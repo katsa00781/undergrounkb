@@ -31,3 +31,32 @@ export const sidebarLinks = [
     },
 
 ]
+
+export const links = [
+    {
+        name: "Kezdőlap",
+        route: "/",
+        icon: "/icons/cardButtonPlus.svg",
+    },
+    {
+        name: "Edzéstervek",
+        route: "/traning-plans",
+        icon: "/icons/",
+    },
+    {
+        name: "Edzésnapló",
+        route: "/workout-log",
+        icon: "/icons/naplo.png",
+        
+    },
+    {
+        name: "Célok",
+        route: "/goals",
+        icon: "/icons/goals.png",
+    },
+    {
+        name: "Időpontok",
+        route: "/appointments",
+        icon: "/icons/cardButtonAddDate.svg",
+    }
+]
