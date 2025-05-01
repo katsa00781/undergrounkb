@@ -15,11 +15,12 @@ interface CardWithFormProps {
     description?: string;
     footer?: string | React.ReactNode;
     imgsrc?: string;
+    className?: string;
 }
 
-export function CardWithForm({ title, content, description, footer, imgsrc}: CardWithFormProps) {
+export function CardWithForm({ title, content, description, footer, imgsrc, className}: CardWithFormProps) {
   return (
-    <Card className="w-[350px]">
+    <Card className={`w-[300px] h-[300px] bg-white shadow-lg border border-neutral-200 p-4 flex flex-col space-y-2 ${className}`}>
       <CardHeader>
         <div className="flex items-center justify-between">
         <CardTitle className="text-title">{title}</CardTitle>

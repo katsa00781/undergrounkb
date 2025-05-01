@@ -3,7 +3,6 @@ import CardButton from '@/components/items/CardButton'
 import { CardWithForm } from '@/components/items/CustomCard'
 import Header from '@/components/items/Header'
 import ProgressBar from '@/components/items/ProgressBar'
-import { links } from '@/public/constans/link'
 import Image from 'next/image'
 
 
