@@ -128,3 +128,23 @@
     @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-colors;
   }
 }
+.text-base {
+  @apply text-[#333333];
+}
+
+.text-title {
+  @apply text-[#333333] text-2xl font-semibold;
+}
+
+.text-subtitle {
+  @apply text-[#333333] text-lg font-medium;
+}
+
+.text-body {
+  @apply text-[#333333] text-base;
+}
+
+.text-small {
+  @apply text-[#333333] text-sm;
+}
+
