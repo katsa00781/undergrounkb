@@ -3,9 +3,9 @@ import SideBar from './SideBar'
 
 const DashBoardOverview = () => {
   return (
-    <main>
+    <section>
        <SideBar />
-    </main>
+    </section>
   )
 }
 

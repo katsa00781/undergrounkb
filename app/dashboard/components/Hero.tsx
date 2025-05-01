@@ -1,9 +1,13 @@
+
+import Header from '@/components/items/Header'
 import React from 'react'
 
 const Hero = () => {
+
+
   return (
-    <div className='flex flex-col items-center justify-center w-full h-screen'>
-        <h1 className='text-white'>HERO</h1>
+    <div className='flex justify-between space-y-2 min-w-[80vw] h-screen'>
+     <Header />
     </div>
   )
 }

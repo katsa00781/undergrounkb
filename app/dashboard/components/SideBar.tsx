@@ -12,7 +12,7 @@ const SideBar = () => {
     const pathName = usePathname();
     
   return (
-    <section className='fixed h-full w-64 bg-white border-r border-neutral-200 p-4 shaddow-lg'>
+    <section className=' min-w-72 h-full bg-white border-r border-neutral-200 p-4 shaddow-lg'>
         <nav className='flex flex-col gap-4'>
             <Link href={'/dashboard'} className={`text-2xl font-[500] text-[#000000] ${pathName === '/dashboard' ? 'text-[#FF4D00]' : 'text-[#000000]'}`}>
             <h1 className='text-xl text-[#333333]'>UnderGround Kettlebell</h1>
