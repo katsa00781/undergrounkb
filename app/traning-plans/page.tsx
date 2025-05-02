@@ -20,7 +20,7 @@ const TraningPlans = () => {
         <CardWithForm
         title='Új edzésterv'
         content={<NewWorkoutForm />}
-        className='w-full p-4 '/>
+        className='w-full h-screen p-4 '/>
    </section>
   )
 }

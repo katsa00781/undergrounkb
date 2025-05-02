@@ -79,6 +79,8 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+    --orange: oklch(0.7 0.2 40); /* #FF6A00 - Narancssárga gomb szín */
+    --orange-foreground: oklch(0.985 0 0);
   }
 
   .dark {
@@ -113,6 +115,8 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+    --orange: oklch(0.7 0.2 40); /* #FF6A00 - Narancssárga gomb szín */
+    --orange-foreground: oklch(0.985 0 0);
   }
 
   * {
@@ -126,6 +130,10 @@
 @layer components {
   .btn-primary {
     @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-colors;
+  }
+
+  .btn-orange {
+    @apply bg-[#FF6A00] text-white hover:bg-[#e65f00] transition-colors;
   }
 }
 .text-base {
