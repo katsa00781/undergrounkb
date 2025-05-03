@@ -6,7 +6,6 @@ import { Bar, BarChart, CartesianGrid, LabelList, XAxis } from "recharts"
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -28,7 +27,7 @@ export interface CustomBarChartProps {
         left?: number   
     },
     title: string
-    description: string
+    description?: string
     footer: string
     imgsrc?: string
     className?: string
@@ -38,9 +37,9 @@ export interface CustomBarChartProps {
 
 
 
-export function CustomBarChart({title, data, description, footer, imgsrc, className,config, comment}: CustomBarChartProps) {
+export function CustomBarChart({title, data,  footer,  className,config, comment}: CustomBarChartProps) {
   return (
-    <Card className=" w-xs max-h-64">
+    <Card className={`w-xl ${className}`}>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
@@ -68,9 +67,11 @@ export function CustomBarChart({title, data, description, footer, imgsrc, classN
             <Bar dataKey="desktop" fill="var(--color-desktop)" radius={8}>
               <LabelList
                 position="top"
-                offset={12}
-                className="fill-foreground"
-                fontSize={12}
+                offset={16}
+                className="fill-foreground text-secondary "
+                fontSize={16}
+                fontWeight={700}
+                
               />
             </Bar>
           </BarChart>
@@ -78,8 +79,8 @@ export function CustomBarChart({title, data, description, footer, imgsrc, classN
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 text-sm">
         <div className="flex gap-2 font-medium leading-none">
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            {footer}
+            <TrendingUp className="h-6 w-6 text-muted-foreground" />
+            <p className="text-h2">{footer}</p>
         </div>
         <div className="leading-none text-muted-foreground">
             <p className="text-sm">{comment}</p>

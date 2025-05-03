@@ -20,8 +20,8 @@ const chartData = [
 
 const chartConfig = {
   desktop: {
-    label: "Desktop",
-    color: "hsl(var(--chart-1))",
+    label: "Edzések Száma",
+    color: "#007AFF"
   },
 } satisfies ChartConfig
 
@@ -67,10 +67,8 @@ const WorkoutLog = () => {
             className='flex w-[362px]'
           />
         </div>
-        <section className='flex flex-col items-center justify-between space-y-8 bg-white'>
-          <div className='flex flex-col items-center  w-[794px] h-[350px]'>
-            <h2 className='text-h2 '>EdzésNApok </h2>
-            <div className='flex items-center justify-center w-[794px] h-[350px] bg-white'>
+        <section className='flex flex-col items-center justify-center space-y-8'>
+            <div className='flex items-center justify-center w-3xl bg-white rounded-2xl border-1 border-s-[#E5E7EB] shadow-md'>
               <CustomBarChart
               title='Edzésszámok'
               data={chartData.map((item) => ({
@@ -78,16 +76,14 @@ const WorkoutLog = () => {
                 desktop: item.desktop,
               }))}
               description='Edzésnapló'
-              footer='Edzésnapló'
-              imgsrc='/icons/positive.svg'
-              className='flex w-full'
-              comment='Edzésnapló'
+              footer='Idei edzések számai havi bontásban'
               config={chartConfig}
+              className='border-none'
+          
                />
             </div>
 
-          </div>
-          <div className='flex w-[794px] h-[350px] bg-amber-700'>
+          <div className='flex w-3xl h-[350px] bg-white rounded-2xl border-1 border-s-[#E5E7EB] shadow-md'>
 
           </div>
         </section>
