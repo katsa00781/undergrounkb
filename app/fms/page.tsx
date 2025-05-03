@@ -1,10 +1,11 @@
-import TemplateForm from '@/components/forms/TemplateForm'
+
 import React from 'react'
+
 
 const Fms = () => {
   return (
     <div>
-      <TemplateForm />
+      FMS
     </div>
   )
 }

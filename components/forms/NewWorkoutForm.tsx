@@ -14,11 +14,12 @@ import {
   FormMessage
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { DatePicker } from "../items/DatePicker"
+
 import { CustomSelect } from "../items/CustomSelect"
 import React from "react"
 import { sets ,Ismetlesek, time, weights, } from "@/public/constans/values"
 import Image from "next/image"
+import DatePicker from "../items/DatePicker"
 
 
 
@@ -26,6 +27,7 @@ import Image from "next/image"
 
  
 const formSchema = z.object({
+  date: z.date(),
   username: z.string().min(2, {
     message: "Username must be at least 2 characters.",
   }),
@@ -54,15 +56,14 @@ const NewWorkoutForm = () => {
     <div>
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <div className="flex w-full items-center space-x-4">
         <FormField
           control={form.control}
-          name="username"
+          name="date"
           render={({ field }) => (
             <FormItem className="w-1/2">
               <FormLabel>Dátum</FormLabel>
               <FormControl>
-               <DatePicker />
+               <DatePicker value={field.value} selected={field.value} onSelect={field.onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -84,7 +85,6 @@ const NewWorkoutForm = () => {
             </FormItem>
           )}
         />
-        </div>
         <div className="flex flex-col w-full rounded-2xl border-1 border-gray-300 p-4">
             <p className="text-subtitle">Edzéstervező</p>
             <div className="flex space-y-4">

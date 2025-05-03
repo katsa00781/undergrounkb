@@ -55,3 +55,9 @@ export const weights = [
     { value: "44" , label: "44 kg"},
     { value: "48" , label: "48 kg"},
 ];
+
+export const clients = [
+    { value: "Kácsor Zsolt", label: "Kácsor Zsolt" },
+    { value: "Wilk Péter", label: "Wilk Péter" },
+    { value: "Furdújné Rodenbücher Rita", label: "Furdújné Rodenbücher Rita" },
+];
