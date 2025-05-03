@@ -6,6 +6,24 @@ import Image from 'next/image'
 import React from 'react'
 
 import { CardWithForm } from '@/components/items/CustomCard'
+import { CustomBarChart } from '@/components/charts/CustomBarChart'
+import { ChartConfig } from '@/components/ui/chart'
+
+const chartData = [
+  { month: "January", desktop: 6 },
+  { month: "February", desktop: 4 },
+  { month: "March", desktop: 6 },
+  { month: "April", desktop: 2 },
+  { month: "May", desktop: 4 },
+  { month: "June", desktop: 6 },
+]
+
+const chartConfig = {
+  desktop: {
+    label: "Desktop",
+    color: "hsl(var(--chart-1))",
+  },
+} satisfies ChartConfig
 
 
 
@@ -49,13 +67,23 @@ const WorkoutLog = () => {
             className='flex w-[362px]'
           />
         </div>
-        <section className='flex flex-col items-center justify-between space-y-8'>
-          <div className='flex w-[794px] h-[350px] bg-amber-200'>
-            <span className='p-48'>
-              <h2>Haladás</h2>
-            </span>
-            <div>
-              
+        <section className='flex flex-col items-center justify-between space-y-8 bg-white'>
+          <div className='flex flex-col items-center  w-[794px] h-[350px]'>
+            <h2 className='text-h2 '>EdzésNApok </h2>
+            <div className='flex items-center justify-center w-[794px] h-[350px] bg-white'>
+              <CustomBarChart
+              title='Edzésszámok'
+              data={chartData.map((item) => ({
+                month: item.month,
+                desktop: item.desktop,
+              }))}
+              description='Edzésnapló'
+              footer='Edzésnapló'
+              imgsrc='/icons/positive.svg'
+              className='flex w-full'
+              comment='Edzésnapló'
+              config={chartConfig}
+               />
             </div>
 
           </div>

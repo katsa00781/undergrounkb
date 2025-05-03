@@ -17,34 +17,38 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-const chartData = [
-  { month: "January", desktop: 186 },
-  { month: "February", desktop: 305 },
-  { month: "March", desktop: 237 },
-  { month: "April", desktop: 73 },
-  { month: "May", desktop: 209 },
-  { month: "June", desktop: 214 },
-]
 
-const chartConfig = {
-  desktop: {
-    label: "Desktop",
-    color: "hsl(var(--chart-1))",
-  },
-} satisfies ChartConfig
+export interface CustomBarChartProps {
+    data:  { month: string; desktop: number; }[],
+    config: ChartConfig
+    margin?: {
+        top?: number
+        right?: number
+        bottom?: number
+        left?: number   
+    },
+    title: string
+    description: string
+    footer: string
+    imgsrc?: string
+    className?: string
+    comment?: string
+}
 
-export function CustomBarChart() {
+
+
+
+export function CustomBarChart({title, data, description, footer, imgsrc, className,config, comment}: CustomBarChartProps) {
   return (
-    <Card>
+    <Card className=" w-xs max-h-64">
       <CardHeader>
-        <CardTitle>Bar Chart - Label</CardTitle>
-        <CardDescription>January - June 2024</CardDescription>
+        <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig}>
+        <ChartContainer config={config}>
           <BarChart
             accessibilityLayer
-            data={chartData}
+            data={data}
             margin={{
               top: 20,
             }}
@@ -55,7 +59,7 @@ export function CustomBarChart() {
               tickLine={false}
               tickMargin={10}
               axisLine={false}
-              tickFormatter={(value) => value.slice(0, 3)}
+              tickFormatter={(value) => value}
             />
             <ChartTooltip
               cursor={false}
@@ -74,10 +78,11 @@ export function CustomBarChart() {
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 text-sm">
         <div className="flex gap-2 font-medium leading-none">
-          Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            {footer}
         </div>
         <div className="leading-none text-muted-foreground">
-          Showing total visitors for the last 6 months
+            <p className="text-sm">{comment}</p>
         </div>
       </CardFooter>
     </Card>
