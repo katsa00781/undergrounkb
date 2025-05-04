@@ -144,6 +144,18 @@
   .text-h2 {
     @apply text-[#1F2937] text-lg font-normal leading-[22px];
   }
+
+  .text-h3 {
+    @apply text-[#1F2937] text-base font-normal leading-5;
+  }
+
+  .container-text-secondary {
+    @apply text-[#6B7280] text-sm font-normal leading-[14px];
+  }
+
+  .container-text-primary {
+    @apply text-[#1F2937] text-base font-normal leading-[16px];
+  }
 }
 .text-base {
   @apply text-[#333333];
@@ -159,6 +171,11 @@
 
 .text-body {
   @apply text-[#333333] text-base;
+}
+
+.bg-container {
+  @apply bg-[#F9FAFB] border-1 rounded-xl border-[#E5E7EB] p-4;
+
 }
 
 .text-small {

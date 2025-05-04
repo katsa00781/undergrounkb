@@ -8,6 +8,8 @@ import React from 'react'
 import { CardWithForm } from '@/components/items/CustomCard'
 import { CustomBarChart } from '@/components/charts/CustomBarChart'
 import { ChartConfig } from '@/components/ui/chart'
+import DiaryCardElement from '@/components/items/DiaryCardElement'
+import { Button } from '@/components/ui/button'
 
 const chartData = [
   { month: "January", desktop: 6 },
@@ -29,7 +31,7 @@ const chartConfig = {
 
 const WorkoutLog = () => {
   return (
-    <main className='flex flex-col h-screen bg-secondary'>
+    <main className='flex flex-col items-center h-screen bg-secondary'>
       <header className='flex max-w-screen min-w-[80vw] bg-white justify-between h-[72px] p-4'>
         <div className='flex items-center space-x-8'>
           <div>
@@ -48,7 +50,7 @@ const WorkoutLog = () => {
           <Image src='/images/user.jpg' alt='User' width={40} height={40} className='rounded-full' />
         </div>
       </header>
-      <section className='flex justify-between p-4 '>
+      <section className='flex p-4 space-x-8 '>
         <div className='flex flex-col items-center space-y-8'>
           <CardWithForm
             title='2025.04.19'
@@ -68,8 +70,8 @@ const WorkoutLog = () => {
           />
         </div>
         <section className='flex flex-col items-center justify-center space-y-8'>
-            <div className='flex items-center justify-center w-3xl bg-white rounded-2xl border-1 border-s-[#E5E7EB] shadow-md'>
-              <CustomBarChart
+          <div className='flex items-center justify-center w-3xl bg-white rounded-2xl border-1 border-s-[#E5E7EB] shadow-md'>
+            <CustomBarChart
               title='Edzésszámok'
               data={chartData.map((item) => ({
                 month: item.month,
@@ -79,12 +81,22 @@ const WorkoutLog = () => {
               footer='Idei edzések számai havi bontásban'
               config={chartConfig}
               className='border-none'
-          
-               />
+
+            />
+          </div>
+
+          <div className='flex flex-col  w-3xl bg-white rounded-2xl border-1 border-s-[#E5E7EB] shadow-md p-4 space-y-4'>
+            <span className='flex items-center'>
+              <h2 className='text-h3 p-4'>Gyakorlatok</h2>
+            </span>
+            {/* A gyakorlatok konténerének headingje */}
+            <DiaryCardElement />
+            <div className='pb-4' >
+              <Button>
+                <Image src='/icons/plus.svg' alt='ok' width={14} height={16} />
+                <span className='text-button w-48 '>Új edzés rögzítése</span>
+              </Button>
             </div>
-
-          <div className='flex w-3xl h-[350px] bg-white rounded-2xl border-1 border-s-[#E5E7EB] shadow-md'>
-
           </div>
         </section>
       </section>
