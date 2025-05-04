@@ -57,7 +57,65 @@ export const weights = [
 ];
 
 export const clients = [
-    { value: "Kácsor Zsolt", label: "Kácsor Zsolt" },
-    { value: "Wilk Péter", label: "Wilk Péter" },
-    { value: "Furdújné Rodenbücher Rita", label: "Furdújné Rodenbücher Rita" },
+    { value: "Kácsor Zsolt", label: "Kácsor Zsolt" , imgsrc: "/images/user.jpg", lastDate: "2025.04.19"},
+    { value: "Wilk Péter", label: "Wilk Péter", imgsrc: "/images/user2.png", lastDate: "2025.04.19"},
+    { value: "Furdújné Rodenbücher Rita", label: "Furdújné Rodenbücher Rita", imgsrc: "/images/user3.png", lastDate: "2025.04.19"},
 ];
+
+// ...existing code...
+
+export const fmsData = [
+    {
+      id: "1",
+      name: "Kácsor Zsolt",
+      imageUrl: "/images/user.jpg",
+      lastAssessment: "2025-04-19",
+      assessments: {
+        deepSquat: { score: 2, pain: false },
+        hurdleStep: { score: 2, pain: false },
+        inlineLunge: { score: 3, pain: false },
+        shoulderMobility: { score: 2, pain: true },
+        activeStraightLegRaise: { score: 2, pain: false },
+        trunkStabilityPushUp: { score: 3, pain: false },
+        rotaryStability: { score: 2, pain: false }
+      },
+      totalScore: 16,
+      notes: "Váll mobilításnál enyhe fájdalom"
+    },
+    {
+      id: "2",
+      name: "Wilk Péter",
+      imageUrl: "/images/user2.png",
+      lastAssessment: "2025-04-19",
+      assessments: {
+        deepSquat: { score: 3, pain: false },
+        hurdleStep: { score: 2, pain: false },
+        inlineLunge: { score: 2, pain: false },
+        shoulderMobility: { score: 3, pain: false },
+        activeStraightLegRaise: { score: 2, pain: false },
+        trunkStabilityPushUp: { score: 3, pain: false },
+        rotaryStability: { score: 2, pain: true }
+      },
+      totalScore: 17,
+      notes: "Rotációs stabilitásnál enyhe deréktáji fájdalom"
+    },
+    {
+      id: "3",
+      name: "Furdújné Rodenbücher Rita",
+      imageUrl: "/images/user3.png",
+      lastAssessment: "2025-04-19",
+      assessments: {
+        deepSquat: { score: 2, pain: false },
+        hurdleStep: { score: 2, pain: false },
+        inlineLunge: { score: 2, pain: false },
+        shoulderMobility: { score: 2, pain: false },
+        activeStraightLegRaise: { score: 3, pain: false },
+        trunkStabilityPushUp: { score: 2, pain: false },
+        rotaryStability: { score: 2, pain: false }
+      },
+      totalScore: 15,
+      notes: "Nincs fájdalom egyik gyakorlatnál sem"
+    }
+  ];
+  
+  // ...existing code...
