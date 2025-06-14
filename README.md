@@ -57,12 +57,25 @@ npm run validate:db
 
 ## Troubleshooting
 
-If you encounter database schema issues, run:
+### Profile Issues
+If you encounter database schema issues with profiles, run:
 
 ```bash
 ./fix-profile-database.sh
 ```
 
+### FMS Assessment Table Installation
+To set up the FMS (Functional Movement Screen) assessment feature:
+
+```bash
+./install-fms-table.sh
+```
+
+This will guide you through the process of installing the required database table.
+
+For detailed FMS installation instructions, see `docs/fms_installation_guide_hu.md`.
+
+### Cache Issues
 For persistent cache issues:
 
 ```bash

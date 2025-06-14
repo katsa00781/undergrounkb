@@ -88,7 +88,7 @@ export async function getAllUsers() {
     
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, email, first_name, last_name, role')
+      .select('id, email, full_name, role')
       .order('email');
 
     if (error) {
@@ -104,17 +104,14 @@ export async function getAllUsers() {
       console.log('User data from DB:', {
         id: user.id,
         email: user.email,
-        first_name: user.first_name !== null ? `"${user.first_name}"` : 'null',
-        last_name: user.last_name !== null ? `"${user.last_name}"` : 'null',
+        full_name: user.full_name !== null ? `"${user.full_name}"` : 'null',
         role: user.role
       });
       
       // Create a name with available information
       let displayName;
-      if (user.first_name && user.last_name) {
-        displayName = `${user.first_name} ${user.last_name}`;
-      } else if (user.first_name) {
-        displayName = user.first_name;
+      if (user.full_name) {
+        displayName = user.full_name;
       } else if (user.email) {
         displayName = user.email;
       } else {
