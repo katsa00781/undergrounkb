@@ -299,7 +299,7 @@ const Profile = () => {
               </label>
               <div className="mt-2 space-y-2">
                 {AVAILABLE_FITNESS_GOALS.map((goal) => {
-                  // Ellenőrizze, hogy az érték már ki van-e választva
+                  // Használjuk a Controller komponenst a komplex mezők kezeléséhez
                   const goalsArray = Array.isArray(watch('fitnessGoals')) ? watch('fitnessGoals') : [];
                   const isChecked = goalsArray.includes(goal);
                   
@@ -310,17 +310,18 @@ const Profile = () => {
                         value={goal}
                         checked={isChecked}
                         onChange={(e) => {
-                          const currentGoals = Array.isArray(watch('fitnessGoals')) ? [...watch('fitnessGoals')] : [];
-                          if (e.target.checked && !currentGoals.includes(goal)) {
-                            currentGoals.push(goal);
-                          } else if (!e.target.checked) {
-                            const index = currentGoals.indexOf(goal);
-                            if (index !== -1) {
-                              currentGoals.splice(index, 1);
+                          let updatedGoals = [...goalsArray];
+                          if (e.target.checked) {
+                            // Ha bejelöltük és még nincs benne, adjuk hozzá
+                            if (!updatedGoals.includes(goal)) {
+                              updatedGoals.push(goal);
                             }
+                          } else {
+                            // Ha kijelöltük, távolítsuk el
+                            updatedGoals = updatedGoals.filter(g => g !== goal);
                           }
-                          // Manuálisan frissítjük a form értéket
-                          reset({ ...watch(), fitnessGoals: currentGoals }, { keepValues: true });
+                          // Frissítsük a form értékét
+                          reset({ ...watch(), fitnessGoals: updatedGoals }, { keepValues: true });
                         }}
                         className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-600"
                       />

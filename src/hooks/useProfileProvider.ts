@@ -24,8 +24,7 @@ export type ProfileDatabaseUpdate = {
   fitness_goals?: string[];
   experience_level?: string | null;
   updated_at: string;
-  first_name?: string | null;
-  last_name?: string | null;
+  full_name?: string | null;
 };
 
 // Function to check if the db schema has the required columns
@@ -43,16 +42,16 @@ async function verifyProfileSchema(): Promise<boolean> {
       return false;
     }
     
-    // Now check for the first_name column specifically
+    // Now check for the full_name column specifically
     const { error: nameError } = await supabase
       .from('profiles')
-      .select('first_name')
+      .select('full_name')
       .limit(1);
     
     if (nameError) {
       // Check if the error is specifically about the missing column
       if (nameError.message.includes('does not exist')) {
-        console.warn('Schema verification: first_name column does not exist in profiles table');
+        console.warn('Schema verification: full_name column does not exist in profiles table');
       } else {
         console.warn('Profile schema verification failed with unexpected error:', nameError.message);
       }
@@ -62,7 +61,7 @@ async function verifyProfileSchema(): Promise<boolean> {
     // Check additional required columns
     const { error: additionalError } = await supabase
       .from('profiles')
-      .select('last_name, height, weight, fitness_goals')
+      .select('height, weight, fitness_goals')
       .limit(1);
     
     if (additionalError) {
@@ -106,16 +105,15 @@ export const useProfileProvider = () => {
       : 'Empty profile');
   
   // Safely check for property existence
-  const hasFirstName = profile && 'first_name' in profile;
-  const hasLastName = profile && 'last_name' in profile;
+  const hasFullName = profile && 'full_name' in profile;
   
   // Convert database profile to form data format
   const userProfile: ProfileFormData | null = profile ? {
     displayName: 
-      // Check for first_name property existence first, then check value
-      hasFirstName && hasLastName && profile.first_name && profile.last_name
-        ? `${profile.first_name} ${profile.last_name}` 
-        : (hasFirstName && profile.first_name ? profile.first_name : (profile.email || '')),
+      // Check for full_name property existence first, then check value
+      hasFullName && profile.full_name
+        ? String(profile.full_name)
+        : (profile.email || ''),
     // Use type-safe access to profile fields
     height: profile.height || null,
     weight: profile.weight || null,
@@ -136,16 +134,11 @@ export const useProfileProvider = () => {
       
       console.log('Form data to update:', data);
 
-      // Parse display name into first and last name
-      let first_name: string | null = null;
-      let last_name: string | null = null;
+      // Use display name directly as full name
+      let full_name: string | null = null;
       
       if (data.displayName) {
-        const nameParts = data.displayName.trim().split(' ');
-        if (nameParts.length > 0) {
-          first_name = nameParts[0];
-          last_name = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null;
-        }
+        full_name = data.displayName.trim();
       }
 
       // Prepare the updates object with all fields
@@ -175,13 +168,9 @@ export const useProfileProvider = () => {
         updated_at: new Date().toISOString()
       };
       
-      // Add name fields conditionally
-      if (first_name !== null) {
-        updates.first_name = first_name;
-      }
-      
-      if (last_name !== null) {
-        updates.last_name = last_name;
+      // Add full name conditionally
+      if (full_name !== null) {
+        updates.full_name = full_name;
       }
       
       console.log('Updating profile with:', updates);
