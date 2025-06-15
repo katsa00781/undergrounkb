@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -50,16 +50,11 @@ const AppointmentManager = () => {
     },
   });
 
-  useEffect(() => {
-    if (user) {
-      loadAppointments();
-    }
-  }, [user]);
-
-  const loadAppointments = async () => {
+  const loadAppointments = useCallback(async () => {
     try {
+      if (!user) return;
       setIsLoading(true);
-      const data = await getTrainerAppointments(user!.id);
+      const data = await getTrainerAppointments(user.id);
       setAppointments(data);
     } catch (error) {
       console.error('Failed to load appointments:', error);
@@ -67,7 +62,13 @@ const AppointmentManager = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      loadAppointments();
+    }
+  }, [user, loadAppointments]);
 
   const onSubmit = async (data: AppointmentFormData) => {
     try {

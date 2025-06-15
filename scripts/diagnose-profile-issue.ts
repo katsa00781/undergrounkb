@@ -106,7 +106,7 @@ async function diagnoseProfileIssues() {
   // 1. Check if we can access the profiles table at all
   console.log('🔍 Checking if profiles table exists...');
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('profiles')
       .select('id')
       .limit(1);
@@ -125,7 +125,7 @@ async function diagnoseProfileIssues() {
   
   // 2. Check for each expected column
   console.log('🔍 Checking for expected columns...');
-  let missingColumns = [];
+  const missingColumns: string[] = [];
   
   for (const column of EXPECTED_COLUMNS) {
     try {
@@ -156,7 +156,7 @@ async function diagnoseProfileIssues() {
     if (await applyProfileMigration()) {
       console.log('✅ Migration applied successfully!');
       // Verify columns were added
-      let stillMissing = [];
+      const stillMissing: string[] = [];
       for (const column of missingColumns) {
         try {
           const { error } = await supabase
@@ -167,7 +167,7 @@ async function diagnoseProfileIssues() {
           if (error && error.message.includes('does not exist')) {
             stillMissing.push(column);
           }
-        } catch (err) {
+        } catch {
           stillMissing.push(column);
         }
       }

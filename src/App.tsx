@@ -1,7 +1,3 @@
-import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/layout/Layout';
-import LoadingScreen from './components/ui/LoadingScreen';
 import { getCurrentUserRole } from './lib/users';
 import { useEffect, useState } from 'react';
 import { Toaster } from './components/ui/toaster';

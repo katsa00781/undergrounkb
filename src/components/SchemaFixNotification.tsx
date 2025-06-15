@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertCircle, CheckCircle, Terminal } from 'lucide-react';
+import { AlertCircle, Terminal } from 'lucide-react';
 
 type SchemaFixNotificationProps = {
   show: boolean;

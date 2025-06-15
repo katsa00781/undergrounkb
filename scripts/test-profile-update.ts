@@ -1,5 +1,22 @@
 // Test script to validate the profile update functionality
-import { supabase } from '../config/supabase';
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+import type { Database } from '../src/types/supabase';
+
+// Load environment variables
+dotenv.config();
+
+// Get Supabase credentials from environment variables
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('\x1b[31m❌ Missing Supabase credentials! Check your .env file.\x1b[0m');
+  process.exit(1);
+}
+
+// Create Supabase client
+const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
 // ANSI color codes for formatting console output
 const GREEN = '\x1b[32m';
@@ -20,7 +37,6 @@ async function testProfileUpdates() {
   try {
     // 1. Find a test user or create one
     let testUserId = '';
-    let testUser = null;
     
     // First check if we have a test user
     const { data: existingUsers, error: searchError } = await supabase
@@ -34,8 +50,8 @@ async function testProfileUpdates() {
     }
     
     if (existingUsers && existingUsers.length > 0) {
-      testUser = existingUsers[0];
-      testUserId = testUser.id;
+      const existingUser = existingUsers[0];
+      testUserId = existingUser.id;
       console.log(`${GREEN}Found existing test user:${RESET}`, testUserId);
     } else {
       // Create a test user
@@ -59,7 +75,9 @@ async function testProfileUpdates() {
         return false;
       }
       
-      testUser = newUser[0];
+      if (newUser && newUser.length > 0) {
+        testUserId = newUser[0].id;
+      }
       console.log(`${GREEN}Created new test user:${RESET}`, testUserId);
     }
     
@@ -113,8 +131,8 @@ async function testProfileUpdates() {
       { name: 'experience_level', value: profile.experience_level, expected: testData.experience_level }
     ];
     
-    let missingFields = [];
-    let mismatchFields = [];
+    const missingFields: string[] = [];
+    const mismatchFields: string[] = [];
     
     fieldsToCheck.forEach(field => {
       if (field.value === undefined) {

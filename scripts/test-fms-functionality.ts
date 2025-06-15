@@ -1,5 +1,10 @@
 // Run this script to test FMS assessment functionality
-import { supabase } from '../config/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Sample FMS assessment data
 const sampleAssessment = {
