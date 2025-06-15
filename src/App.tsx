@@ -2,30 +2,12 @@ import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import LoadingScreen from './components/ui/LoadingScreen';
-import { useAuth } from './hooks/useAuth';
 import { getCurrentUserRole } from './lib/users';
 import { useEffect, useState } from 'react';
 import { Toaster } from './components/ui/toaster';
 import { supabase, connectionManager } from './config/supabase';
-import { getUserRole } from './lib/userService';
 import { useNavigate } from 'react-router-dom';
 import { AppRoutes } from './routes';
-
-// Lazy-loaded pages
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Profile = lazy(() => import('./pages/Profile'));
-const WorkoutPlanner = lazy(() => import('./pages/WorkoutPlanner'));
-const ExerciseLibrary = lazy(() => import('./pages/ExerciseLibrary'));
-const ExerciseDetail = lazy(() => import('./pages/ExerciseDetail'));
-const WorkoutLog = lazy(() => import('./pages/WorkoutLog'));
-const FMSAssessment = lazy(() => import('./pages/FMSAssessment'));
-const ProgressTracking = lazy(() => import('./pages/ProgressTracking'));
-const UserManagement = lazy(() => import('./pages/UserManagement'));
-const AppointmentManager = lazy(() => import('./pages/AppointmentManager'));
-const AppointmentBookingPage = lazy(() => import('./pages/AppointmentBooking'));
-const NotFound = lazy(() => import('./pages/NotFound'));
-const Register = lazy(() => import('./pages/auth/Register'));
-const Login = lazy(() => import('./pages/auth/Login'));
 
 // Connection error component
 function ConnectionError() {
@@ -57,7 +39,6 @@ function ConnectionError() {
 }
 
 function App() {
-  const { user } = useAuth();
   const [connectionError, setConnectionError] = useState(false);
   const [userRole, setUserRole] = useState<string>('anonymous');
   const [isLoading, setIsLoading] = useState(true);
@@ -83,7 +64,7 @@ function App() {
           return;
         }
 
-        const role = await getUserRole(user.id);
+        const role = await getCurrentUserRole();
         console.log('User role in App:', role);
         setUserRole(role);
       } catch (error) {
@@ -96,7 +77,7 @@ function App() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        const role = await getUserRole(session.user.id);
+        const role = await getCurrentUserRole();
         setUserRole(role);
       } else if (event === 'SIGNED_OUT') {
         setUserRole('anonymous');
