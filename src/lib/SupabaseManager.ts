@@ -70,7 +70,7 @@ export class SupabaseManager {
    */
   async checkConnection(): Promise<boolean> {
     try {
-      const tables = ['profiles', 'users', 'exercises', 'fms_assessments'];
+      const tables = ['profiles', 'exercises', 'fms_assessments', 'appointments', 'appointment_bookings'];
       const checks = await Promise.all(
         tables.map(table => 
           this.client.from(table).select('count').limit(1)
@@ -100,9 +100,11 @@ export class SupabaseManager {
   /**
    * Handle connection errors with retry logic
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private async handleConnectionError(error: unknown) {
     this.connectionStatus = 'disconnected';
+    
+    // Log the actual error for debugging
+    console.error('Database connection error:', error);
     
     if (this.retryCount < this.maxRetries) {
       this.retryCount++;
@@ -212,7 +214,6 @@ export class SupabaseManager {
       await subscription.subscribe(handleStatus);
 
       this.subscriptions.set(channel, subscription);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       console.error('Subscription error:', error);
     }
@@ -352,7 +353,7 @@ export class SupabaseManager {
   /**
    * Perform a sync operation
    */
-  private async performSync(key: string, item: SyncQueueItem): Promise<void> {
+  private async performSync(_key: string, item: SyncQueueItem): Promise<void> {
     try {
       let result;
 

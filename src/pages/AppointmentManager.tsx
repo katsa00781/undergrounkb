@@ -81,7 +81,6 @@ const AppointmentManager = () => {
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
         max_participants: data.max_participants,
-        trainer_id: user!.id,
       });
 
       await loadAppointments();
@@ -287,16 +286,15 @@ const AppointmentManager = () => {
               <div
                 key={booking.id}
                 className="flex items-center justify-between rounded-lg border border-gray-200 p-4 dark:border-gray-700"
-              >
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {booking.user_email}
+              >              <div>
+                <p className="font-medium text-gray-900 dark:text-white">
+                  {booking.user_email || booking.user_id}
+                </p>
+                {booking.user_name && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {booking.user_name}
                   </p>
-                  {booking.user_name && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {booking.user_name}
-                    </p>
-                  )}
+                )}
                 </div>
                 <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                   booking.status === 'confirmed'

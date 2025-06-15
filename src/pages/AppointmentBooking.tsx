@@ -25,6 +25,7 @@ const AppointmentBookingPage = () => {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [accessChecked, setAccessChecked] = useState(false);
   const [accessError, setAccessError] = useState<string | null>(null);
+  const [bookingEnabled, setBookingEnabled] = useState(true); // Enable booking by default
 
   // Define loadData using useCallback
   const loadData = useCallback(async () => {
@@ -90,18 +91,8 @@ const AppointmentBookingPage = () => {
           
           if (profileError) {
             console.error('Error getting profile role:', profileError);
-            // Ha nincs profil adat, nézzük meg a users táblában
-            const { data: userData, error: userError } = await supabase
-              .from('users')
-              .select('role')
-              .eq('id', user.id)
-              .single();
-              
-            console.log('User data:', userData);
-            
-            if (userError) {
-              console.error('Error getting user role:', userError);
-            } 
+            console.warn('Could not determine user role, defaulting to "user"');
+            return 'user';
           }
 
           // Debug: Temporarily force update the role in profiles and memory for testing
@@ -115,7 +106,7 @@ const AppointmentBookingPage = () => {
           console.error('Error checking roles:', roleError);
         }
         
-        // Check if the table exists by making a test query
+        // Check if the appointment_bookings table exists 
         const { error } = await supabase
           .from('appointment_bookings')
           .select('count')
@@ -124,8 +115,11 @@ const AppointmentBookingPage = () => {
         if (error) {
           console.error('Error accessing appointment_bookings table:', error);
           if (error.code === '42P01') {
-            setAccessError('The appointments system is currently unavailable. Please try again later.');
-            return false;
+            // Table doesn't exist, but we can still show available appointments
+            setBookingEnabled(false);
+            setAccessError('Booking is temporarily disabled. You can view available appointments but cannot book them yet.');
+            // Return true to continue loading the page with disabled booking
+            return true;
           }
         }
         
@@ -149,13 +143,22 @@ const AppointmentBookingPage = () => {
   }, [user, navigate, location, loadData]);
 
   const handleBook = async (appointmentId: string) => {
+    if (!bookingEnabled) {
+      toast.error('Booking is currently unavailable');
+      return;
+    }
+    
     try {
       await bookAppointment(appointmentId, user!.id);
       await loadData();
       toast.success('Appointment booked successfully');
     } catch (error) {
       console.error('Failed to book appointment:', error);
-      toast.error('Failed to book appointment');
+      if (error instanceof Error && error.message.includes('unavailable')) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to book appointment');
+      }
     }
   };
 
@@ -270,8 +273,10 @@ const AppointmentBookingPage = () => {
                     <button
                       onClick={() => handleBook(appointment.id)}
                       className="btn btn-primary"
+                      disabled={!bookingEnabled}
+                      title={!bookingEnabled ? "Booking is temporarily unavailable" : ""}
                     >
-                      Book Now
+                      {bookingEnabled ? "Book Now" : "View Only"}
                     </button>
                   </div>
 

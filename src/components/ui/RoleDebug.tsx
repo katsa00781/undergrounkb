@@ -52,21 +52,11 @@ export function RoleDebug() {
             console.error('Profile table error:', profileError);
           }
 
-          // Check from users table
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('id, role')
-            .eq('id', userId)
-            .single();
-
-          if (!userError) {
-            setRoleInfo(prev => ({
-              ...prev,
-              usersTable: userData
-            }));
-          } else {
-            console.error('Users table error:', userError);
-          }
+          // We no longer check from users table as it's been deprecated
+          setRoleInfo(prev => ({
+            ...prev,
+            usersTable: { id: userId, role: '(users table deprecated)' }
+          }));
 
           // Try RPC function if available
           try {

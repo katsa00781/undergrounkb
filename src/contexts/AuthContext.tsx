@@ -102,26 +102,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error('Failed to create user profile');
       }
 
-      // Create user record in users table
-      const { error: userError } = await supabase
-        .from('users')
-        .insert([
-          {
-            id: authData.user.id,
-            name,
-            email,
-            role: 'user',
-          },
-        ])
-        .select();
-
-      if (userError) {
-        console.error('User creation error:', userError);
-        // Don't sign out here as the profile was already created successfully
-        // This is a secondary operation that shouldn't prevent registration
-        console.warn('User table sync failed, but registration can proceed');
-      }
-
+      // We no longer create records in users table, only profiles
+      console.log('User registered and profile created successfully');
       toast.success('Registration successful!');
     } catch (err) {
       const message = err instanceof AuthError ? err.message : 'Failed to register';
@@ -211,19 +193,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         .eq('id', user.id);
 
       if (profileError) throw profileError;
-
-      // Also update the users table
-      if (data.name) {
-        const { error: userError } = await supabase
-          .from('users')
-          .update({ name: data.name })
-          .eq('id', user.id);
-
-        if (userError) {
-          console.warn('Failed to update user record:', userError);
-          // Don't throw error here as the profile was updated successfully
-        }
-      }
 
       toast.success('Profile updated successfully');
     } catch (err) {

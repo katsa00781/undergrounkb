@@ -57,54 +57,12 @@ export async function checkTableExists(tableName: string): Promise<boolean> {
   }
 }
 
-// Sync data between profiles and users tables
-export async function syncProfileToUser(id: string, data: Record<string, unknown>): Promise<void> {
-  try {
-    // Check if users table exists
-    const tableExists = await checkTableExists('users');
-    if (!tableExists) {
-      console.warn('Users table does not exist, skipping sync');
-      return;
-    }
-
-    // Check if user exists in users table
-    const { data: existingUser, error: checkError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', id)
-      .maybeSingle();
-    
-    if (checkError) {
-      console.error('Error checking if user exists:', checkError);
-      return;
-    }
-
-    if (existingUser) {
-      // Update existing user
-      const { error: updateError } = await supabase
-        .from('users')
-        .update(data)
-        .eq('id', id);
-      
-      if (updateError) {
-        console.error('Error updating user:', updateError);
-      }
-    } else {
-      // Insert new user
-      const { error: insertError } = await supabase
-        .from('users')
-        .insert({
-          id,
-          ...data
-        });
-      
-      if (insertError) {
-        console.error('Error inserting user:', insertError);
-      }
-    }
-  } catch (error) {
-    console.error('Error syncing profile to user:', error);
-  }
+// This function is deprecated as we no longer need to sync between profiles and users tables
+// We now use only the profiles table for user data
+export async function syncProfileToUser(_id: string, _data: Record<string, unknown>): Promise<void> {
+  // This function is kept for backward compatibility but does nothing
+  console.log('syncProfileToUser is deprecated, using only profiles table now');
+  return;
 }
 
 // Retry a Supabase operation with exponential backoff

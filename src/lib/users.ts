@@ -9,23 +9,6 @@ export interface User {
   updated_at?: string;
 }
 
-// Helper function to sync data between profiles and users tables
-async function syncUserData(id: string, data: Partial<User>) {
-  try {
-    // Update users table
-    const { error } = await supabase
-      .from('users')
-      .update(data)
-      .eq('id', id);
-    
-    if (error) {
-      console.warn('Failed to sync user data to users table:', error);
-    }
-  } catch (err) {
-    console.error('Error syncing user data:', err);
-  }
-}
-
 export async function getUsers() {
   const { data, error } = await supabase
     .from('profiles')
@@ -48,7 +31,7 @@ export async function getUser(id: string) {
 }
 
 export async function createUser(user: Omit<User, 'id' | 'created_at' | 'updated_at'>) {
-  // First create in profiles table
+  // Create in profiles table
   const { data, error } = await supabase
     .from('profiles')
     .insert({ ...user, role: user.role || 'user' })
@@ -56,22 +39,6 @@ export async function createUser(user: Omit<User, 'id' | 'created_at' | 'updated
     .single();
 
   if (error) throw error;
-
-  // Then create in users table
-  try {
-    await supabase
-      .from('users')
-      .insert({
-        id: data.id,
-        email: data.email,
-        name: data.name,
-        role: data.role
-      });
-  } catch (err) {
-    console.warn('Failed to create user in users table:', err);
-    // Don't throw error here as the profile was created successfully
-  }
-
   return data as User;
 }
 
@@ -85,10 +52,6 @@ export async function updateUser(id: string, user: Partial<User>) {
     .single();
 
   if (error) throw error;
-
-  // Sync with users table
-  await syncUserData(id, user);
-
   return data as User;
 }
 
@@ -100,17 +63,6 @@ export async function deleteUser(id: string) {
     .eq('id', id);
 
   if (error) throw error;
-
-  // Delete from users table
-  try {
-    await supabase
-      .from('users')
-      .delete()
-      .eq('id', id);
-  } catch (err) {
-    console.warn('Failed to delete user from users table:', err);
-    // Don't throw error here as the profile was deleted successfully
-  }
 }
 
 export async function getCurrentUserRole(): Promise<'admin' | 'user'> {
@@ -122,7 +74,7 @@ export async function getCurrentUserRole(): Promise<'admin' | 'user'> {
       return 'user';
     }
 
-    // Try to get the role from profiles table first
+    // Get the role from profiles table
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('role')
@@ -136,36 +88,6 @@ export async function getCurrentUserRole(): Promise<'admin' | 'user'> {
 
     if (profileError) {
       console.warn('Error fetching user role from profiles:', profileError);
-    }
-
-    // If profiles table fails, try the users table as fallback
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (!userError && userData?.role) {
-      console.log(`User role from users table: ${userData.role}`);
-      
-      // Sync the role back to profiles if needed
-      if (profileError || (profileData && profileData.role !== userData.role)) {
-        try {
-          await supabase
-            .from('profiles')
-            .update({ role: userData.role })
-            .eq('id', user.id);
-          console.log('Synced role from users to profiles');
-        } catch (syncError) {
-          console.error('Failed to sync role to profiles:', syncError);
-        }
-      }
-      
-      return userData.role as 'admin' | 'user';
-    }
-
-    if (userError) {
-      console.warn('Error fetching user role from users:', userError);
     }
 
     // Default to user if all else fails
@@ -187,17 +109,5 @@ export async function makeUserAdmin(email: string) {
     .single();
 
   if (error) throw error;
-
-  // Sync with users table
-  try {
-    await supabase
-      .from('users')
-      .update({ role: 'admin' })
-      .eq('email', email);
-  } catch (err) {
-    console.warn('Failed to update user role in users table:', err);
-    // Don't throw error here as the profile was updated successfully
-  }
-
   return data as User;
 }
