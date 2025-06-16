@@ -6,6 +6,7 @@ import { Plus, Save, Trash2, GripVertical } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Exercise, getExercises } from '../lib/exercises';
 import { createWorkout } from '../lib/workouts';
+import { getMovementPatterns, MovementPattern } from '../lib/exerciseService';
 import toast from 'react-hot-toast';
 
 const workoutSchema = z.object({
@@ -34,6 +35,8 @@ const WorkoutPlanner = () => {
   const [sections, setSections] = useState([{ id: '1', name: 'Main Workout', exercises: [{ id: '1' }] }]);
   const [isLoading, setIsLoading] = useState(false);
   const [categoryFilters, setCategoryFilters] = useState<{ [sectionId: string]: string }>({});
+  const [movementPatternFilters, setMovementPatternFilters] = useState<{ [sectionId: string]: string }>({});
+
 
   const {
     register,
@@ -99,6 +102,7 @@ const WorkoutPlanner = () => {
       reset();
       setSections([{ id: '1', name: 'Main Workout', exercises: [{ id: '1' }] }]);
       setCategoryFilters({});
+      setMovementPatternFilters({});
     } catch (error) {
       console.error('Error saving workout:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to save workout';
@@ -122,6 +126,7 @@ const WorkoutPlanner = () => {
 
   const addExercise = (sectionIndex: number) => {
     const newSections = [...sections];
+    // Simply add a new exercise with a unique ID
     newSections[sectionIndex].exercises.push({ id: Date.now().toString() });
     setSections(newSections);
   };
@@ -134,17 +139,45 @@ const WorkoutPlanner = () => {
 
   const categories = Array.from(new Set(exercises.map(ex => ex.category)));
 
+  // Get movement patterns for a given category
+
+
   const getFilteredExercises = (sectionId: string) => {
     const selectedCategory = categoryFilters[sectionId];
-    return selectedCategory
-      ? exercises.filter(ex => ex.category === selectedCategory)
-      : exercises;
+    const selectedMovementPattern = movementPatternFilters[sectionId];
+    
+    return exercises.filter(ex => {
+      // Apply category filter
+      const matchesCategory = !selectedCategory || ex.category.toLowerCase() === selectedCategory.toLowerCase();
+      
+      // Apply movement pattern filter
+      const matchesMovementPattern = !selectedMovementPattern || ex.movement_pattern === selectedMovementPattern;
+      
+      return matchesCategory && matchesMovementPattern;
+    });
   };
 
   const updateCategoryFilter = (sectionId: string, category: string) => {
-    setCategoryFilters(prev => ({
+    // Update category filter
+    setCategoryFilters(prev => {
+      const newCategory = category === prev[sectionId] ? '' : category;
+      return {
+        ...prev,
+        [sectionId]: newCategory,
+      };
+    });
+    
+    // Reset movement pattern filter when category changes
+    setMovementPatternFilters(prev => ({
       ...prev,
-      [sectionId]: category === prev[sectionId] ? '' : category,
+      [sectionId]: '', 
+    }));
+  };
+  
+  const updateMovementPatternFilter = (sectionId: string, movementPattern: string) => {
+    setMovementPatternFilters(prev => ({
+      ...prev,
+      [sectionId]: movementPattern === prev[sectionId] ? '' : movementPattern,
     }));
   };
 
@@ -267,23 +300,7 @@ const WorkoutPlanner = () => {
                   )}
                 </div>
 
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Category Filter
-                  </label>
-                  <select
-                    className="input mt-1"
-                    value={categoryFilters[section.id] || ''}
-                    onChange={(e) => updateCategoryFilter(section.id, e.target.value)}
-                  >
-                    <option value="">All Categories</option>
-                    {categories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {/* Szekció-szintű szűrők eltávolítva, mivel minden gyakorlatnál elérhetőek */}
 
                 <div className="space-y-4">
                   {section.exercises.map((exercise, exerciseIndex) => (
@@ -314,9 +331,56 @@ const WorkoutPlanner = () => {
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             Exercise
                           </label>
+                          
+                          {/* Exercise filters buttons */}
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            <div className="flex-1">
+                              <select
+                                className="input mt-1 w-full"
+                                onChange={(e) => updateCategoryFilter(section.id, e.target.value)}
+                                value={categoryFilters[section.id] || ''}
+                              >
+                                <option value="">All Categories</option>
+                                {categories.map((category) => (
+                                  <option key={category} value={category}>
+                                    {category}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            
+                            <div className="flex-1">
+                              <select
+                                className="input mt-1 w-full"
+                                onChange={(e) => updateMovementPatternFilter(section.id, e.target.value)}
+                                value={movementPatternFilters[section.id] || ''}
+                                disabled={!categoryFilters[section.id]}
+                              >
+                                <option value="">All Movement Patterns</option>
+                                {categoryFilters[section.id] && 
+                                  exercises
+                                    .filter(ex => ex.category.toLowerCase() === categoryFilters[section.id].toLowerCase())
+                                    .map(ex => ex.movement_pattern)
+                                    .filter((value, index, self) => self.indexOf(value) === index) // get unique values
+                                    .map(pattern => {
+                                      // Find the nice label for this pattern from the exerciseService
+                                      const patternInfo = getMovementPatterns().find(p => p.id === pattern);
+                                      const label = patternInfo ? patternInfo.label : pattern;
+                                      return (
+                                        <option key={pattern} value={pattern}>
+                                          {label}
+                                        </option>
+                                      );
+                                    })
+                                }
+                              </select>
+                            </div>
+                          </div>
+                          
+                          {/* Exercise select */}
                           <select
                             {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.exerciseId`)}
-                            className="input mt-1"
+                            className="input mt-1 w-full"
                           >
                             <option value="">Select an exercise</option>
                             {getFilteredExercises(section.id).map((ex) => (
@@ -417,6 +481,7 @@ const WorkoutPlanner = () => {
               reset();
               setSections([{ id: '1', name: 'Main Workout', exercises: [{ id: '1' }] }]);
               setCategoryFilters({});
+              setMovementPatternFilters({});
             }}
             className="btn btn-outline"
           >
