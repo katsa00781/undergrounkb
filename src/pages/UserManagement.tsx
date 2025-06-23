@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 
 const userSchema = z.object({
   email: z.string().email('Invalid email address'),
-  name: z.string().min(2, 'Name must be at least 2 characters'),
+  full_name: z.string().min(2, 'Name must be at least 2 characters'),
   role: z.enum(['admin', 'user']),
 });
 
@@ -42,7 +42,7 @@ const UserManagement = () => {
   useEffect(() => {
     if (editingUser) {
       setValue('email', editingUser.email);
-      setValue('name', editingUser.name || '');
+      setValue('full_name', editingUser.full_name || '');
       setValue('role', editingUser.role);
       setShowForm(true);
     }
@@ -163,13 +163,13 @@ const UserManagement = () => {
                   </div>
                   <input
                     type="text"
-                    {...register('name')}
+                    {...register('full_name')}
                     className="input pl-10"
                     placeholder="John Doe"
                   />
                 </div>
-                {errors.name && (
-                  <p className="mt-1 text-sm text-error-600 dark:text-error-400">{errors.name.message}</p>
+                {errors.full_name && (
+                  <p className="mt-1 text-sm text-error-600 dark:text-error-400">{errors.full_name.message}</p>
                 )}
               </div>
 
@@ -241,7 +241,7 @@ const UserManagement = () => {
                     className="border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
                   >
                     <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                      {user.name || '—'}
+                      {user.full_name || '—'}
                     </td>
                     <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                       {user.email}

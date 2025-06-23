@@ -32,7 +32,9 @@ type MovementScores = z.infer<typeof movementSchema>;
 interface User {
   id: string;
   email: string | null;
-  name: string | null;
+  full_name: string | null;
+  // Kompatibilitás miatt a régi name mezőt is megtartjuk
+  name?: string | null; 
 }
 
 const FMSAssessment = () => {
@@ -87,7 +89,7 @@ const FMSAssessment = () => {
       } else {
         // Log each user before setting state
         data.forEach(user => {
-          console.log(`User: ID=${user.id}, Email=${user.email}, Name="${user.name}"`);
+          console.log(`User: ID=${user.id}, Email=${user.email}, Name="${user.full_name}"`);
         });
         
         setUsers(data);
@@ -411,7 +413,7 @@ const FMSAssessment = () => {
                     </option>
                     {users.map((user) => {
                       // Create a display string that shows whatever information is available
-                      const displayName = user.name || user.email || `User ${user.id.slice(0, 8)}`;
+                      const displayName = user.full_name || user.email || `User ${user.id.slice(0, 8)}`;
                       
                       return (
                         <option key={user.id} value={user.id}>

@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   Home, 
@@ -10,7 +9,7 @@ import {
   Users,
   Activity
 } from 'lucide-react';
-import { getCurrentUserRole } from '../../lib/users';
+import { useRolePermission } from '../../hooks/useRolePermission';
 
 interface SidebarProps {
   open: boolean;
@@ -19,22 +18,8 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ open, onClose, isMobile }: SidebarProps) => {
-  // Minden menüpont látható minden felhasználó számára, így nincs szükség az isAdmin változóra
-  
-  useEffect(() => {
-    // Csak a konzolba írjuk ki a felhasználó szerepkörét, de nem használjuk fel
-    const logUserRole = async () => {
-      try {
-        console.log('Checking user role in Sidebar...');
-        const role = await getCurrentUserRole();
-        console.log('User role in Sidebar:', role);
-      } catch (error) {
-        console.error('Error checking user role in Sidebar:', error);
-      }
-    };
-    
-    logUserRole();
-  }, []);
+  // A felhasználó jogosultságainak ellenőrzése
+  const { permissions } = useRolePermission();
 
   return (
     <aside
@@ -78,28 +63,6 @@ const Sidebar = ({ open, onClose, isMobile }: SidebarProps) => {
         </NavLink>
 
         <NavLink
-          to="/planner"
-          className={({ isActive }) =>
-            `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
-          }
-          onClick={onClose}
-        >
-          <Calendar size={20} />
-          <span>Edzéstervező</span>
-        </NavLink>
-
-        <NavLink
-          to="/exercises"
-          className={({ isActive }) =>
-            `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
-          }
-          onClick={onClose}
-        >
-          <Dumbbell size={20} />
-          <span>Gyakorlattár</span>
-        </NavLink>
-
-        <NavLink
           to="/log"
           className={({ isActive }) =>
             `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
@@ -110,16 +73,44 @@ const Sidebar = ({ open, onClose, isMobile }: SidebarProps) => {
           <span>Edzésnapló</span>
         </NavLink>
 
-        <NavLink
-          to="/assessment"
-          className={({ isActive }) =>
-            `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
-          }
-          onClick={onClose}
-        >
-          <Activity size={20} />
-          <span>FMS Felmérés</span>
-        </NavLink>
+        {permissions.canAccessWorkoutPlanner && (
+          <NavLink
+            to="/planner"
+            className={({ isActive }) =>
+              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+            }
+            onClick={onClose}
+          >
+            <Calendar size={20} />
+            <span>Edzéstervező</span>
+          </NavLink>
+        )}
+
+        {permissions.canAccessExerciseLibrary && (
+          <NavLink
+            to="/exercises"
+            className={({ isActive }) =>
+              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+            }
+            onClick={onClose}
+          >
+            <Dumbbell size={20} />
+            <span>Gyakorlattár</span>
+          </NavLink>
+        )}
+
+        {permissions.canAccessFMSAssessment && (
+          <NavLink
+            to="/assessment"
+            className={({ isActive }) =>
+              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+            }
+            onClick={onClose}
+          >
+            <Activity size={20} />
+            <span>FMS Felmérés</span>
+          </NavLink>
+        )}
 
         <NavLink
           to="/progress"
@@ -132,27 +123,31 @@ const Sidebar = ({ open, onClose, isMobile }: SidebarProps) => {
           <span>Fejlődés Követése</span>
         </NavLink>
 
-        <NavLink
-          to="/users"
-          className={({ isActive }) =>
-            `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
-          }
-          onClick={onClose}
-        >
-          <Users size={20} />
-          <span>Felhasználók</span>
-        </NavLink>
+        {permissions.canAccessUserManagement && (
+          <NavLink
+            to="/users"
+            className={({ isActive }) =>
+              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+            }
+            onClick={onClose}
+          >
+            <Users size={20} />
+            <span>Felhasználók</span>
+          </NavLink>
+        )}
 
-        <NavLink
-          to="/appointments/manage"
-          className={({ isActive }) =>
-            `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
-          }
-          onClick={onClose}
-        >
-          <Calendar size={20} />
-          <span>Időpontok Kezelése</span>
-        </NavLink>
+        {permissions.canAccessAppointmentManager && (
+          <NavLink
+            to="/appointments/manage"
+            className={({ isActive }) =>
+              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+            }
+            onClick={onClose}
+          >
+            <Calendar size={20} />
+            <span>Időpontok Kezelése</span>
+          </NavLink>
+        )}
 
         <NavLink
           to="/appointments"

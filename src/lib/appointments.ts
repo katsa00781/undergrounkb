@@ -135,7 +135,7 @@ export async function getTrainerAppointments(trainerId: string) {
     // Fetch all user details in a single query
     const { data: usersData, error: usersError } = await supabase
       .from('profiles')
-      .select('id, name, email')
+      .select('id, full_name, email')
       .in('id', Array.from(userIds));
 
     if (usersError) {
@@ -143,7 +143,7 @@ export async function getTrainerAppointments(trainerId: string) {
     } else if (usersData) {
       // Create a map of user IDs to user details for quick lookup
       usersData.forEach(user => {
-        userMap.set(user.id, { name: user.name, email: user.email });
+        userMap.set(user.id, { name: user.full_name, email: user.email });
       });
     }
   }
@@ -156,7 +156,7 @@ export async function getTrainerAppointments(trainerId: string) {
         id: booking.id,
         user_id: booking.user_id,
         status: booking.status,
-        user_name: userData?.name,
+        user_name: userData?.name, // Ez még a régi name mezőt használja a kompatibilitás miatt
         user_email: userData?.email
       };
     });

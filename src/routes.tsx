@@ -67,10 +67,28 @@ export const AppRoutes = ({ userRole }: AppRoutesProps) => {
           <Route path="/log" element={<WorkoutLog />} />
           <Route path="/progress" element={<ProgressTracking />} />
           <Route path="/appointments" element={<AppointmentBookingPage />} />
-          <Route path="/planner" element={<WorkoutPlanner />} />
-          <Route path="/exercises" element={<ExerciseLibrary />} />
-          <Route path="/exercises/:id" element={<ExerciseDetail />} />
-          <Route path="/assessment" element={<FMSAssessment />} />
+          
+          {/* Admin-only routes */}
+          <Route path="/planner" element={
+            <ProtectedRoute userRole={userRole} requiredRole="admin">
+              <WorkoutPlanner />
+            </ProtectedRoute>
+          } />
+          <Route path="/exercises" element={
+            <ProtectedRoute userRole={userRole} requiredRole="admin">
+              <ExerciseLibrary />
+            </ProtectedRoute>
+          } />
+          <Route path="/exercises/:id" element={
+            <ProtectedRoute userRole={userRole} requiredRole="admin">
+              <ExerciseDetail />
+            </ProtectedRoute>
+          } />
+          <Route path="/assessment" element={
+            <ProtectedRoute userRole={userRole} requiredRole="admin">
+              <FMSAssessment />
+            </ProtectedRoute>
+          } />
 
           {/* Admin-only routes */}
           <Route path="/users" element={

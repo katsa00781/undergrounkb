@@ -1,28 +1,63 @@
-import { supabase } from '../config/supabase';
+import { supabase, connectionManager } from '../config/supabase';
 
 export interface User {
   id: string;
   email: string;
-  name: string | null;
+  full_name: string | null;
   role: 'admin' | 'user';
   created_at?: string;
   updated_at?: string;
 }
 
 export async function getUsers() {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, email, name, role, created_at, updated_at')
-    .order('name');
-
-  if (error) throw error;
-  return data as User[];
+  console.log('Attempting to fetch users from profiles table...');
+  
+  try {
+    // First check if the connection manager can connect to the database
+    const isConnected = await connectionManager.checkConnection();
+    console.log(`Supabase connection check: ${isConnected ? 'CONNECTED' : 'DISCONNECTED'}`);
+    
+    if (!isConnected) {
+      console.error('Cannot connect to Supabase database. Please check your configuration and network.');
+      throw new Error('Database connection failed');
+    }
+    
+    // Try to get the table schema to verify if the table exists and is accessible
+    console.log('Checking if profiles table exists and is accessible...');
+    const { error: schemaError } = await supabase
+      .from('profiles')
+      .select('count')
+      .limit(1);
+      
+    if (schemaError) {
+      console.error('Error accessing profiles table:', schemaError);
+      throw schemaError;
+    }
+    
+    // Now attempt to fetch the actual data
+    console.log('Fetching user data from profiles table...');
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, email, full_name, role, created_at, updated_at')
+      .order('full_name');
+    
+    if (error) {
+      console.error('Error fetching users from profiles table:', error);
+      throw error;
+    }
+    
+    console.log(`Successfully fetched ${data?.length || 0} users from profiles table`);
+    return data as User[];
+  } catch (err) {
+    console.error('Unexpected error in getUsers:', err);
+    throw err;
+  }
 }
 
 export async function getUser(id: string) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, email, name, role, created_at, updated_at')
+    .select('id, email, full_name, role, created_at, updated_at')
     .eq('id', id)
     .single();
 

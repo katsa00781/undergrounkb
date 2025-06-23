@@ -123,7 +123,8 @@ export async function getAllUsers() {
       return {
         id: user.id,
         email: user.email,
-        name: displayName
+        full_name: displayName,
+        name: displayName // A kompatibilitás miatt megtartjuk
       };
     });
     

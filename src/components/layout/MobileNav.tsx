@@ -1,20 +1,12 @@
-import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Calendar, BarChart2, ClipboardList, User, Users, Dumbbell, Activity } from 'lucide-react';
-import { getCurrentUserRole } from '../../lib/users';
+import { Home, Calendar, BarChart2, ClipboardList, User, Users, Dumbbell } from 'lucide-react';
+import { useRolePermission } from '../../hooks/useRolePermission';
 
 const MobileNav = () => {
-  const [isAdmin, setIsAdmin] = useState(false);
+  // A felhasználó jogosultságainak ellenőrzése
+  const { isAdmin } = useRolePermission();
 
-  useEffect(() => {
-    checkUserRole();
-  }, []);
-
-  const checkUserRole = async () => {
-    const role = await getCurrentUserRole();
-    setIsAdmin(role === 'admin');
-  };
-
+  // Admin felhasználók látják az adminisztrációs menüpontokat is
   if (isAdmin) {
     return (
       <nav className="fixed bottom-0 left-0 right-0 z-10 border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 md:hidden">

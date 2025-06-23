@@ -47,7 +47,7 @@ async function createUserProfile(user: User) {
       .insert({
         id: user.id,
         email: user.email,
-        name: userData.name || user.email?.split('@')[0] || 'User',
+        full_name: userData.name || user.email?.split('@')[0] || 'User',
         role: 'user',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()

@@ -103,7 +103,7 @@ export async function ensureUserProfile(): Promise<void> {
         .insert({
           id: user.id,
           email: user.email || '',
-          name: userData.name || user.email?.split('@')[0] || 'User',
+          full_name: userData.name || user.email?.split('@')[0] || 'User',
           role: 'user'
         });
 
