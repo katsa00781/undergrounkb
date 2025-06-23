@@ -20,12 +20,8 @@ async function testSupabaseQueries() {
       return false;
     }
 
-    // Simple query on 'users' table
-    const { error: usersError } = await supabase.from('users').select('*').limit(1);
-    if (usersError) {
-      console.error('Error in users query:', usersError);
-      return false;
-    }
+    // Note: The application no longer uses the 'users' table, all user data is in the 'profiles' table
+    // No need to check users table in this test, as we already checked profiles above
 
     // Simple query on 'exercises' table
     const { error: exercisesError } = await supabase.from('exercises').select('*').limit(1);

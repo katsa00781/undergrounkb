@@ -98,7 +98,11 @@ const ProgressTracking = () => {
   };
 
   const chartData = {
-    labels: weights.map(w => format(parseISO(w.date), 'MMM d')),
+    labels: weights.map(w => {
+      // Kezeljük mindkét esetet: ha van date mező vagy ha a created_at-et kell használnunk
+      const dateToFormat = w.date || (w.created_at && new Date(w.created_at).toISOString().split('T')[0]);
+      return dateToFormat ? format(parseISO(dateToFormat), 'MMM d') : 'N/A';
+    }),
     datasets: [
       {
         label: 'Weight (kg)',

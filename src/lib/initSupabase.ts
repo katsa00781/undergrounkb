@@ -1,5 +1,5 @@
 import { supabase, connectionManager, cleanupSupabaseManagers } from '../config/supabase';
-import { syncProfileToUser, testSupabaseConnection } from './supabaseUtils';
+import { testSupabaseConnection } from './supabaseUtils';
 import { ensureUserProfile as ensureUserProfileAuth, clearSessionTimeout } from './auth';
 import toast from 'react-hot-toast';
 
@@ -56,12 +56,9 @@ async function setupRealtimeSubscriptions() {
     'UPDATE',
     async (payload: { new: Record<string, unknown>; old: Record<string, unknown> }) => {
       if (payload.new && payload.old) {
-        // Handle profile updates
-        await syncProfileToUser(payload.new.id as string, {
-          name: payload.new.name as string,
-          email: payload.new.email as string,
-          role: payload.new.role as string
-        });
+        // Handle profile updates - no need to sync to users table anymore
+        // All user data is now stored only in profiles table
+        console.log('Profile updated:', payload.new.id);
       }
     }
   );
@@ -115,12 +112,8 @@ export async function ensureUserProfile(): Promise<void> {
         return;
       }
 
-      // Also create a record in the users table
-      await syncProfileToUser(user.id, {
-        email: user.email || '',
-        name: userData.name || user.email?.split('@')[0] || 'User',
-        role: 'user'
-      });
+      // Note: We no longer need to create records in the users table
+      // All user data is now stored in the profiles table
 
       console.log('Created new user profile');
     }

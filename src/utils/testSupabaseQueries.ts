@@ -7,21 +7,17 @@ import { supabase } from '../config/supabase';
 export async function testSupabaseQueries(): Promise<boolean> {
   try {
     // Egyszerű lekérdezés a 'profiles' táblából
-    const { data: profiles, error: profilesError } = await supabase.from('profiles').select('*').limit(1);
+    const { error: profilesError } = await supabase.from('profiles').select('*').limit(1);
     if (profilesError) {
       console.error('Hiba a profiles lekérdezésnél:', profilesError);
       return false;
     }
 
-    // Egyszerű lekérdezés a 'users' táblából
-    const { data: users, error: usersError } = await supabase.from('users').select('*').limit(1);
-    if (usersError) {
-      console.error('Hiba a users lekérdezésnél:', usersError);
-      return false;
-    }
+    // Megjegyzés: Az alkalmazás már nem használja a 'users' táblát, minden felhasználói adat a 'profiles' táblában van
+    // A tesztben nincs szükség a users táblára, mert fentebb már ellenőriztük a profiles táblát
 
     // Egyszerű lekérdezés az 'exercises' táblából
-    const { data: exercises, error: exercisesError } = await supabase.from('exercises').select('*').limit(1);
+    const { error: exercisesError } = await supabase.from('exercises').select('*').limit(1);
     if (exercisesError) {
       console.error('Hiba az exercises lekérdezésnél:', exercisesError);
       return false;

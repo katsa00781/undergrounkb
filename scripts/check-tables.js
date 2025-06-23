@@ -67,8 +67,8 @@ async function checkUsersTable() {
   console.log('\nChecking if "users" table exists (for comparison)...');
   
   try {
-    // Try to query the users table
-    console.log('Attempting to query users table...');
+    // Note: The application now uses 'profiles' table instead of 'users'
+    console.log('Checking if users table exists (for compatibility check)...');
     const { data, error } = await supabase
       .from('users')
       .select('*')
@@ -77,7 +77,7 @@ async function checkUsersTable() {
     if (error) {
       // Check if the error indicates the table doesn't exist
       if (error.message && error.message.includes('relation "users" does not exist')) {
-        console.log('❌ The "users" table does not exist in the database');
+        console.log('ℹ️ The "users" table does not exist in the database (this is expected, we use profiles now)');
         console.log('   This is expected if your app uses "profiles" for user data');
         return false;
       } else {
