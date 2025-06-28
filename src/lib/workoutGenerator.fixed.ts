@@ -5,6 +5,7 @@ import { getExercises } from './exercises';
 
 // A generált edzéstípusok
 export type WorkoutDay = 1 | 2 | 3 | 4;
+export type ProgramType = '2napos' | '3napos' | '4napos';
 
 export interface WorkoutExercise {
   exerciseId: string;
@@ -275,6 +276,387 @@ function getRandomExercise(
   }
   
   return categoryExercises[Math.floor(Math.random() * categoryExercises.length)];
+}
+
+// 2 napos program generátor
+function generate2DayPlan(
+  categorizedExercises: Record<string, Exercise[]>,
+  fmsCorrections: string[],
+  day: 1 | 2
+): WorkoutSectionGenerated[] {
+  const sections: WorkoutSectionGenerated[] = [];
+  
+  // FMS korrekció always first
+  sections.push({
+    name: 'FMS korrekció',
+    exercises: [
+      {
+        exerciseId: fmsCorrections[0] ? 'fms-correction-1' : 'placeholder-fms',
+        name: fmsCorrections[0] || 'FMS korrekciós gyakorlat',
+        sets: 2,
+        reps: '8-10',
+        weight: null,
+        restPeriod: 60,
+      },
+    ],
+  });
+
+  if (day === 1) {
+    // Első nap - Teljes test edzés
+    sections.push({
+      name: 'Első kör',
+      exercises: [
+        { // Térddomináns BI
+          exerciseId: getRandomExercise(categorizedExercises, 'térddomináns_bi')?.id || 'placeholder-terddom-bi',
+          name: getRandomExercise(categorizedExercises, 'térddomináns_bi')?.name || 'Térddomináns BI',
+          sets: 4,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+        { // FMS korrekció
+          exerciseId: fmsCorrections[1] ? 'fms-correction-2' : 'placeholder-fms',
+          name: fmsCorrections[1] || 'FMS korrekciós gyakorlat',
+          sets: 2,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 60,
+        },
+        { // Horizontális nyomás bi
+          exerciseId: getRandomExercise(categorizedExercises, 'horizontális_nyomás_bi')?.id || 'placeholder-horiz-nyomas-bi',
+          name: getRandomExercise(categorizedExercises, 'horizontális_nyomás_bi')?.name || 'Horizontális nyomás bi',
+          sets: 4,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+      ],
+    });
+    
+    sections.push({
+      name: 'Második kör',
+      exercises: [
+        { // Vertikális húzás
+          exerciseId: getRandomExercise(categorizedExercises, 'vertikális_húzás_bi')?.id || 'placeholder-vert-huzas',
+          name: getRandomExercise(categorizedExercises, 'vertikális_húzás_bi')?.name || 'Vertikális húzás',
+          sets: 4,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+        { // FMS korrekció
+          exerciseId: fmsCorrections[2] ? 'fms-correction-3' : 'placeholder-fms',
+          name: fmsCorrections[2] || 'FMS korrekciós gyakorlat',
+          sets: 2,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 60,
+        },
+        { // Csípődomináns BI
+          exerciseId: getRandomExercise(categorizedExercises, 'csípődomináns_nyújtott')?.id || 'placeholder-csipo-bi',
+          name: getRandomExercise(categorizedExercises, 'csípődomináns_nyújtott')?.name || 'Csípődomináns BI',
+          sets: 4,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+      ],
+    });
+  } else if (day === 2) {
+    // Második nap - Teljes test edzés más fókusszal
+    sections.push({
+      name: 'Első kör',
+      exercises: [
+        { // Térddomináns Uni
+          exerciseId: getRandomExercise(categorizedExercises, 'térddomináns_uni')?.id || 'placeholder-terddom-uni',
+          name: getRandomExercise(categorizedExercises, 'térddomináns_uni')?.name || 'Térddomináns Uni',
+          sets: 4,
+          reps: '8-10/oldal',
+          weight: null,
+          restPeriod: 90,
+        },
+        { // FMS korrekció
+          exerciseId: fmsCorrections[1] ? 'fms-correction-2' : 'placeholder-fms',
+          name: fmsCorrections[1] || 'FMS korrekciós gyakorlat',
+          sets: 2,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 60,
+        },
+        { // Vertikális nyomás
+          exerciseId: getRandomExercise(categorizedExercises, 'vertikális_nyomás_bi')?.id || 'placeholder-vert-nyomas',
+          name: getRandomExercise(categorizedExercises, 'vertikális_nyomás_bi')?.name || 'Vertikális nyomás',
+          sets: 4,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+      ],
+    });
+    
+    sections.push({
+      name: 'Második kör',
+      exercises: [
+        { // Horizontális húzás bi
+          exerciseId: getRandomExercise(categorizedExercises, 'horizontális_húzás_bi')?.id || 'placeholder-horiz-huzas-bi',
+          name: getRandomExercise(categorizedExercises, 'horizontális_húzás_bi')?.name || 'Horizontális húzás bi',
+          sets: 4,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+        { // FMS korrekció
+          exerciseId: fmsCorrections[2] ? 'fms-correction-3' : 'placeholder-fms',
+          name: fmsCorrections[2] || 'FMS korrekciós gyakorlat',
+          sets: 2,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 60,
+        },
+        { // Csípődomináns Uni
+          exerciseId: getRandomExercise(categorizedExercises, 'csípődomináns_hajlított')?.id || 'placeholder-csipo-uni',
+          name: getRandomExercise(categorizedExercises, 'csípődomináns_hajlított')?.name || 'Csípődomináns Uni',
+          sets: 4,
+          reps: '8-10/oldal',
+          weight: null,
+          restPeriod: 90,
+        },
+      ],
+    });
+  }
+  
+  return sections;
+}
+
+// 3 napos program generátor
+function generate3DayPlan(
+  categorizedExercises: Record<string, Exercise[]>,
+  fmsCorrections: string[],
+  day: 1 | 2 | 3
+): WorkoutSectionGenerated[] {
+  // Structure based on your table
+  const sections: WorkoutSectionGenerated[] = [];
+  // FMS korrekció always first
+  sections.push({
+    name: 'FMS korrekció',
+    exercises: [
+      {
+        exerciseId: fmsCorrections[0] ? 'fms-correction-1' : 'placeholder-fms',
+        name: fmsCorrections[0] || 'FMS korrekciós gyakorlat',
+        sets: 2,
+        reps: '8-10',
+        weight: null,
+        restPeriod: 60,
+      },
+    ],
+  });
+  if (day === 1) {
+    // Első pár
+    sections.push({
+      name: 'Első pár',
+      exercises: [
+        { // Térddomináns BI
+          exerciseId: getRandomExercise(categorizedExercises, 'térddomináns_bi')?.id || 'placeholder-terddom-bi',
+          name: getRandomExercise(categorizedExercises, 'térddomináns_bi')?.name || 'Térddomináns BI',
+          sets: 3,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+        { // FMS korrekció
+          exerciseId: fmsCorrections[1] ? 'fms-correction-2' : 'placeholder-fms',
+          name: fmsCorrections[1] || 'FMS korrekciós gyakorlat',
+          sets: 2,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 60,
+        },
+        { // Vertikális húzás
+          exerciseId: getRandomExercise(categorizedExercises, 'vertikális_húzás_bi')?.id || 'placeholder-vert-huzas',
+          name: getRandomExercise(categorizedExercises, 'vertikális_húzás_bi')?.name || 'Vertikális húzás',
+          sets: 3,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+      ],
+    });
+    // Első hármas
+    sections.push({
+      name: 'Első hármas',
+      exercises: [
+        { // Térddomináns Uni
+          exerciseId: getRandomExercise(categorizedExercises, 'térddomináns_uni')?.id || 'placeholder-terddom-uni',
+          name: getRandomExercise(categorizedExercises, 'térddomináns_uni')?.name || 'Térddomináns Uni',
+          sets: 3,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+        { // Horizontális nyomás uni
+          exerciseId: getRandomExercise(categorizedExercises, 'horizontális_nyomás_uni')?.id || 'placeholder-horiz-nyomas-uni',
+          name: getRandomExercise(categorizedExercises, 'horizontális_nyomás_uni')?.name || 'Horizontális nyomás uni',
+          sets: 3,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+        { // FMS korrekció
+          exerciseId: fmsCorrections[2] ? 'fms-correction-3' : 'placeholder-fms',
+          name: fmsCorrections[2] || 'FMS korrekciós gyakorlat',
+          sets: 2,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 60,
+        },
+        { // Csípődomináns BI
+          exerciseId: getRandomExercise(categorizedExercises, 'csípődomináns_nyújtott')?.id || 'placeholder-csipo-bi',
+          name: getRandomExercise(categorizedExercises, 'csípődomináns_nyújtott')?.name || 'Csípődomináns BI',
+          sets: 3,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+      ],
+    });
+  } else if (day === 2) {
+    // Második nap szerkezete
+    sections.push({
+      name: 'Első pár',
+      exercises: [
+        { // Horizontális nyomás bi
+          exerciseId: getRandomExercise(categorizedExercises, 'horizontális_nyomás_bi')?.id || 'placeholder-horiz-nyomas-bi',
+          name: getRandomExercise(categorizedExercises, 'horizontális_nyomás_bi')?.name || 'Horizontális nyomás bi',
+          sets: 3,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+        { // FMS korrekció
+          exerciseId: fmsCorrections[1] ? 'fms-correction-2' : 'placeholder-fms',
+          name: fmsCorrections[1] || 'FMS korrekciós gyakorlat',
+          sets: 2,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 60,
+        },
+        { // Térddomináns uni
+          exerciseId: getRandomExercise(categorizedExercises, 'térddomináns_uni')?.id || 'placeholder-terddom-uni',
+          name: getRandomExercise(categorizedExercises, 'térddomináns_uni')?.name || 'Térddomináns uni',
+          sets: 3,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+      ],
+    });
+    sections.push({
+      name: 'Első hármas',
+      exercises: [
+        { // Vertikális nyomás
+          exerciseId: getRandomExercise(categorizedExercises, 'vertikális_nyomás_bi')?.id || 'placeholder-vert-nyomas',
+          name: getRandomExercise(categorizedExercises, 'vertikális_nyomás_bi')?.name || 'Vertikális nyomás',
+          sets: 3,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+        { // Horizontális húzás bi
+          exerciseId: getRandomExercise(categorizedExercises, 'horizontális_húzás_bi')?.id || 'placeholder-horiz-huzas-bi',
+          name: getRandomExercise(categorizedExercises, 'horizontális_húzás_bi')?.name || 'Horizontális húzás bi',
+          sets: 3,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+        { // FMS korrekció
+          exerciseId: fmsCorrections[2] ? 'fms-correction-3' : 'placeholder-fms',
+          name: fmsCorrections[2] || 'FMS korrekciós gyakorlat',
+          sets: 2,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 60,
+        },
+        { // Csípődomináns Uni
+          exerciseId: getRandomExercise(categorizedExercises, 'csípődomináns_hajlított')?.id || 'placeholder-csipo-uni',
+          name: getRandomExercise(categorizedExercises, 'csípődomináns_hajlított')?.name || 'Csípődomináns Uni',
+          sets: 3,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+      ],
+    });
+  } else if (day === 3) {
+    // Harmadik nap szerkezete
+    sections.push({
+      name: 'Első pár',
+      exercises: [
+        { // Térddomináns BI
+          exerciseId: getRandomExercise(categorizedExercises, 'térddomináns_bi')?.id || 'placeholder-terddom-bi',
+          name: getRandomExercise(categorizedExercises, 'térddomináns_bi')?.name || 'Térddomináns BI',
+          sets: 3,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+        { // FMS korrekció
+          exerciseId: fmsCorrections[1] ? 'fms-correction-2' : 'placeholder-fms',
+          name: fmsCorrections[1] || 'FMS korrekciós gyakorlat',
+          sets: 2,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 60,
+        },
+        { // Vertikális húzás
+          exerciseId: getRandomExercise(categorizedExercises, 'vertikális_húzás_bi')?.id || 'placeholder-vert-huzas',
+          name: getRandomExercise(categorizedExercises, 'vertikális_húzás_bi')?.name || 'Vertikális húzás',
+          sets: 3,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+      ],
+    });
+    sections.push({
+      name: 'Első hármas',
+      exercises: [
+        { // Horizontális nyomás uni
+          exerciseId: getRandomExercise(categorizedExercises, 'horizontális_nyomás_uni')?.id || 'placeholder-horiz-nyomas-uni',
+          name: getRandomExercise(categorizedExercises, 'horizontális_nyomás_uni')?.name || 'Horizontális nyomás uni',
+          sets: 3,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+        { // Horizontális húzás uni
+          exerciseId: getRandomExercise(categorizedExercises, 'horizontális_húzás_uni')?.id || 'placeholder-horiz-huzas-uni',
+          name: getRandomExercise(categorizedExercises, 'horizontális_húzás_uni')?.name || 'Horizontális húzás uni',
+          sets: 3,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+        { // FMS korrekció
+          exerciseId: fmsCorrections[2] ? 'fms-correction-3' : 'placeholder-fms',
+          name: fmsCorrections[2] || 'FMS korrekciós gyakorlat',
+          sets: 2,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 60,
+        },
+        { // Gait vagy Core
+          exerciseId: getRandomExercise(categorizedExercises, 'gait')?.id || getRandomExercise(categorizedExercises, 'core')?.id || 'placeholder-gait-core',
+          name: getRandomExercise(categorizedExercises, 'gait')?.name || getRandomExercise(categorizedExercises, 'core')?.name || 'Gait vagy Core',
+          sets: 3,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 90,
+        },
+      ],
+    });
+  }
+  return sections;
 }
 
 /**
@@ -635,8 +1017,8 @@ function generateDay2Plan(
     getRandomExercise(categorizedExercises, 'fms_korrekció') : null;
   
   // Előre kiválasztjuk a szükséges gyakorlatokat
-  const horizontalisHuzasBi = getRandomExercise(categorizedExercises, 'horizontális_húzás_bi');
   const vertikalisHuzasBi = getRandomExercise(categorizedExercises, 'vertikális_húzás_bi');
+  const horizontalisHuzasBi = getRandomExercise(categorizedExercises, 'horizontális_húzás_bi');
   const csipoDominansHajlitott = getRandomExercise(categorizedExercises, 'csípődomináns_hajlított');
   const csipoDominansNyujtott = getRandomExercise(categorizedExercises, 'csípődomináns_nyújtott');
   const rotaciosGyakorlat = getRandomExercise(categorizedExercises, 'rotációs');
@@ -1161,6 +1543,101 @@ export async function generateWorkoutPlan(options: {
       user_id: userId
     };
     
+  } catch (error) {
+    console.error('Hiba az edzésterv generálásakor:', error);
+    throw error;
+  }
+}
+
+/**
+ * Main generator for programType and day
+ */
+export async function generateWorkoutPlanV2(options: {
+  userId: string;
+  programType: ProgramType;
+  day: number; // 1,2,3 or 4
+  includeWeights?: boolean;
+  adjustForFMS?: boolean;
+}): Promise<GeneratedWorkoutPlan> {
+  const { userId, programType, day, includeWeights = true, adjustForFMS = true } = options;
+  
+  try {
+    // 1. Gyakorlatok lekérése
+    const exercises = await getExercises();
+    let fmsCorrections: string[] = [];
+    if (adjustForFMS) {
+      try {
+        const { data: fmsData } = await supabase
+          .from('fms_assessments')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        if (fmsData && fmsData.length > 0) {
+          fmsCorrections = identifyFMSCorrections(fmsData[0]);
+        }
+      } catch {
+        // ignore FMS fetch errors
+      }
+    }
+    const categorizedExercises = categorizeExercises(exercises);
+    let sections: WorkoutSectionGenerated[] = [];
+    let title = '';
+    let description = '';
+    
+    if (programType === '2napos') {
+      title = '2 napos program';
+      description = '2 napos teljes test edzésterv';
+      sections = generate2DayPlan(categorizedExercises, fmsCorrections, day as 1 | 2);
+    } else if (programType === '3napos') {
+      title = '3 napos program';
+      description = '3 napos strukturált edzésterv';
+      sections = generate3DayPlan(categorizedExercises, fmsCorrections, day as 1 | 2 | 3);
+    } else {
+      // fallback to 4 napos (use existing logic)
+      title = '4 napos program';
+      description = '4 napos strukturált edzésterv';
+      // You can call your existing day1-4 logic here
+      switch (day) {
+        case 1:
+          sections = generateDay1Plan(categorizedExercises, fmsCorrections);
+          break;
+        case 2:
+          sections = generateDay2Plan(categorizedExercises, fmsCorrections);
+          break;
+        case 3:
+          sections = generateDay3Plan(categorizedExercises, fmsCorrections);
+          break;
+        case 4:
+          sections = generateDay4Plan(categorizedExercises, fmsCorrections);
+          break;
+        default:
+          sections = generateDay1Plan(categorizedExercises, fmsCorrections);
+      }
+    }
+    // Add weights if needed (reuse your logic)
+    if (includeWeights) {
+      sections.forEach(section => {
+        section.exercises.forEach(exercise => {
+          if (exercise.exerciseId && !exercise.weight && !exercise.exerciseId.startsWith('placeholder-')) {
+            if (exercise.name?.toLowerCase().includes('kettlebell') || 
+                exercise.name?.toLowerCase().includes('súlyzó') ||
+                exercise.name?.toLowerCase().includes('kb')) {
+              exercise.weight = 16;
+            }
+          }
+        });
+      });
+    }
+    return {
+      title,
+      description,
+      date: new Date().toISOString().split('T')[0],
+      duration: 60,
+      sections,
+      notes: `Generált edzésterv - ${title}. Az edzés tartalmaz ${fmsCorrections.length} FMS korrekciós gyakorlatot.`,
+      user_id: userId
+    };
   } catch (error) {
     console.error('Hiba az edzésterv generálásakor:', error);
     throw error;

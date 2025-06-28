@@ -78,32 +78,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
           data: {
             name,
           },
+          emailRedirectTo: undefined, // Disable email redirect during development
         },
       });
 
       if (signUpError) throw signUpError;
       if (!authData.user) throw new Error('Failed to create user account');
 
-      // Create profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: authData.user.id,
-            name,
-            email,
-            role: 'user',
-          },
-        ]);
-
-      if (profileError) {
-        console.error('Profile creation error:', profileError);
-        await supabase.auth.signOut();
-        throw new Error('Failed to create user profile');
-      }
-
-      // We no longer create records in users table, only profiles
-      console.log('User registered and profile created successfully');
+      // Profile is automatically created by database trigger
+      console.log('User registered successfully');
       toast.success('Registration successful!');
     } catch (err) {
       const message = err instanceof AuthError ? err.message : 'Failed to register';
@@ -186,10 +169,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (!user) throw new Error('No user logged in');
 
+      // Map name to full_name for the database
+      const profileData: { full_name?: string; avatar_url?: string } = {};
+      if (data.name !== undefined) {
+        profileData.full_name = data.name;
+      }
+      if (data.avatar_url !== undefined) {
+        profileData.avatar_url = data.avatar_url;
+      }
+
       // Update profile in profiles table
       const { error: profileError } = await supabase
         .from('profiles')
-        .update(data)
+        .update(profileData)
         .eq('id', user.id);
 
       if (profileError) throw profileError;
