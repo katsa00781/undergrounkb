@@ -59,8 +59,9 @@ const WorkoutPlanner = () => {
   const [sections, setSections] = useState<Section[]>([{ id: '1', name: 'Main Workout', exercises: [{ id: '1' }] }]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [categoryFilters, setCategoryFilters] = useState<{ [sectionId: string]: string }>({});
-  const [movementPatternFilters, setMovementPatternFilters] = useState<{ [sectionId: string]: string }>({});
+  // Change filters to be per exercise instead of per section
+  const [categoryFilters, setCategoryFilters] = useState<{ [exerciseKey: string]: string }>({});
+  const [movementPatternFilters, setMovementPatternFilters] = useState<{ [exerciseKey: string]: string }>({});
   const [selectedWorkoutDay, setSelectedWorkoutDay] = useState<WorkoutDay>(1);
   const [selectedProgramType, setSelectedProgramType] = useState<ProgramType>('4napos');
   const [showGenerateForm, setShowGenerateForm] = useState(false);
@@ -180,9 +181,13 @@ const WorkoutPlanner = () => {
 
   const categories = Array.from(new Set(exercises.map(ex => ex.category)));
 
-  const getFilteredExercises = (sectionId: string) => {
-    const selectedCategory = categoryFilters[sectionId];
-    const selectedMovementPattern = movementPatternFilters[sectionId];
+  // Helper function to create exercise key
+  const getExerciseKey = (sectionId: string, exerciseId: string) => `${sectionId}-${exerciseId}`;
+
+  const getFilteredExercises = (sectionId: string, exerciseId: string) => {
+    const exerciseKey = getExerciseKey(sectionId, exerciseId);
+    const selectedCategory = categoryFilters[exerciseKey];
+    const selectedMovementPattern = movementPatternFilters[exerciseKey];
     
     return exercises.filter(ex => {
       // Apply category filter
@@ -195,32 +200,34 @@ const WorkoutPlanner = () => {
     });
   };
 
-  const updateCategoryFilter = (sectionId: string, category: string) => {
+  const updateCategoryFilter = (sectionId: string, exerciseId: string, category: string) => {
+    const exerciseKey = getExerciseKey(sectionId, exerciseId);
     // Update category filter
     setCategoryFilters(prev => {
-      const newCategory = category === prev[sectionId] ? '' : category;
+      const newCategory = category === prev[exerciseKey] ? '' : category;
       return {
         ...prev,
-        [sectionId]: newCategory,
+        [exerciseKey]: newCategory,
       };
     });
     
     // Reset movement pattern filter when category changes
     setMovementPatternFilters(prev => ({
       ...prev,
-      [sectionId]: '', 
+      [exerciseKey]: '', 
     }));
   };
   
-  const updateMovementPatternFilter = (sectionId: string, movementPattern: string) => {
+  const updateMovementPatternFilter = (sectionId: string, exerciseId: string, movementPattern: string) => {
+    const exerciseKey = getExerciseKey(sectionId, exerciseId);
     setMovementPatternFilters(prev => ({
       ...prev,
-      [sectionId]: movementPattern === prev[sectionId] ? '' : movementPattern,
+      [exerciseKey]: movementPattern === prev[exerciseKey] ? '' : movementPattern,
     }));
   };
 
   // Automatikusan beállítja a mozgásminta szűrőt a placeholder gyakorlat alapján
-  const setMovementPatternForPlaceholder = (sectionId: string, placeholderId: string) => {
+  const setMovementPatternForPlaceholder = (sectionId: string, exerciseId: string, placeholderId: string) => {
     let movementPattern = '';
     
     if (placeholderId.includes('terddom-bi')) {
@@ -246,9 +253,10 @@ const WorkoutPlanner = () => {
     }
     
     if (movementPattern) {
+      const exerciseKey = getExerciseKey(sectionId, exerciseId);
       setMovementPatternFilters(prev => ({
         ...prev,
-        [sectionId]: movementPattern,
+        [exerciseKey]: movementPattern,
       }));
     }
   };
@@ -276,7 +284,7 @@ const WorkoutPlanner = () => {
       const formattedSections = generatedWorkout.sections.map((section) => {
         return {
           name: section.name,
-          exercises: section.exercises.map(exercise => {
+          exercises: section.exercises.map((exercise) => {
             // For placeholders, we need to save the name 
             const isPlaceholder = exercise.exerciseId.startsWith('placeholder-');
             
@@ -327,25 +335,26 @@ const WorkoutPlanner = () => {
       })));
 
       // Automatikusan beállítjuk a mozgásminta szűrőket minden placeholder gyakorlathoz
-      formattedSections.forEach((section, index) => {
-        const sectionId = (index + 1).toString();
-        
-        // Ellenőrizzük, hogy van-e placeholder gyakorlat ebben a szekcióban
-        const hasPlaceholder = section.exercises.some(exercise => 
-          exercise.exerciseId?.startsWith('placeholder-')
-        );
-        
-        if (hasPlaceholder) {
-          // Megkeressük az első placeholder gyakorlatot és beállítjuk a szűrőt
-          const firstPlaceholder = section.exercises.find(exercise => 
+      // We need to use the sections state for this since formattedSections doesn't have IDs
+      setTimeout(() => {
+        sections.forEach((section) => {
+          // Ellenőrizzük, hogy van-e placeholder gyakorlat ebben a szekcióban
+          const hasPlaceholder = section.exercises.some(exercise => 
             exercise.exerciseId?.startsWith('placeholder-')
           );
           
-          if (firstPlaceholder?.exerciseId) {
-            setMovementPatternForPlaceholder(sectionId, firstPlaceholder.exerciseId);
+          if (hasPlaceholder) {
+            // Megkeressük az első placeholder gyakorlatot és beállítjuk a szűrőt
+            const firstPlaceholder = section.exercises.find(exercise => 
+              exercise.exerciseId?.startsWith('placeholder-')
+            );
+            
+            if (firstPlaceholder?.exerciseId && firstPlaceholder.id) {
+              setMovementPatternForPlaceholder(section.id, firstPlaceholder.id, firstPlaceholder.exerciseId);
+            }
           }
-        }
-      });
+        });
+      }, 200);
 
       // Force form to re-render with new values by updating form state
       setTimeout(() => {
@@ -671,74 +680,6 @@ const WorkoutPlanner = () => {
                 )}
               </div>
 
-              {/* Exercise Filters */}
-              <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/* Category Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Filter by Category
-                  </label>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {categories.map((category) => (
-                      <button
-                        key={category}
-                        type="button"
-                        onClick={() => updateCategoryFilter(section.id, category)}
-                        className={`rounded-md px-3 py-1 text-sm ${
-                          categoryFilters[section.id] === category
-                            ? 'bg-primary-500 text-white'
-                            : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                        }`}
-                      >
-                        {category}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Movement Pattern Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Filter by Movement Pattern
-                    {movementPatternFilters[section.id] && (
-                      <span className="ml-2 text-xs text-green-600 dark:text-green-400">
-                        (szűrő aktív)
-                      </span>
-                    )}
-                  </label>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {getMovementPatterns().map((pattern) => (
-                      <button
-                        key={pattern.id}
-                        type="button"
-                        onClick={() => updateMovementPatternFilter(section.id, pattern.id)}
-                        className={`rounded-md px-3 py-1 text-sm ${
-                          movementPatternFilters[section.id] === pattern.id
-                            ? 'bg-primary-500 text-white'
-                            : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                        }`}
-                      >
-                        {pattern.label}
-                        {movementPatternFilters[section.id] === pattern.id && (
-                          <span className="ml-1 text-xs">✓</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  {movementPatternFilters[section.id] && (
-                    <div className="mt-1">
-                      <button
-                        type="button"
-                        onClick={() => updateMovementPatternFilter(section.id, '')}
-                        className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                      >
-                        Szűrő törlése
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
               {/* Exercises */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -779,6 +720,66 @@ const WorkoutPlanner = () => {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                           Exercise
                         </label>
+                        
+                        {/* Exercise-specific filters */}
+                        <div className="mt-2 mb-3">
+                          <div className="mb-2">
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Category Filter:</span>
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {categories.map((category) => {
+                                const exerciseKey = getExerciseKey(section.id, exercise.id);
+                                return (
+                                  <button
+                                    key={category}
+                                    type="button"
+                                    onClick={() => updateCategoryFilter(section.id, exercise.id, category)}
+                                    className={`rounded px-2 py-1 text-xs ${
+                                      categoryFilters[exerciseKey] === category
+                                        ? 'bg-primary-500 text-white'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                                    }`}
+                                  >
+                                    {category}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          
+                          <div className="mb-2">
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Movement Pattern:</span>
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {getMovementPatterns().map((pattern) => {
+                                const exerciseKey = getExerciseKey(section.id, exercise.id);
+                                return (
+                                  <button
+                                    key={pattern.id}
+                                    type="button"
+                                    onClick={() => updateMovementPatternFilter(section.id, exercise.id, pattern.id)}
+                                    className={`rounded px-2 py-1 text-xs ${
+                                      movementPatternFilters[exerciseKey] === pattern.id
+                                        ? 'bg-primary-500 text-white'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                                    }`}
+                                  >
+                                    {pattern.label}
+                                  </button>
+                                );
+                              })}
+                              {/* Clear filter button */}
+                              {movementPatternFilters[getExerciseKey(section.id, exercise.id)] && (
+                                <button
+                                  type="button"
+                                  onClick={() => updateMovementPatternFilter(section.id, exercise.id, '')}
+                                  className="rounded px-2 py-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800"
+                                >
+                                  Clear
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
                         <select
                           {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.exerciseId`)}
                           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
@@ -795,7 +796,7 @@ const WorkoutPlanner = () => {
                           }}
                         >
                           <option value="">Select an exercise</option>
-                          {getFilteredExercises(section.id).map((ex) => (
+                          {getFilteredExercises(section.id, exercise.id).map((ex) => (
                             <option key={ex.id} value={ex.id}>
                               {ex.name}
                             </option>
