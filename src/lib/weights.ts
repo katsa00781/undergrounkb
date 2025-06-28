@@ -10,6 +10,12 @@ export interface WeightMeasurement {
   date?: string;
   notes?: string;
   updated_at?: string;
+  // New measurement fields
+  bodyfat?: number;
+  muscle?: number;
+  bmi?: number;
+  deep_sleep?: number; // in minutes
+  rest_rating?: number; // scale 1-5
 }
 
 export const getWeightMeasurements = async (userId: string) => {
@@ -41,7 +47,13 @@ export const createWeightMeasurement = async (measurement: Omit<WeightMeasuremen
     weight: measurement.weight,
     // Ha van date mező a bemeneti adatokban, azt is tároljuk
     ...(measurement.date && { date: measurement.date }),
-    ...(measurement.notes && { notes: measurement.notes })
+    ...(measurement.notes && { notes: measurement.notes }),
+    // Add new measurement fields if they exist
+    ...(measurement.bodyfat !== undefined && { bodyfat: measurement.bodyfat }),
+    ...(measurement.muscle !== undefined && { muscle: measurement.muscle }),
+    ...(measurement.bmi !== undefined && { bmi: measurement.bmi }),
+    ...(measurement.deep_sleep !== undefined && { deep_sleep: measurement.deep_sleep }),
+    ...(measurement.rest_rating !== undefined && { rest_rating: measurement.rest_rating })
   };
 
   const { data, error } = await supabase

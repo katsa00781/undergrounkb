@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, Save, Trash2, GripVertical } from 'lucide-react';
+import { Plus, Save, Trash2, GripVertical, Sparkles, RotateCw } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Exercise, getExercises } from '../lib/exercises';
 import { createWorkout } from '../lib/workouts';
-import { getMovementPatterns, MovementPattern } from '../lib/exerciseService';
+import { getMovementPatterns } from '../lib/exerciseService';
+import { WorkoutDay, generateWorkoutPlan } from '../lib/workoutGenerator.fixed';
 import toast from 'react-hot-toast';
 
 const workoutSchema = z.object({
@@ -17,9 +18,13 @@ const workoutSchema = z.object({
   sections: z.array(z.object({
     name: z.string().min(1, 'Section name is required'),
     exercises: z.array(z.object({
-      exerciseId: z.string().min(1, 'Exercise is required'),
+      exerciseId: z.string(), // Allow empty exercises (placeholders)
+      exerciseName: z.string().optional(), // For storing placeholder exercise names
       sets: z.number().min(1, 'Must have at least 1 set'),
-      reps: z.number().min(1, 'Must have at least 1 rep'),
+      reps: z.union([
+        z.number().min(1, 'Must have at least 1 rep'),
+        z.string().min(1, 'Must specify reps')
+      ]), // Support both string and number for reps
       weight: z.number().optional(),
       notes: z.string().optional(),
       restPeriod: z.number().optional(),
@@ -32,10 +37,31 @@ type WorkoutFormData = z.infer<typeof workoutSchema>;
 const WorkoutPlanner = () => {
   const { user } = useAuth();
   const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [sections, setSections] = useState([{ id: '1', name: 'Main Workout', exercises: [{ id: '1' }] }]);
+  type SectionExercise = { 
+    id: string; 
+    exerciseId?: string; 
+    name?: string;
+    exerciseName?: string; // For storing placeholder names
+    sets?: number;
+    reps?: number | string;
+    weight?: number;
+    notes?: string;
+    restPeriod?: number;
+  };
+  
+  type Section = {
+    id: string;
+    name: string;
+    exercises: SectionExercise[];
+  };
+  
+  const [sections, setSections] = useState<Section[]>([{ id: '1', name: 'Main Workout', exercises: [{ id: '1' }] }]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [categoryFilters, setCategoryFilters] = useState<{ [sectionId: string]: string }>({});
   const [movementPatternFilters, setMovementPatternFilters] = useState<{ [sectionId: string]: string }>({});
+  const [selectedWorkoutDay, setSelectedWorkoutDay] = useState<WorkoutDay>(1);
+  const [showGenerateForm, setShowGenerateForm] = useState(false);
 
 
   const {
@@ -49,6 +75,8 @@ const WorkoutPlanner = () => {
       sections: [{ name: 'Main Workout', exercises: [{ sets: 3, reps: 10 }] }],
     },
   });
+
+
 
   useEffect(() => {
     loadExercises();
@@ -83,10 +111,20 @@ const WorkoutPlanner = () => {
           throw new Error(`Section "${section.name}" must have at least one exercise`);
         }
         
-        for (const exercise of section.exercises) {
-          if (!exercise.exerciseId) {
-            throw new Error('All exercises must be selected');
+        // Remove placeholder exercises before saving
+        section.exercises = section.exercises.filter(exercise => 
+          exercise.exerciseId && !exercise.exerciseId.startsWith('placeholder-')
+        );
+        
+        // Remove exerciseName field which is only used for UI display
+        section.exercises.forEach(exercise => {
+          if ('exerciseName' in exercise) {
+            delete (exercise as {exerciseName?: string}).exerciseName;
           }
+        });
+        
+        if (section.exercises.length === 0) {
+          throw new Error(`Section "${section.name}" must have at least one real exercise`);
         }
       }
       
@@ -127,7 +165,11 @@ const WorkoutPlanner = () => {
   const addExercise = (sectionIndex: number) => {
     const newSections = [...sections];
     // Simply add a new exercise with a unique ID
-    newSections[sectionIndex].exercises.push({ id: Date.now().toString() });
+    newSections[sectionIndex].exercises.push({ 
+      id: Date.now().toString(),
+      sets: 3,
+      reps: 10
+    });
     setSections(newSections);
   };
 
@@ -181,14 +223,169 @@ const WorkoutPlanner = () => {
     }));
   };
 
+  const handleGenerateWorkout = async () => {
+    if (!user?.id) {
+      toast.error('You must be logged in to generate a workout plan');
+      return;
+    }
+    
+    try {
+      setIsGenerating(true);
+      setShowGenerateForm(false);
+      
+      const generatedWorkout = await generateWorkoutPlan({
+        userId: user.id,
+        day: selectedWorkoutDay,
+        includeWeights: true,
+        adjustForFMS: true
+      });
+      
+      // Map the generated workout structure to our form structure
+      const formattedSections = generatedWorkout.sections.map((section) => {
+        return {
+          name: section.name,
+          exercises: section.exercises.map(exercise => {
+            // For placeholders, we need to save the name 
+            const isPlaceholder = exercise.exerciseId.startsWith('placeholder-');
+            
+            return {
+              exerciseId: exercise.exerciseId,
+              // For placeholders, store name to display it later
+              exerciseName: isPlaceholder ? exercise.name : undefined,
+              sets: Number(exercise.sets) || 3,
+              // Preserve string reps like "6-8" or "10 mindkét oldalra"
+              reps: typeof exercise.reps === 'string' && isNaN(Number(exercise.reps)) 
+                ? exercise.reps 
+                : (Number(exercise.reps) || 10),
+              weight: exercise.weight || undefined,
+              notes: exercise.instruction || undefined,
+              restPeriod: exercise.restPeriod || 60,
+            };
+          })
+        };
+      });
+
+      // Reset form with generated data
+      reset({
+        title: generatedWorkout.title,
+        date: generatedWorkout.date,
+        duration: generatedWorkout.duration,
+        notes: generatedWorkout.notes || '',
+        sections: formattedSections
+      });
+      
+      // Update sections state for UI rendering with names
+      setSections(formattedSections.map((section, index) => ({
+        id: (index + 1).toString(),
+        name: section.name,
+        exercises: section.exercises.map((exercise, exIndex) => {
+          // Try to find the exercise in our loaded exercises list
+          const exerciseDetails = exercise.exerciseId && !exercise.exerciseId.startsWith('placeholder-') 
+            ? exercises.find(e => e.id === exercise.exerciseId) 
+            : null;
+          
+          return { 
+            id: `${index + 1}-${exIndex + 1}`,
+            ...exercise,
+            // For placeholders, use the name from the generated workout
+            name: exerciseDetails?.name || 
+                  (exercise.exerciseId?.startsWith('placeholder-') ? exercise.exerciseName : undefined)
+          };
+        })
+      })));
+      
+      toast.success('Workout plan generated successfully');
+    } catch (error) {
+      console.error('Failed to generate workout plan:', error);
+      toast.error('Failed to generate workout plan');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const toggleGenerateForm = () => {
+    setShowGenerateForm(!showGenerateForm);
+  };
+
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-4">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Plan Your Workout</h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Create a new workout plan by adding exercises and setting your goals.
-        </p>
+    <div className="container py-8">
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Workout Planner</h1>
+        
+        <div className="mt-4 flex space-x-2 sm:mt-0">
+          <button
+            type="button"
+            onClick={toggleGenerateForm}
+            className="btn btn-primary flex items-center gap-2"
+          >
+            <Sparkles size={16} />
+            Generate Workout
+          </button>
+        </div>
       </div>
+
+      {/* Generate Workout Form */}
+      {showGenerateForm && (
+        <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+          <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Generate Workout Plan</h2>
+          <p className="mb-4 text-gray-600 dark:text-gray-400">
+            Choose a workout day to generate a structured training plan. Your workout will include exercises based on our program and any available FMS assessments.
+          </p>
+          
+          <div className="mb-4">
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Select Workout Day
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {[1, 2, 3, 4].map((day) => (
+                <button
+                  key={day}
+                  type="button"
+                  onClick={() => setSelectedWorkoutDay(day as WorkoutDay)}
+                  className={`rounded-md px-4 py-2 ${
+                    selectedWorkoutDay === day 
+                      ? 'bg-primary-500 text-white' 
+                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {day === 1 && 'Day 1 - Robbanékonyság'}
+                  {day === 2 && 'Day 2 - Erő'}
+                  {day === 3 && 'Day 3 - Kombináció'}
+                  {day === 4 && 'Day 4 - Regeneráció'}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-2">
+            <button
+              type="button"
+              onClick={() => setShowGenerateForm(false)}
+              className="btn btn-ghost"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleGenerateWorkout}
+              className="btn btn-primary flex items-center gap-2"
+              disabled={isGenerating}
+            >
+              {isGenerating ? (
+                <>
+                  <RotateCw size={16} className="animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={16} />
+                  Generate Plan
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -384,11 +581,35 @@ const WorkoutPlanner = () => {
                           >
                             <option value="">Select an exercise</option>
                             {getFilteredExercises(section.id).map((ex) => (
-                              <option key={ex.id} value={ex.id}>
+                              <option 
+                                key={ex.id} 
+                                value={ex.id}
+                              >
                                 {ex.name}
                               </option>
                             ))}
                           </select>
+                          
+                          {/* Store exercise name for placeholders */}
+                          {section.exercises[exerciseIndex]?.exerciseId?.startsWith?.('placeholder-') && (
+                            <input
+                              type="hidden"
+                              {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.exerciseName`)}
+                              value={section.exercises[exerciseIndex].name || 
+                                     section.exercises[exerciseIndex].exerciseName || 
+                                     "Placeholder gyakorlat"}
+                            />
+                          )}
+                          
+                          {/* Display placeholder exercise names */}
+                          {section.exercises[exerciseIndex]?.exerciseId?.startsWith?.('placeholder-') && (
+                            <div className="mt-1 text-sm text-amber-600">
+                              {/* Try different ways to get the name */}
+                              {section.exercises[exerciseIndex].name || 
+                               section.exercises[exerciseIndex].exerciseName || 
+                               "Placeholder gyakorlat"} (placeholder)
+                            </div>
+                          )}
                         </div>
 
                         <div>
@@ -409,11 +630,10 @@ const WorkoutPlanner = () => {
                             Reps
                           </label>
                           <input
-                            type="number"
-                            {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.reps`, { valueAsNumber: true })}
+                            type="text"
+                            {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.reps`)}
                             className="input mt-1"
-                            placeholder="10"
-                            min="1"
+                            placeholder="10 vagy 8-12"
                           />
                         </div>
 

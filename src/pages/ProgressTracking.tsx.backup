@@ -47,21 +47,6 @@ const ProgressTracking = () => {
   const [showForm, setShowForm] = useState(false);
   const [weights, setWeights] = useState<WeightMeasurement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeChart, setActiveChart] = useState<'weight' | 'bodyfat' | 'muscle' | 'bmi' | 'deep_sleep'>('weight');
-
-  const {
-    register,
-    handleSubmit,
-    watch,
-    reset,
-    setValue,
-    formState: { errors, isSubmitting },
-  } = useForm<WeightFormData>({
-    resolver: zodResolver(weightSchema),
-    defaultValues: {
-      date: new Date().toISOString().split('T')[0],
-    },
-  });
 
   const loadWeights = useCallback(async () => {
     if (!user?.id) return;
@@ -84,13 +69,36 @@ const ProgressTracking = () => {
     }
   }, [user?.id, loadWeights]);
 
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<WeightFormData>({
+    resolver: zodResolver(weightSchema),
+    defaultValues: {
+      date: new Date().toISOString().split('T')[0],
+    },
+  });
+    if (!user?.id) return;
+    
+    try {
+      setIsLoading(true);
+      const data = await getWeightMeasurements(user.id);
+      setWeights(data);
+    } catch (error) {
+      console.error('Failed to load weights:', error);
+      toast.error('Failed to load weight data');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.id]);
+
   const onSubmit = async (data: WeightFormData) => {
     if (!user?.id) return;
 
     try {
-      // Ensure rest_rating is properly converted to a number if it exists
-      const rest_rating = data.rest_rating !== undefined ? Number(data.rest_rating) : undefined;
-      
       await createWeightMeasurement({
         user_id: user.id,
         date: data.date,
@@ -99,7 +107,7 @@ const ProgressTracking = () => {
         muscle: data.muscle,
         bmi: data.bmi,
         deep_sleep: data.deep_sleep,
-        rest_rating: rest_rating,
+        rest_rating: data.rest_rating,
         notes: data.notes,
       });
       
@@ -113,6 +121,9 @@ const ProgressTracking = () => {
     }
   };
 
+  // State to control which measurement to display in the chart
+  const [activeChart, setActiveChart] = useState<'weight' | 'bodyfat' | 'muscle' | 'bmi' | 'deep_sleep'>('weight');
+  
   const getChartLabels = () => {
     return weights.map(w => {
       const dateToFormat = w.date || (w.created_at && new Date(w.created_at).toISOString().split('T')[0]);
@@ -137,7 +148,7 @@ const ProgressTracking = () => {
             case 'deep_sleep': return w.deep_sleep;
             default: return w.weight;
           }
-        }).filter(val => val !== undefined),
+        }).filter(value => value !== undefined),
         borderColor: 
           activeChart === 'weight' ? 'rgb(59, 130, 246)' : // blue
           activeChart === 'bodyfat' ? 'rgb(249, 115, 22)' : // orange
@@ -155,6 +166,7 @@ const ProgressTracking = () => {
     ],
   };
 
+  // Fix chart options type issue
   const chartOptions = {
     responsive: true,
     plugins: {
@@ -163,7 +175,7 @@ const ProgressTracking = () => {
       },
       tooltip: {
         callbacks: {
-          label: (context: { parsed: { y: number } }) => {
+          label: (context: any) => {
             const value = context.parsed.y;
             switch (activeChart) {
               case 'weight': return `Weight: ${value} kg`;
@@ -181,7 +193,7 @@ const ProgressTracking = () => {
       y: {
         beginAtZero: activeChart === 'deep_sleep',
         ticks: {
-          callback: function(value: number | string) {
+          callback: function(value: any) {
             switch (activeChart) {
               case 'weight': return `${value} kg`;
               case 'bodyfat': return `${value}%`;
@@ -346,29 +358,26 @@ const ProgressTracking = () => {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   How Rested Do You Feel? (1-5)
                 </label>
-                <div className="flex gap-4 mt-2">
+                <div className="flex gap-2 mt-2">
                   {[1, 2, 3, 4, 5].map((rating) => (
-                    <button
-                      type="button"
-                      key={rating}
-                      onClick={() => setValue('rest_rating', rating, { shouldValidate: true })}
-                      className={`flex flex-col items-center p-2 rounded-md transition-all ${
-                        Number(watch('rest_rating')) === rating 
-                          ? 'bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400'
-                          : 'text-gray-300 hover:text-gray-500 dark:hover:text-gray-300'
-                      }`}
-                    >
-                      <span className="text-2xl">
+                    <label key={rating} className="flex flex-col items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        value={rating}
+                        {...register('rest_rating', { valueAsNumber: true })}
+                        className="sr-only"
+                      />
+                      <span className={`text-2xl ${
+                        watch('rest_rating') === rating 
+                          ? 'text-primary-500' 
+                          : 'text-gray-300 hover:text-gray-400'
+                      }`}>
                         {rating <= 2 ? '😴' : rating === 3 ? '😐' : '😀'}
                       </span>
                       <span className="text-xs mt-1">{rating}</span>
-                    </button>
+                    </label>
                   ))}
                 </div>
-                
-                {/* Hidden field to store the value in the form */}
-                <input type="hidden" {...register('rest_rating', { valueAsNumber: true })} />
-                
                 {errors.rest_rating && (
                   <p className="mt-1 text-sm text-error-600 dark:text-error-400">{errors.rest_rating.message}</p>
                 )}
@@ -495,12 +504,12 @@ const ProgressTracking = () => {
                 <div className="flex h-full items-center justify-center">
                   <div className="text-center text-gray-500 dark:text-gray-400">
                     <LineChart className="mx-auto h-12 w-12" />
-                    <p className="mt-2">No measurement data available</p>
+                    <p className="mt-2">No weight data available</p>
                     <button
                       onClick={() => setShowForm(true)}
                       className="btn btn-primary mt-4"
                     >
-                      Log Your First Measurement
+                      Log Your First Weight
                     </button>
                   </div>
                 </div>
@@ -518,9 +527,7 @@ const ProgressTracking = () => {
               <div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">Current Weight</div>
                 <div className="text-2xl font-semibold text-gray-900 dark:text-white">
-                  {weights[weights.length - 1]?.weight !== null && weights[weights.length - 1]?.weight !== undefined 
-                    ? weights[weights.length - 1]?.weight.toFixed(1) 
-                    : '—'} kg
+                  {weights[weights.length - 1]?.weight.toFixed(1) || '—'} kg
                 </div>
               </div>
               
@@ -532,9 +539,7 @@ const ProgressTracking = () => {
                     <div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">Current Body Fat</div>
                       <div className="text-2xl font-semibold text-gray-900 dark:text-white">
-                        {lastEntry.bodyfat !== null && lastEntry.bodyfat !== undefined 
-                          ? lastEntry.bodyfat.toFixed(1) 
-                          : '0'}%
+                        {lastEntry.bodyfat.toFixed(1)}%
                       </div>
                     </div>
                   );
@@ -550,7 +555,7 @@ const ProgressTracking = () => {
                     <div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">Current Muscle Mass</div>
                       <div className="text-2xl font-semibold text-gray-900 dark:text-white">
-                        {lastEntry.muscle !== null && lastEntry.muscle !== undefined ? lastEntry.muscle.toFixed(1) : '0'}%
+                        {lastEntry.muscle.toFixed(1)}%
                       </div>
                     </div>
                   );
@@ -566,7 +571,7 @@ const ProgressTracking = () => {
                     <div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">Current BMI</div>
                       <div className="text-2xl font-semibold text-gray-900 dark:text-white">
-                        {lastEntry.bmi !== null && lastEntry.bmi !== undefined ? lastEntry.bmi.toFixed(1) : '0'}
+                        {lastEntry.bmi.toFixed(1)}
                       </div>
                     </div>
                   );
@@ -583,10 +588,7 @@ const ProgressTracking = () => {
                       ? 'text-success-600 dark:text-success-400'
                       : 'text-error-600 dark:text-error-400'
                   }`}>
-                    {((weights[weights.length - 1].weight !== null && weights[weights.length - 1].weight !== undefined && 
-                       weights[0].weight !== null && weights[0].weight !== undefined) 
-                      ? (weights[weights.length - 1].weight - weights[0].weight).toFixed(1)
-                      : '0')} kg
+                    {(weights[weights.length - 1].weight - weights[0].weight).toFixed(1)} kg
                   </div>
                 )}
               </div>
@@ -638,34 +640,34 @@ const ProgressTracking = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div className="text-gray-500 dark:text-gray-400">
-                        Weight: <span className="font-medium text-gray-900 dark:text-white">{entry.weight !== null && entry.weight !== undefined ? entry.weight.toFixed(1) : '0'} kg</span>
+                        Weight: <span className="font-medium text-gray-900 dark:text-white">{entry.weight.toFixed(1)} kg</span>
                       </div>
                       
-                      {entry.bodyfat !== null && entry.bodyfat !== undefined && (
+                      {entry.bodyfat && (
                         <div className="text-gray-500 dark:text-gray-400">
-                          Body Fat: <span className="font-medium text-gray-900 dark:text-white">{entry.bodyfat !== null && entry.bodyfat !== undefined ? entry.bodyfat.toFixed(1) : '0'}%</span>
+                          Body Fat: <span className="font-medium text-gray-900 dark:text-white">{entry.bodyfat.toFixed(1)}%</span>
                         </div>
                       )}
                       
-                      {entry.muscle !== null && entry.muscle !== undefined && (
+                      {entry.muscle && (
                         <div className="text-gray-500 dark:text-gray-400">
-                          Muscle: <span className="font-medium text-gray-900 dark:text-white">{entry.muscle !== null && entry.muscle !== undefined ? entry.muscle.toFixed(1) : '0'}%</span>
+                          Muscle: <span className="font-medium text-gray-900 dark:text-white">{entry.muscle.toFixed(1)}%</span>
                         </div>
                       )}
                       
-                      {entry.bmi !== null && entry.bmi !== undefined && (
+                      {entry.bmi && (
                         <div className="text-gray-500 dark:text-gray-400">
-                          BMI: <span className="font-medium text-gray-900 dark:text-white">{entry.bmi !== null && entry.bmi !== undefined ? entry.bmi.toFixed(1) : '0'}</span>
+                          BMI: <span className="font-medium text-gray-900 dark:text-white">{entry.bmi.toFixed(1)}</span>
                         </div>
                       )}
                       
-                      {entry.deep_sleep !== undefined && (
+                      {entry.deep_sleep && (
                         <div className="text-gray-500 dark:text-gray-400">
                           Deep Sleep: <span className="font-medium text-gray-900 dark:text-white">{entry.deep_sleep} min</span>
                         </div>
                       )}
                       
-                      {entry.rest_rating !== undefined && (
+                      {entry.rest_rating && (
                         <div className="text-gray-500 dark:text-gray-400">
                           Rest Rating: <span className="font-medium text-gray-900 dark:text-white">
                             {entry.rest_rating <= 2 ? '😴' : entry.rest_rating === 3 ? '😐' : '😀'} ({entry.rest_rating}/5)

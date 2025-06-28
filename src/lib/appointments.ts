@@ -198,7 +198,7 @@ export async function bookAppointment(appointmentId: string, userId: string) {
     // Start a Supabase transaction
     const { data: appointment, error: fetchError } = await supabase
       .from('appointments')
-      .select('current_participants, max_participants')
+      .select('*, created_by, start_time')
       .eq('id', appointmentId)
       .single();
 
@@ -241,6 +241,25 @@ export async function bookAppointment(appointmentId: string, userId: string) {
       .eq('id', appointmentId);
 
     if (updateError) throw updateError;
+
+    // Import the copyWorkoutToUser function from workouts.ts
+    // We need to do this dynamically here to avoid circular imports
+    const { copyWorkoutToUser } = await import('./workouts');
+    
+    // Extract the date part from the appointment start_time (ISO format)
+    const appointmentDate = appointment.start_time.split('T')[0];
+    const trainerId = appointment.created_by;
+    
+    if (trainerId) {
+      try {
+        // Copy the admin's workout to the user
+        await copyWorkoutToUser(appointmentDate, trainerId, userId);
+      } catch (workoutError) {
+        // If copying the workout fails, we still want to consider the booking successful
+        // Just log the error and continue
+        console.error('Error copying workout to user:', workoutError);
+      }
+    }
 
     return bookingData as AppointmentBooking;
   } catch (error) {

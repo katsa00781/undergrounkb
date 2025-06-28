@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Clock, Users, Check, X } from 'lucide-react';
+import { Calendar, Clock, Users, Check, X, Dumbbell } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useAuth } from '../hooks/useAuth';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -151,7 +151,38 @@ const AppointmentBookingPage = () => {
     try {
       await bookAppointment(appointmentId, user!.id);
       await loadData();
-      toast.success('Appointment booked successfully');
+      toast.success('Appointment booked successfully!');
+      
+      // Show notification about assigned workout
+      toast((t) => (
+        <div className="flex items-start gap-3">
+          <Dumbbell className="h-5 w-5 text-primary-500" />
+          <div className="flex flex-1 flex-col gap-2">
+            <span className="font-semibold">Workout assigned!</span>
+            <p className="text-sm text-gray-600">Check your Workout Log to see the workout plan for this session.</p>
+            <div className="flex gap-2 mt-1">
+              <button 
+                onClick={() => {
+                  navigate('/workout-log');
+                  toast.dismiss(t.id);
+                }} 
+                className="rounded-md bg-primary-600 px-3 py-1 text-xs text-white hover:bg-primary-700"
+              >
+                Go to Workout Log
+              </button>
+              <button 
+                onClick={() => toast.dismiss(t.id)} 
+                className="rounded-md px-3 py-1 text-xs text-gray-500 hover:text-gray-700"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+          <button onClick={() => toast.dismiss(t.id)} className="text-gray-500 hover:text-gray-700">
+            <X size={18} />
+          </button>
+        </div>
+      ), { duration: 8000 });
     } catch (error) {
       console.error('Failed to book appointment:', error);
       if (error instanceof Error && error.message.includes('unavailable')) {

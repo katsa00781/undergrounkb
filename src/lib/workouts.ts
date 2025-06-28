@@ -6,7 +6,7 @@ export interface WorkoutSection {
   exercises: {
     exerciseId: string;
     sets: number;
-    reps: number;
+    reps: number | string; // Support both number and string for reps
     weight?: number;
     notes?: string;
     restPeriod?: number;
@@ -144,4 +144,75 @@ export async function deleteWorkout(id: string) {
     .eq('id', id);
 
   if (error) throw error;
+}
+
+/**
+ * Copy a workout from the admin (trainer) to a user when they book an appointment for that day
+ * @param appointmentDate - The date of the appointment (YYYY-MM-DD format)
+ * @param adminId - The ID of the trainer/admin
+ * @param userId - The ID of the user who booked the appointment
+ * @returns The copied workout, or null if no workout was found
+ */
+export async function copyWorkoutToUser(appointmentDate: string, adminId: string, userId: string) {
+  try {
+    console.log(`Copying workout from admin ${adminId} to user ${userId} for date ${appointmentDate}`);
+    
+    // Find the admin's workout for the appointment date
+    const { data: adminWorkouts, error: fetchError } = await supabase
+      .from('workouts')
+      .select('*')
+      .eq('user_id', adminId)
+      .eq('date', appointmentDate)
+      .order('created_at', { ascending: false }) // Get the most recent one if multiple exist
+      .limit(1);
+    
+    if (fetchError) {
+      console.error('Error finding admin workout:', fetchError);
+      return null;
+    }
+    
+    if (!adminWorkouts || adminWorkouts.length === 0) {
+      console.warn(`No workout found for admin ${adminId} on date ${appointmentDate}`);
+      return null;
+    }
+    
+    const adminWorkout = adminWorkouts[0];
+    
+    // Process the workout to ensure sections are properly parsed
+    if (adminWorkout.sections && typeof adminWorkout.sections === 'string') {
+      try {
+        adminWorkout.sections = JSON.parse(adminWorkout.sections);
+      } catch (e) {
+        console.error('Error parsing sections JSON:', e);
+      }
+    }
+    
+    // Create a new workout for the user based on the admin's workout
+    const newUserWorkout = {
+      title: `${adminWorkout.title} (Assigned)`,
+      date: appointmentDate,
+      duration: adminWorkout.duration,
+      notes: adminWorkout.notes ? `${adminWorkout.notes}\n\nAssigned from trainer session.` : 'Assigned from trainer session.',
+      sections: adminWorkout.sections,
+      user_id: userId
+    };
+    
+    // Insert the new workout for the user
+    const { data: newWorkout, error: insertError } = await supabase
+      .from('workouts')
+      .insert(newUserWorkout)
+      .select()
+      .single();
+    
+    if (insertError) {
+      console.error('Error copying workout to user:', insertError);
+      return null;
+    }
+    
+    console.log('Successfully copied workout to user:', newWorkout);
+    return newWorkout as Workout;
+  } catch (error) {
+    console.error('Exception in copyWorkoutToUser:', error);
+    return null;
+  }
 }
