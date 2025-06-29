@@ -19,15 +19,19 @@ const appointmentSchema = z.object({
 type AppointmentFormData = z.infer<typeof appointmentSchema>;
 
 interface BookingDetails {
-  id: string;
+  appointment_id: string;
   user_id: string;
-  status: 'confirmed' | 'cancelled';
+  created_at?: string;
+  user?: {
+    name: string | null;
+    email: string;
+  };
   user_name?: string;
   user_email?: string;
 }
 
 interface AppointmentWithBookings extends Appointment {
-  appointment_bookings: BookingDetails[];
+  appointments_participants: BookingDetails[];
 }
 
 const AppointmentManager = () => {
@@ -282,31 +286,28 @@ const AppointmentManager = () => {
           </div>
 
           <div className="space-y-4">
-            {selectedAppointment.appointment_bookings.map((booking) => (
+            {selectedAppointment.appointments_participants.map((booking: BookingDetails) => (
               <div
-                key={booking.id}
+                key={`${booking.appointment_id}-${booking.user_id}`}
                 className="flex items-center justify-between rounded-lg border border-gray-200 p-4 dark:border-gray-700"
-              >              <div>
+              >
+              <div>
                 <p className="font-medium text-gray-900 dark:text-white">
-                  {booking.user_email || booking.user_id}
+                  {booking.user?.email || booking.user_email || booking.user_id}
                 </p>
-                {booking.user_name && (
+                {(booking.user?.name || booking.user_name) && (
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {booking.user_name}
+                    {booking.user?.name || booking.user_name}
                   </p>
                 )}
                 </div>
-                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                  booking.status === 'confirmed'
-                    ? 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400'
-                    : 'bg-error-100 text-error-800 dark:bg-error-900/30 dark:text-error-400'
-                }`}>
-                  {booking.status}
+                <span className="inline-flex rounded-full px-2 py-1 text-xs font-semibold bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400">
+                  Confirmed
                 </span>
               </div>
             ))}
 
-            {selectedAppointment.appointment_bookings.length === 0 && (
+            {selectedAppointment.appointments_participants.length === 0 && (
               <p className="text-center text-gray-600 dark:text-gray-400">
                 No bookings yet
               </p>

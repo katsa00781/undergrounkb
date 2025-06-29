@@ -4,7 +4,7 @@ export interface User {
   id: string;
   email: string;
   full_name: string | null;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'disabled';
   created_at?: string;
   updated_at?: string;
 }
@@ -34,11 +34,12 @@ export async function getUsers() {
       throw schemaError;
     }
     
-    // Now attempt to fetch the actual data
-    console.log('Fetching user data from profiles table...');
+    // Now attempt to fetch the actual data, excluding disabled users
+    console.log('Fetching active users from profiles table...');
     const { data, error } = await supabase
       .from('profiles')
       .select('id, email, full_name, role, created_at, updated_at')
+      .neq('role', 'disabled')  // Filter out disabled users
       .order('full_name');
     
     if (error) {
@@ -46,7 +47,7 @@ export async function getUsers() {
       throw error;
     }
     
-    console.log(`Successfully fetched ${data?.length || 0} users from profiles table`);
+    console.log(`Successfully fetched ${data?.length || 0} active users from profiles table`);
     return data as User[];
   } catch (err) {
     console.error('Unexpected error in getUsers:', err);
@@ -91,16 +92,26 @@ export async function updateUser(id: string, user: Partial<User>) {
 }
 
 export async function deleteUser(id: string) {
-  // Delete from profiles table
-  const { error } = await supabase
+  // Soft delete: Set role to 'disabled' instead of hard delete
+  console.log(`Soft deleting user ${id} by setting role to 'disabled'`);
+  
+  const { data, error } = await supabase
     .from('profiles')
-    .delete()
-    .eq('id', id);
+    .update({ role: 'disabled' })
+    .eq('id', id)
+    .select()
+    .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error soft deleting user:', error);
+    throw error;
+  }
+  
+  console.log('User soft deleted successfully:', data);
+  return data as User;
 }
 
-export async function getCurrentUserRole(): Promise<'admin' | 'user'> {
+export async function getCurrentUserRole(): Promise<'admin' | 'user' | 'disabled'> {
   try {
     // Get the current authenticated user
     const { data: { user } } = await supabase.auth.getUser();
@@ -118,7 +129,7 @@ export async function getCurrentUserRole(): Promise<'admin' | 'user'> {
 
     if (!profileError && profileData?.role) {
       console.log(`User role from profiles: ${profileData.role}`);
-      return profileData.role as 'admin' | 'user';
+      return profileData.role as 'admin' | 'user' | 'disabled';
     }
 
     if (profileError) {
@@ -144,5 +155,53 @@ export async function makeUserAdmin(email: string) {
     .single();
 
   if (error) throw error;
+  return data as User;
+}
+
+export async function getAllUsers() {
+  // Get all users including disabled ones (for admin purposes)
+  console.log('Fetching all users including disabled ones...');
+  
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, email, full_name, role, created_at, updated_at')
+      .order('full_name');
+    
+    if (error) {
+      console.error('Error fetching all users:', error);
+      throw error;
+    }
+    
+    console.log(`Successfully fetched ${data?.length || 0} total users`);
+    return data as User[];
+  } catch (err) {
+    console.error('Unexpected error in getAllUsers:', err);
+    throw err;
+  }
+}
+
+export async function restoreUser(id: string, newRole: 'admin' | 'user' = 'user') {
+  // Restore a disabled user by setting their role back to admin or user
+  console.log(`Restoring user ${id} with role ${newRole}`);
+  
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ role: newRole })
+    .eq('id', id)
+    .eq('role', 'disabled')  // Only restore if currently disabled
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error restoring user:', error);
+    throw error;
+  }
+  
+  if (!data) {
+    throw new Error('User not found or not disabled');
+  }
+  
+  console.log('User restored successfully:', data);
   return data as User;
 }

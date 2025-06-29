@@ -70,7 +70,7 @@ export class SupabaseManager {
    */
   async checkConnection(): Promise<boolean> {
     try {
-      const tables = ['profiles', 'exercises', 'fms_assessments', 'appointments', 'appointment_bookings'];
+      const tables = ['profiles', 'exercises', 'fms_assessments', 'appointments', 'appointments_participants'];
       const checks = await Promise.all(
         tables.map(table => 
           this.client.from(table).select('count').limit(1)

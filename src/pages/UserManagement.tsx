@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Users, UserPlus, Edit2, Trash2, Mail, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { User, getUsers, createUser, updateUser, deleteUser } from '../lib/users';
+import { User, getUsers, createUser, updateUser, deleteUser, getAllUsers, restoreUser } from '../lib/users';
 import toast from 'react-hot-toast';
 
 const userSchema = z.object({
   email: z.string().email('Invalid email address'),
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
-  role: z.enum(['admin', 'user']),
+  role: z.enum(['admin', 'user', 'disabled']),
 });
 
 type UserFormData = z.infer<typeof userSchema>;
@@ -18,6 +18,7 @@ type UserFormData = z.infer<typeof userSchema>;
 const UserManagement = () => {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
+  const [showDisabled, setShowDisabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -35,9 +36,22 @@ const UserManagement = () => {
     },
   });
 
+  const loadUsers = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const data = showDisabled ? await getAllUsers() : await getUsers();
+      setUsers(data);
+    } catch (error) {
+      console.error('Failed to load users:', error);
+      toast.error('Failed to load users');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [showDisabled]);
+
   useEffect(() => {
     loadUsers();
-  }, []);
+  }, [loadUsers]);
 
   useEffect(() => {
     if (editingUser) {
@@ -47,19 +61,6 @@ const UserManagement = () => {
       setShowForm(true);
     }
   }, [editingUser, setValue]);
-
-  const loadUsers = async () => {
-    try {
-      setIsLoading(true);
-      const data = await getUsers();
-      setUsers(data);
-    } catch (error) {
-      console.error('Failed to load users:', error);
-      toast.error('Failed to load users');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const onSubmit = async (data: UserFormData) => {
     try {
@@ -82,15 +83,28 @@ const UserManagement = () => {
   };
 
   const handleDeleteUser = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+    if (!confirm('Are you sure you want to disable this user? They will no longer be able to access the system.')) return;
 
     try {
       await deleteUser(id);
       await loadUsers();
-      toast.success('User deleted successfully');
+      toast.success('User disabled successfully');
     } catch (error) {
-      console.error('Failed to delete user:', error);
-      toast.error('Failed to delete user');
+      console.error('Failed to disable user:', error);
+      toast.error('Failed to disable user');
+    }
+  };
+
+  const handleRestoreUser = async (id: string) => {
+    if (!confirm('Are you sure you want to restore this user?')) return;
+
+    try {
+      await restoreUser(id, 'user');
+      await loadUsers();
+      toast.success('User restored successfully');
+    } catch (error) {
+      console.error('Failed to restore user:', error);
+      toast.error('Failed to restore user');
     }
   };
 
@@ -112,17 +126,28 @@ const UserManagement = () => {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">User Management</h1>
           <p className="mt-1 text-gray-600 dark:text-gray-400">Manage users and their roles</p>
         </div>
-        <button
-          onClick={() => {
-            setEditingUser(null);
-            setShowForm(!showForm);
-            reset();
-          }}
-          className="btn btn-primary inline-flex items-center gap-2"
-        >
-          <UserPlus size={20} />
-          <span>Add User</span>
-        </button>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={showDisabled}
+              onChange={(e) => setShowDisabled(e.target.checked)}
+              className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <span className="text-sm text-gray-700 dark:text-gray-300">Show disabled users</span>
+          </label>
+          <button
+            onClick={() => {
+              setEditingUser(null);
+              setShowForm(!showForm);
+              reset();
+            }}
+            className="btn btn-primary inline-flex items-center gap-2"
+          >
+            <UserPlus size={20} />
+            <span>Add User</span>
+          </button>
+        </div>
       </div>
 
       {showForm && (
@@ -183,6 +208,9 @@ const UserManagement = () => {
                 >
                   <option value="user">User</option>
                   <option value="admin">Admin</option>
+                  {editingUser && editingUser.role === 'disabled' && (
+                    <option value="disabled">Disabled</option>
+                  )}
                 </select>
                 {errors.role && (
                   <p className="mt-1 text-sm text-error-600 dark:text-error-400">{errors.role.message}</p>
@@ -238,7 +266,11 @@ const UserManagement = () => {
                 {users.map((user) => (
                   <tr
                     key={user.id}
-                    className="border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+                    className={`border-b border-gray-200 ${
+                      user.role === 'disabled' 
+                        ? 'bg-gray-50 dark:bg-gray-900/50 opacity-75' 
+                        : 'bg-white dark:bg-gray-800'
+                    }`}
                   >
                     <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
                       {user.full_name || '—'}
@@ -250,6 +282,8 @@ const UserManagement = () => {
                       <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                         user.role === 'admin'
                           ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400'
+                          : user.role === 'disabled'
+                          ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                           : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                       }`}>
                         {user.role}
@@ -260,18 +294,32 @@ const UserManagement = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setEditingUser(user)}
-                          className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-400"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-error-500 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-error-400"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        {user.role !== 'disabled' ? (
+                          <>
+                            <button
+                              onClick={() => setEditingUser(user)}
+                              className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-400"
+                              title="Edit user"
+                            >
+                              <Edit2 size={18} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-error-500 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-error-400"
+                              title="Disable user"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => handleRestoreUser(user.id)}
+                            className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-green-500 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-green-400"
+                            title="Restore user"
+                          >
+                            <UserIcon size={18} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

@@ -4,7 +4,7 @@ import LoadingScreen from './components/ui/LoadingScreen';
 import Layout from './components/layout/Layout';
 
 // Lazy-loaded pages
-const Register = lazy(() => import('./pages/auth/Register'));
+// const Register = lazy(() => import('./pages/auth/Register')); // Disabled for security  
 const Login = lazy(() => import('./pages/auth/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Profile = lazy(() => import('./pages/Profile'));
@@ -47,11 +47,10 @@ export const AppRoutes = ({ userRole }: AppRoutesProps) => {
       <Routes>
         {/* Public routes */}
         <Route path="/" element={
-          userRole !== 'anonymous' ? <Navigate to="/dashboard" replace /> : <Navigate to="/register" replace />
+          userRole !== 'anonymous' ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
         } />
-        <Route path="/register" element={
-          userRole !== 'anonymous' ? <Navigate to="/dashboard" replace /> : <Register />
-        } />
+        {/* Registration disabled for security - only admins can create users */}
+        <Route path="/register" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={
           userRole !== 'anonymous' ? <Navigate to="/dashboard" replace /> : <Login />
         } />

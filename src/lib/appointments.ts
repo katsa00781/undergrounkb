@@ -16,18 +16,22 @@ export interface Appointment {
   status?: 'available' | 'booked' | 'cancelled'; // Not in DB schema but used in app
 }
 
-export interface AppointmentBooking {
-  id: string;
+export interface AppointmentParticipant {
   appointment_id: string;
   user_id: string;
-  status: 'confirmed' | 'cancelled';
   created_at?: string;
-  updated_at?: string;
   user?: {
     name: string | null;
     email: string;
   };
 }
+
+// Backward compatibility type alias
+export type AppointmentBooking = AppointmentParticipant & {
+  id?: string;
+  status?: 'confirmed' | 'cancelled';
+  updated_at?: string;
+};
 
 export async function createAppointment(appointment: {
   title: string;
@@ -105,26 +109,26 @@ export async function getTrainerAppointments(trainerId: string) {
   
   // Külön lekérdezéssel kérjük le a foglalásokat minden időponthoz
   const data = await Promise.all(appointmentsData.map(async (appointment) => {
-    const { data: bookings, error: bookingsError } = await supabase
-      .from('appointment_bookings')
-      .select('id, user_id, status')
+    const { data: participants, error: participantsError } = await supabase
+      .from('appointments_participants')
+      .select('appointment_id, user_id')
       .eq('appointment_id', appointment.id);
     
-    if (bookingsError) {
-      console.warn(`Error fetching bookings for appointment ${appointment.id}:`, bookingsError);
-      return { ...appointment, appointment_bookings: [] };
+    if (participantsError) {
+      console.warn(`Error fetching participants for appointment ${appointment.id}:`, participantsError);
+      return { ...appointment, appointments_participants: [] };
     }
     
-    return { ...appointment, appointment_bookings: bookings || [] };
+    return { ...appointment, appointments_participants: participants || [] };
   }));
 
   // if (error) throw error;
 
-  // Extract all unique user IDs from the bookings
+  // Extract all unique user IDs from the participants
   const userIds = new Set<string>();
   data.forEach(appointment => {
-    appointment.appointment_bookings.forEach((booking: Partial<AppointmentBooking>) => {
-      if (booking.user_id) userIds.add(booking.user_id);
+    appointment.appointments_participants.forEach((participant: Partial<AppointmentParticipant>) => {
+      if (participant.user_id) userIds.add(participant.user_id);
     });
   });
 
@@ -148,45 +152,44 @@ export async function getTrainerAppointments(trainerId: string) {
     }
   }
 
-  // Add user details to each booking
+  // Add user details to each participant
   const appointmentsWithUserDetails = data.map(appointment => {
-    const bookingsWithUsers = appointment.appointment_bookings.map((booking: Partial<AppointmentBooking>) => {
-      const userData = userMap.get(booking.user_id);
+    const participantsWithUsers = appointment.appointments_participants.map((participant: Partial<AppointmentParticipant>) => {
+      const userData = userMap.get(participant.user_id);
       return {
-        id: booking.id,
-        user_id: booking.user_id,
-        status: booking.status,
-        user_name: userData?.name, // Ez még a régi name mezőt használja a kompatibilitás miatt
-        user_email: userData?.email
+        appointment_id: participant.appointment_id,
+        user_id: participant.user_id,
+        created_at: participant.created_at,
+        user: userData ? { name: userData.name, email: userData.email } : undefined
       };
     });
 
     return {
       ...appointment,
-      appointment_bookings: bookingsWithUsers
+      appointments_participants: participantsWithUsers
     };
   });
 
-  return appointmentsWithUserDetails as (Appointment & { appointment_bookings: AppointmentBooking[] })[];
+  return appointmentsWithUserDetails as (Appointment & { appointments_participants: AppointmentParticipant[] })[];
 }
 
 export async function getUserBookings(userId: string) {
   try {
     const { data, error } = await supabase
-      .from('appointment_bookings')
+      .from('appointments_participants')
       .select('*, appointments(*)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) {
-      // Check if the error is because the appointment_bookings table doesn't exist
+      // Check if the error is because the appointments_participants table doesn't exist
       if (error.code === '42P01') {
-        console.warn('Appointment bookings table does not exist yet.');
+        console.warn('Appointments participants table does not exist yet.');
         return []; // Return empty array instead of throwing an error
       }
       throw error;
     }
-    return data as (AppointmentBooking & { appointments: Appointment })[];
+    return data as (AppointmentParticipant & { appointments: Appointment })[];
   } catch (error) {
     console.error('Error in getUserBookings:', error);
     return []; // Return empty array on error to avoid breaking the UI
@@ -213,19 +216,18 @@ export async function bookAppointment(appointmentId: string, userId: string) {
       throw new Error('This appointment is already full');
     }
 
-    // Create the booking
-    const { data: bookingData, error } = await supabase
-      .from('appointment_bookings')
+    // Create the participant record
+    const { data: participantData, error } = await supabase
+      .from('appointments_participants')
       .insert({
         appointment_id: appointmentId,
         user_id: userId,
-        status: 'confirmed',
       })
       .select()
       .single();
 
     if (error) {
-      // Check if the error is because the appointment_bookings table doesn't exist
+      // Check if the error is because the appointments_participants table doesn't exist
       if (error.code === '42P01') {
         throw new Error('The booking system is currently unavailable. Please contact the administrator.');
       }
@@ -261,51 +263,37 @@ export async function bookAppointment(appointmentId: string, userId: string) {
       }
     }
 
-    return bookingData as AppointmentBooking;
+    return participantData as AppointmentBooking;
   } catch (error) {
     console.error('Error in bookAppointment:', error);
     throw error;
   }
 }
 
-export async function cancelBooking(bookingId: string) {
+export async function cancelBooking(appointmentId: string, userId: string) {
   try {
-    // Get the appointment_id first
-    const { data: booking, error: fetchError } = await supabase
-      .from('appointment_bookings')
-      .select('appointment_id')
-      .eq('id', bookingId)
-      .single();
-
-    if (fetchError) {
-      // Check if the error is because the appointment_bookings table doesn't exist
-      if (fetchError.code === '42P01') {
-        throw new Error('The booking system is currently unavailable. Please contact the administrator.');
-      }
-      throw new Error(`Failed to fetch booking: ${fetchError.message}`);
-    }
-
-    if (!booking) {
-      throw new Error('Booking not found');
-    }
-
-    // Update the booking status
+    // Delete the participant record directly
     const { data, error } = await supabase
-      .from('appointment_bookings')
-      .update({ status: 'cancelled' })
-      .eq('id', bookingId)
+      .from('appointments_participants')
+      .delete()
+      .eq('appointment_id', appointmentId)
+      .eq('user_id', userId)
       .select()
       .single();
 
     if (error) {
-      throw new Error(`Failed to update booking: ${error.message}`);
+      // Check if the error is because the appointments_participants table doesn't exist
+      if (error.code === '42P01') {
+        throw new Error('The booking system is currently unavailable. Please contact the administrator.');
+      }
+      throw new Error(`Failed to cancel booking: ${error.message}`);
     }
 
     // Get the current appointment data
     const { data: appointmentData, error: fetchAppointmentError } = await supabase
       .from('appointments')
       .select('current_participants, max_participants')
-      .eq('id', booking.appointment_id)
+      .eq('id', appointmentId)
       .single();
     
     if (fetchAppointmentError) {
@@ -326,7 +314,7 @@ export async function cancelBooking(bookingId: string) {
         current_participants: newParticipants,
         updated_at: new Date().toISOString()
       })
-      .eq('id', booking.appointment_id);
+      .eq('id', appointmentId);
     
     if (updateError) {
       throw new Error(`Failed to update appointment: ${updateError.message}`);

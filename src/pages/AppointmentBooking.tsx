@@ -106,14 +106,14 @@ const AppointmentBookingPage = () => {
           console.error('Error checking roles:', roleError);
         }
         
-        // Check if the appointment_bookings table exists 
+        // Check if the appointments_participants table exists 
         const { error } = await supabase
-          .from('appointment_bookings')
+          .from('appointments_participants')
           .select('count')
           .limit(1);
           
         if (error) {
-          console.error('Error accessing appointment_bookings table:', error);
+          console.error('Error accessing appointments_participants table:', error);
           if (error.code === '42P01') {
             // Table doesn't exist, but we can still show available appointments
             setBookingEnabled(false);
@@ -193,9 +193,13 @@ const AppointmentBookingPage = () => {
     }
   };
 
-  const handleCancel = async (bookingId: string) => {
+  const handleCancel = async (appointmentId: string) => {
     try {
-      await cancelBooking(bookingId);
+      if (!user?.id) {
+        toast.error('User not authenticated');
+        return;
+      }
+      await cancelBooking(appointmentId, user.id);
       await loadData();
       toast.success('Booking cancelled successfully');
     } catch (error) {
@@ -338,7 +342,7 @@ const AppointmentBookingPage = () => {
             <div className="space-y-4">
               {userBookings.map((booking) => (
                 <div
-                  key={booking.id}
+                  key={`${booking.appointment_id}-${booking.user_id}`}
                   className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
                 >
                   <div className="flex items-center justify-between">
@@ -356,31 +360,16 @@ const AppointmentBookingPage = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${
-                        booking.status === 'confirmed'
-                          ? 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400'
-                          : 'bg-error-100 text-error-800 dark:bg-error-900/30 dark:text-error-400'
-                      }`}>
-                        {booking.status === 'confirmed' ? (
-                          <>
-                            <Check size={14} />
-                            <span>Confirmed</span>
-                          </>
-                        ) : (
-                          <>
-                            <X size={14} />
-                            <span>Cancelled</span>
-                          </>
-                        )}
+                      <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400">
+                        <Check size={14} />
+                        <span>Confirmed</span>
                       </span>
-                      {booking.status === 'confirmed' && (
-                        <button
-                          onClick={() => handleCancel(booking.id)}
-                          className="btn btn-outline text-error-600 hover:bg-error-50 hover:text-error-700 dark:text-error-400 dark:hover:bg-error-900/30 dark:hover:text-error-300"
-                        >
-                          Cancel
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleCancel(booking.appointment_id)}
+                        className="btn btn-outline text-error-600 hover:bg-error-50 hover:text-error-700 dark:text-error-400 dark:hover:bg-error-900/30 dark:hover:text-error-300"
+                      >
+                        Cancel
+                      </button>
                     </div>
                   </div>
 
