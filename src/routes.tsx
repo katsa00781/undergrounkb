@@ -17,6 +17,7 @@ const ExerciseDetail = lazy(() => import('./pages/ExerciseDetail'));
 const FMSAssessment = lazy(() => import('./pages/FMSAssessment'));
 const UserManagement = lazy(() => import('./pages/UserManagement'));
 const AppointmentManager = lazy(() => import('./pages/AppointmentManager'));
+const TestAuth = lazy(() => import('./pages/TestAuth'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 interface AppRoutesProps {
@@ -54,6 +55,7 @@ export const AppRoutes = ({ userRole }: AppRoutesProps) => {
         <Route path="/login" element={
           userRole !== 'anonymous' ? <Navigate to="/dashboard" replace /> : <Login />
         } />
+        <Route path="/test-auth" element={<TestAuth />} />
 
         {/* Protected routes */}
         <Route element={

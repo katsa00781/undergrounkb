@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, BarChart2, TrendingUp, Activity, Dumbbell } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -29,20 +29,7 @@ const Dashboard = () => {
     setGreeting(getGreeting());
   }, []);
 
-  useEffect(() => {
-    if (user?.id) {
-      loadDashboardData();
-    }
-    
-    // Check connection status
-    const checkConnection = async () => {
-      await connectionManager.checkConnection();
-    };
-    
-    checkConnection();
-  }, [user]);
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -52,6 +39,9 @@ const Dashboard = () => {
         getLatestFMSAssessment(user.id),
         getUserBookings(user.id)
       ]);
+      
+      console.log('Weights data loaded:', weightsData); // Debug log
+      console.log('User ID:', user.id); // Debug log
       setWeights(weightsData);
       setLatestFMS(fmsData);
       
@@ -71,17 +61,32 @@ const Dashboard = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user?.id) {
+      loadDashboardData();
+    }
+    
+    // Check connection status
+    const checkConnection = async () => {
+      await connectionManager.checkConnection();
+    };
+    
+    checkConnection();
+  }, [user, loadDashboardData]);
 
   // Calculate weight progress
   const latestWeight = weights.length > 0 ? weights[weights.length - 1].weight : null;
   const monthAgoWeight = weights.find(w => 
-    new Date(w.date) <= subDays(new Date(), 30)
+    w.date && new Date(w.date) <= subDays(new Date(), 30)
   )?.weight;
   
   const weightChange = latestWeight && monthAgoWeight 
     ? latestWeight - monthAgoWeight 
     : null;
+
+  console.log('Dashboard weight data:', { latestWeight, monthAgoWeight, weightChange, weights }); // Debug log
 
   const getFMSColor = (score: number) => {
     if (score >= 3) return 'text-success-600 dark:text-success-400';
@@ -132,6 +137,14 @@ const Dashboard = () => {
               <p className="text-2xl font-semibold text-gray-900 dark:text-white">
                 {latestWeight ? `${latestWeight} kg` : '—'}
               </p>
+              {!latestWeight && (
+                <Link 
+                  to="/progress" 
+                  className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  Súly hozzáadása →
+                </Link>
+              )}
             </div>
           </div>
         </div>

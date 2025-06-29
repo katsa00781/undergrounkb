@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { connectionManager, supabase } from '../../config/supabase';
 import { AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
 
@@ -13,50 +13,8 @@ const ConnectionTest = ({ onConnectionChange }: ConnectionTestProps) => {
   const [showDetails, setShowDetails] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    testConnection();
-  }, []);
-
-  const testConnection = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Check connection using the unified manager
-      const isConnected = await connectionManager.checkConnection();
-      setIsConnected(isConnected);
-      setConnectionStatus(connectionManager.getConnectionStatus());
-      
-      // Generate diagnostic info
-      const info = await generateDiagnosticInfo();
-      setDiagnosticInfo(info);
-      
-      // Notify parent component about connection state
-      if (onConnectionChange) {
-        onConnectionChange(isConnected);
-      }
-    } catch (error) {
-      console.error('Error testing connection:', error);
-      setIsConnected(false);
-      
-      if (onConnectionChange) {
-        onConnectionChange(false);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (isConnected === null) {
-    return (
-      <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400">
-        <RefreshCw className="h-4 w-4 animate-spin" />
-        <span className="text-sm">Kapcsolat ellenőrzése...</span>
-      </div>
-    );
-  }
-
-  // Generate diagnostic information
-  const generateDiagnosticInfo = async (): Promise<string> => {
+  // Generate diagnostic information - wrap in useCallback
+  const generateDiagnosticInfo = useCallback(async (): Promise<string> => {
     try {
       let info = '=== Supabase Connection Diagnostics ===\n\n';
       
@@ -84,8 +42,58 @@ const ConnectionTest = ({ onConnectionChange }: ConnectionTestProps) => {
     } catch (error) {
       return `Error generating diagnostic info: ${error instanceof Error ? error.message : String(error)}`;
     }
-  };
-  
+  }, [connectionStatus]);
+
+  const testConnection = useCallback(async () => {
+    console.log('ConnectionTest: testConnection called');
+    try {
+      setIsLoading(true);
+      
+      // Check connection using the unified manager
+      const isConnected = await connectionManager.checkConnection();
+      setIsConnected(isConnected);
+      setConnectionStatus(connectionManager.getConnectionStatus());
+      
+      // Generate diagnostic info
+      console.log('ConnectionTest: Calling generateDiagnosticInfo');
+      const info = await generateDiagnosticInfo();
+      setDiagnosticInfo(info);
+      
+      // Notify parent component about connection state
+      if (onConnectionChange) {
+        onConnectionChange(isConnected);
+      }
+    } catch (error) {
+      console.error('Error testing connection:', error);
+      setIsConnected(false);
+      
+      if (onConnectionChange) {
+        onConnectionChange(false);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [onConnectionChange, generateDiagnosticInfo]);
+
+  useEffect(() => {
+    // Add a longer delay to ensure proper initialization
+    const timer = setTimeout(() => {
+      console.log('ConnectionTest: Starting connection test after delay');
+      testConnection();
+    }, 1000); // Increased delay from 500ms to 1000ms
+    
+    return () => clearTimeout(timer);
+  }, [testConnection]);
+
+  if (isConnected === null) {
+    return (
+      <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400">
+        <RefreshCw className="h-4 w-4 animate-spin" />
+        <span className="text-sm">Kapcsolat ellenőrzése...</span>
+      </div>
+    );
+  }
+
   // Check if there are policy recursion issues
   const hasPolicyRecursion = diagnosticInfo.includes('infinite recursion') || 
                             diagnosticInfo.includes('policy recursion') ||

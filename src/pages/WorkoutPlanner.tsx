@@ -56,7 +56,18 @@ const WorkoutPlanner = () => {
     exercises: SectionExercise[];
   };
   
-  const [sections, setSections] = useState<Section[]>([{ id: '1', name: 'Main Workout', exercises: [{ id: '1' }] }]);
+  const [sections, setSections] = useState<Section[]>([{ 
+    id: '1', 
+    name: 'Main Workout', 
+    exercises: [{ 
+      id: '1',
+      sets: 3,
+      reps: 10,
+      weight: undefined,
+      notes: '',
+      restPeriod: undefined
+    }] 
+  }]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   // Change filters to be per exercise instead of per section
@@ -74,7 +85,17 @@ const WorkoutPlanner = () => {
   } = useForm<WorkoutFormData>({
     resolver: zodResolver(workoutSchema),
     defaultValues: {
-      sections: [{ name: 'Main Workout', exercises: [{ sets: 3, reps: 10 }] }],
+      sections: [{ 
+        name: 'Main Workout', 
+        exercises: [{ 
+          exerciseId: '',
+          sets: 3, 
+          reps: 10,
+          weight: undefined, // Explicitly set as optional
+          notes: '',
+          restPeriod: undefined
+        }] 
+      }],
     },
   });
 
@@ -152,7 +173,18 @@ const WorkoutPlanner = () => {
 
   const addSection = () => {
     const newSectionId = Date.now().toString();
-    setSections([...sections, { id: newSectionId, name: '', exercises: [{ id: '1' }] }]);
+    setSections([...sections, { 
+      id: newSectionId, 
+      name: '', 
+      exercises: [{ 
+        id: '1',
+        sets: 3,
+        reps: 10,
+        weight: undefined,
+        notes: '',
+        restPeriod: undefined
+      }] 
+    }]);
   };
 
   const removeSection = (sectionIndex: number) => {
@@ -164,11 +196,14 @@ const WorkoutPlanner = () => {
 
   const addExercise = (sectionIndex: number) => {
     const newSections = [...sections];
-    // Simply add a new exercise with a unique ID
+    // Add a new exercise with proper default values
     newSections[sectionIndex].exercises.push({ 
       id: Date.now().toString(),
       sets: 3,
-      reps: 10
+      reps: 10,
+      weight: undefined, // Explicitly undefined for optional weight
+      notes: '',
+      restPeriod: undefined
     });
     setSections(newSections);
   };
@@ -297,9 +332,14 @@ const WorkoutPlanner = () => {
               reps: typeof exercise.reps === 'string' && isNaN(Number(exercise.reps)) 
                 ? exercise.reps 
                 : (Number(exercise.reps) || 10),
-              weight: exercise.weight || undefined,
+              // Only set weight if it's a valid number, otherwise undefined
+              weight: (exercise.weight && !isNaN(Number(exercise.weight)) && Number(exercise.weight) > 0) 
+                ? Number(exercise.weight) 
+                : undefined,
               notes: exercise.instruction || undefined,
-              restPeriod: exercise.restPeriod || 60,
+              restPeriod: (exercise.restPeriod && !isNaN(Number(exercise.restPeriod)) && Number(exercise.restPeriod) > 0)
+                ? Number(exercise.restPeriod)
+                : undefined,
             };
           })
         };
@@ -621,14 +661,14 @@ const WorkoutPlanner = () => {
 
           <div>
             <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Notes
+              Notes <span className="text-gray-400 text-xs">(optional)</span>
             </label>
             <textarea
               {...register('notes')}
               id="notes"
               rows={3}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-              placeholder="Add any workout notes..."
+              placeholder="General workout notes or instructions (optional)"
             />
           </div>
         </div>
@@ -889,15 +929,17 @@ const WorkoutPlanner = () => {
                       {/* Weight */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Weight (kg)
+                          Weight (kg) <span className="text-gray-400 text-xs">(optional)</span>
                         </label>
                         <input
-                          {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.weight`, { valueAsNumber: true })}
+                          {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.weight`, { 
+                            setValueAs: (v) => v === '' || v === null || v === undefined ? undefined : Number(v)
+                          })}
                           type="number"
                           step="0.5"
                           min="0"
                           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                          placeholder="Optional"
+                          placeholder="Leave empty if bodyweight exercise"
                           value={exercise.weight || ''}
                           onChange={(e) => {
                             const newSections = [...sections];
@@ -910,14 +952,16 @@ const WorkoutPlanner = () => {
                       {/* Rest Period */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Rest (seconds)
+                          Rest (seconds) <span className="text-gray-400 text-xs">(optional)</span>
                         </label>
                         <input
-                          {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.restPeriod`, { valueAsNumber: true })}
+                          {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.restPeriod`, { 
+                            setValueAs: (v) => v === '' || v === null || v === undefined ? undefined : Number(v)
+                          })}
                           type="number"
                           min="0"
                           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                          placeholder="60"
+                          placeholder="e.g. 60 (default if empty)"
                           value={exercise.restPeriod || ''}
                           onChange={(e) => {
                             const newSections = [...sections];
@@ -930,13 +974,13 @@ const WorkoutPlanner = () => {
                       {/* Notes */}
                       <div className="sm:col-span-2 lg:col-span-1">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Notes
+                          Notes <span className="text-gray-400 text-xs">(optional)</span>
                         </label>
                         <input
                           {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.notes`)}
                           type="text"
                           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                          placeholder="Optional notes"
+                          placeholder="Additional exercise notes or instructions"
                           value={exercise.notes || ''}
                           onChange={(e) => {
                             const newSections = [...sections];
