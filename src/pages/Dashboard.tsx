@@ -41,6 +41,7 @@ const Dashboard = () => {
       ]);
       
       console.log('Weights data loaded:', weightsData); // Debug log
+      console.log('FMS data loaded:', fmsData); // Debug log
       console.log('User ID:', user.id); // Debug log
       setWeights(weightsData);
       setLatestFMS(fmsData);
@@ -177,12 +178,32 @@ const Dashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Legutóbbi FMS</p>
-                <p className={`text-2xl font-semibold ${getFMSColor(latestFMS.total_score)}`}>
-                  {latestFMS.total_score}/21
+                <p className={`text-2xl font-semibold ${getFMSColor(latestFMS.total_score || 0)}`}>
+                  {latestFMS.total_score || 0}/21
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {format(new Date(latestFMS.date), 'yyyy.MM.dd')}
+                  {format(new Date(latestFMS.created_at || new Date()), 'yyyy.MM.dd')}
                 </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!latestFMS && !isLoading && (
+          <div className="card animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            <div className="flex items-center">
+              <div className="rounded-full bg-gray-100 p-3 dark:bg-gray-700">
+                <Activity className="h-6 w-6 text-gray-400" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">FMS Értékelés</p>
+                <p className="text-lg text-gray-400">Nincs adat</p>
+                <Link
+                  to="/fms-assessment"
+                  className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400"
+                >
+                  Új értékelés készítése →
+                </Link>
               </div>
             </div>
           </div>

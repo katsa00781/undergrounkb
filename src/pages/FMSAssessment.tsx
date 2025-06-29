@@ -201,7 +201,6 @@ const FMSAssessment = () => {
 
       const assessment = {
         user_id: data.user_id,
-        date: new Date().toISOString().split('T')[0],
         deep_squat: data.deepSquat,
         hurdle_step: data.hurdleStep,
         inline_lunge: data.inlineLunge,

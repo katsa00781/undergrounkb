@@ -3,7 +3,6 @@ import { supabase } from '../config/supabase';
 export interface FMSAssessment {
   id: string;
   user_id: string;
-  date: string;
   deep_squat: number;
   hurdle_step: number;
   inline_lunge: number;
@@ -11,8 +10,9 @@ export interface FMSAssessment {
   active_straight_leg_raise: number;
   trunk_stability_pushup: number;
   rotary_stability: number;
-  total_score: number;
+  total_score?: number;
   notes?: string;
+  assessed_by?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -44,16 +44,28 @@ export async function createFMSAssessment(assessment: Omit<FMSAssessment, 'id' |
 }
 
 export async function getLatestFMSAssessment(userId: string) {
-  const { data, error } = await supabase
-    .from('fms_assessments')
-    .select('*')
-    .eq('user_id', userId)
-    .order('date', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  try {
+    console.log('Fetching latest FMS assessment for user:', userId);
+    
+    const { data, error } = await supabase
+      .from('fms_assessments')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-  if (error) throw error;
-  return data as FMSAssessment | null;
+    if (error) {
+      console.error('Error fetching latest FMS assessment:', error);
+      throw error;
+    }
+    
+    console.log('Latest FMS assessment result:', data);
+    return data as FMSAssessment | null;
+  } catch (error) {
+    console.error('Exception in getLatestFMSAssessment:', error);
+    throw error;
+  }
 }
 
 export async function getFMSAssessments(userId: string) {
