@@ -17,15 +17,15 @@ const ConnectionTest = ({ onConnectionChange }: ConnectionTestProps) => {
   const generateDiagnosticInfo = useCallback(async (): Promise<string> => {
     try {
       let info = '=== Supabase Connection Diagnostics ===\n\n';
-      
+
       // Connection status
       info += `Connection Status: ${connectionStatus}\n\n`;
-      
+
       // Environment variables check
       info += 'Environment Variables:\n';
       info += `- VITE_SUPABASE_URL: ${import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Missing'}\n`;
       info += `- VITE_SUPABASE_ANON_KEY: ${import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Set' : 'Missing'}\n\n`;
-      
+
       // Check auth state
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       info += 'Auth State:\n';
@@ -37,7 +37,7 @@ const ConnectionTest = ({ onConnectionChange }: ConnectionTestProps) => {
           info += `- User: ${session.user.email}\n`;
         }
       }
-      
+
       return info;
     } catch (error) {
       return `Error generating diagnostic info: ${error instanceof Error ? error.message : String(error)}`;
@@ -45,20 +45,20 @@ const ConnectionTest = ({ onConnectionChange }: ConnectionTestProps) => {
   }, [connectionStatus]);
 
   const testConnection = useCallback(async () => {
-    console.log('ConnectionTest: testConnection called');
+
     try {
       setIsLoading(true);
-      
+
       // Check connection using the unified manager
       const isConnected = await connectionManager.checkConnection();
       setIsConnected(isConnected);
       setConnectionStatus(connectionManager.getConnectionStatus());
-      
+
       // Generate diagnostic info
-      console.log('ConnectionTest: Calling generateDiagnosticInfo');
+
       const info = await generateDiagnosticInfo();
       setDiagnosticInfo(info);
-      
+
       // Notify parent component about connection state
       if (onConnectionChange) {
         onConnectionChange(isConnected);
@@ -66,7 +66,7 @@ const ConnectionTest = ({ onConnectionChange }: ConnectionTestProps) => {
     } catch (error) {
       console.error('Error testing connection:', error);
       setIsConnected(false);
-      
+
       if (onConnectionChange) {
         onConnectionChange(false);
       }
@@ -78,10 +78,10 @@ const ConnectionTest = ({ onConnectionChange }: ConnectionTestProps) => {
   useEffect(() => {
     // Add a longer delay to ensure proper initialization
     const timer = setTimeout(() => {
-      console.log('ConnectionTest: Starting connection test after delay');
+
       testConnection();
     }, 1000); // Increased delay from 500ms to 1000ms
-    
+
     return () => clearTimeout(timer);
   }, [testConnection]);
 

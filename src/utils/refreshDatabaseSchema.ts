@@ -14,13 +14,12 @@ export async function refreshDatabaseSchema() {
       .from('profiles')
       .select('id')
       .limit(1);
-    
+
     if (error) {
       console.error('Error refreshing database schema:', error);
       return false;
     }
-    
-    console.log('Database schema cache refreshed successfully');
+
     return true;
   } catch (err) {
     console.error('Failed to refresh database schema cache:', err);

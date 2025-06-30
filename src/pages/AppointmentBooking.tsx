@@ -30,26 +30,20 @@ const AppointmentBookingPage = () => {
   // Define loadData using useCallback
   const loadData = useCallback(async () => {
     if (!user) return;
-    
+
     try {
-      console.log('Loading appointments data...');
-      console.log('User:', user);
+
       setIsLoading(true);
-      
-      console.log('Fetching available appointments...');
+
       const availableApptsPromise = getAvailableAppointments();
-      
-      console.log('Fetching user bookings for user ID:', user.id);
+
       const userBookingsPromise = getUserBookings(user.id);
-      
+
       const [appointments, bookings] = await Promise.all([
         availableApptsPromise,
         userBookingsPromise,
       ]);
-      
-      console.log('Available appointments:', appointments);
-      console.log('User bookings:', bookings);
-      
+
       setAvailableAppointments(appointments);
       setUserBookings(bookings);
     } catch (error) {
@@ -63,32 +57,27 @@ const AppointmentBookingPage = () => {
   }, [user]);
 
   useEffect(() => {
-    console.log('AppointmentBookingPage mounted');
-    console.log('Auth user:', user);
-    
+
     const checkAccess = async () => {
       try {
         if (!user) {
-          console.log('User not authenticated, redirecting to login');
+
           setAccessError('Authentication required');
           navigate('/login', { state: { from: location } });
           return false;
         }
-        
+
         // Get user role to ensure access rights
         try {
           // Debug: Override role check to allow any authenticated user to access
-          console.log('Bypassing role check temporarily for debugging');
-          
+
           // Először közvetlen lekérdezés a profiles táblában
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('role')
             .eq('id', user.id)
             .single();
-            
-          console.log('Profile data:', profileData);
-          
+
           if (profileError) {
             console.error('Error getting profile role:', profileError);
             console.warn('Could not determine user role, defaulting to "user"');
@@ -97,21 +86,20 @@ const AppointmentBookingPage = () => {
 
           // Debug: Temporarily force update the role in profiles and memory for testing
           // Figyelem: Ez csak ideiglenes tesztelésre szolgál!
-          // console.log('DEBUG: Temporarily updating user role to admin');
-          // await supabase
+          // // await supabase
           //   .from('profiles')
           //   .update({ role: 'admin' })
           //   .eq('id', user.id);
         } catch (roleError) {
           console.error('Error checking roles:', roleError);
         }
-        
+
         // Check if the appointments_participants table exists 
         const { error } = await supabase
           .from('appointments_participants')
           .select('count')
           .limit(1);
-          
+
         if (error) {
           console.error('Error accessing appointments_participants table:', error);
           if (error.code === '42P01') {
@@ -122,7 +110,7 @@ const AppointmentBookingPage = () => {
             return true;
           }
         }
-        
+
         // Always allow access for now (debug mode)
         return true;
       } catch (err) {
@@ -133,10 +121,10 @@ const AppointmentBookingPage = () => {
         setAccessChecked(true);
       }
     };
-    
+
     checkAccess().then(hasAccess => {
       if (hasAccess && user) {
-        console.log('User has access, loading data');
+
         loadData();
       }
     });
@@ -147,12 +135,12 @@ const AppointmentBookingPage = () => {
       toast.error('Booking is currently unavailable');
       return;
     }
-    
+
     try {
       await bookAppointment(appointmentId, user!.id);
       await loadData();
       toast.success('Appointment booked successfully!');
-      
+
       // Show notification about assigned workout
       toast((t) => (
         <div className="flex items-start gap-3">
@@ -225,7 +213,7 @@ const AppointmentBookingPage = () => {
       </div>
     );
   }
-  
+
   // Show access error if any
   if (accessError) {
     return (
@@ -279,7 +267,7 @@ const AppointmentBookingPage = () => {
         {/* Available Appointments */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Available Time Slots</h2>
-          
+
           {filteredAppointments.length > 0 ? (
             <div className="space-y-4">
               {filteredAppointments.map((appointment) => (
@@ -337,7 +325,7 @@ const AppointmentBookingPage = () => {
         {/* User's Bookings */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Your Bookings</h2>
-          
+
           {userBookings.length > 0 ? (
             <div className="space-y-4">
               {userBookings.map((booking) => (

@@ -37,7 +37,6 @@ export async function initializeSupabase(): Promise<boolean> {
       return false;
     }
 
-    console.log('Supabase initialized successfully');
     return true;
   } catch (error) {
     console.error('Error initializing Supabase:', error);
@@ -58,7 +57,7 @@ async function setupRealtimeSubscriptions() {
       if (payload.new && payload.old) {
         // Handle profile updates - no need to sync to users table anymore
         // All user data is now stored only in profiles table
-        console.log('Profile updated:', payload.new.id);
+
       }
     }
   );
@@ -97,7 +96,7 @@ export async function ensureUserProfile(): Promise<void> {
     // If no profile exists, create one
     if (!profile) {
       const userData = user.user_metadata || {};
-      
+
       const { error: insertError } = await supabase
         .from('profiles')
         .insert({
@@ -115,7 +114,6 @@ export async function ensureUserProfile(): Promise<void> {
       // Note: We no longer need to create records in the users table
       // All user data is now stored in the profiles table
 
-      console.log('Created new user profile');
     }
   } catch (error) {
     console.error('Error ensuring user profile:', error);

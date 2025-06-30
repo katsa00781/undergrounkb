@@ -21,12 +21,12 @@ export class SupabaseError extends Error {
 export async function handleSupabaseError(error: any) {
   const errorCode = error?.code || 'UNKNOWN_ERROR';
   const errorMessage = error?.message || 'An unknown error occurred';
-  
+
   console.error(`Supabase Error [${errorCode}]:`, error);
   if (typeof toastReact !== 'undefined') {
     toastReact.error(errorMessage);
   }
-  
+
   throw new SupabaseError(errorMessage, errorCode, error);
 }
 
@@ -37,7 +37,7 @@ export async function checkTableExists(tableName: string): Promise<boolean> {
       .from(tableName)
       .select('count')
       .limit(1);
-    
+
     if (error) {
       if (error.code === '42P01') { // Table does not exist
         return false;
@@ -48,7 +48,7 @@ export async function checkTableExists(tableName: string): Promise<boolean> {
       }
       throw error;
     }
-    
+
     return true;
   } catch (error) {
     console.error(`Error checking if table ${tableName} exists:`, error);
@@ -60,7 +60,7 @@ export async function checkTableExists(tableName: string): Promise<boolean> {
 // We now use only the profiles table for user data
 export async function syncProfileToUser(_id: string, _data: Record<string, unknown>): Promise<void> {
   // This function is kept for backward compatibility but does nothing
-  console.log('syncProfileToUser is deprecated, using only profiles table now');
+
   return;
 }
 
@@ -79,13 +79,13 @@ export async function retryOperation<T>(
     } catch (error: unknown) {
       const err = error as Error & { code?: string };
       retries++;
-      
+
       // Check if we've reached max retries or if the error is not retryable
       if (retries >= maxRetries || 
           (err.code && ['42P01', '42501', '23505'].includes(err.code))) {
         throw error;
       }
-      
+
       // Wait before retrying with exponential backoff
       await new Promise(resolve => setTimeout(resolve, delay));
       delay *= 2; // Exponential backoff
@@ -108,10 +108,9 @@ export async function getCurrentUser() {
 // Check if the Supabase connection is working
 export async function testSupabaseConnection(): Promise<boolean> {
   try {
-    console.log('\nTesting basic Supabase connection...');
 
     // Try to access the auth API
-    console.log('Testing Auth API...');
+
     const { error: authError } = await supabase.auth.getSession();
     if (authError) {
       console.error('Auth API error:', {
@@ -120,15 +119,14 @@ export async function testSupabaseConnection(): Promise<boolean> {
       });
       return false;
     }
-    console.log('Auth API test passed');
 
     // Try to access a table
-    console.log('\nTesting database access...');
+
     const { error: tableError } = await supabase
       .from('exercises')
       .select('count')
       .limit(1);
-    
+
     if (tableError) {
       // Ignore table not found errors and policy recursion errors
       if (tableError.code !== '42P01' && tableError.code !== '42P17') {
@@ -139,18 +137,18 @@ export async function testSupabaseConnection(): Promise<boolean> {
         });
         return false;
       }
-      
+
       if (tableError.code === '42P17') {
         console.warn('Policy recursion detected, but connection is working');
       } else if (tableError.code === '42P01') {
         console.warn('Table does not exist, but connection is working');
       }
     } else {
-      console.log('Database access test passed');
+
     }
 
     // Test RPC function availability (not functionality)
-    console.log('\nTesting RPC functions...');
+
     try {
       const { error: rpcError } = await supabase.rpc('decrement_participants', {
         appointment_id: '00000000-0000-0000-0000-000000000000'
@@ -163,10 +161,7 @@ export async function testSupabaseConnection(): Promise<boolean> {
       // P0001 - raise exception (business logic error)
       if (rpcError) {
         if (['42501', '42883', '42P17', 'P0001'].includes(rpcError.code)) {
-          console.log('RPC test: Expected error received (this is fine):', {
-            code: rpcError.code,
-            message: rpcError.message
-          });
+
         } else {
           console.error('RPC function error:', {
             code: rpcError.code,
@@ -176,14 +171,13 @@ export async function testSupabaseConnection(): Promise<boolean> {
           return false;
         }
       } else {
-        console.log('RPC function test passed');
+
       }
     } catch (error) {
       // Ignore RPC errors as they might be permission related
       console.warn('RPC test error (non-critical):', error);
     }
-    
-    console.log('\nAll basic connection tests passed!');
+
     return true;
   } catch (error) {
     console.error('Unexpected error during connection test:', {
@@ -215,7 +209,7 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
       variant: type === 'success' ? 'default' : 'destructive',
     });
   } else {
-    console.log(message);
+
   }
 };
 

@@ -29,9 +29,6 @@ try {
   }
 
   // Log environment status (helpful for debugging)
-  console.log('Environment variables status:');
-  console.log('- VITE_SUPABASE_URL:', supabaseUrl ? supabaseUrl : 'Missing');
-  console.log('- VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '********' : 'Missing');
 
   // Validate URL format
   if (supabaseUrl && !supabaseUrl.startsWith('https://')) {

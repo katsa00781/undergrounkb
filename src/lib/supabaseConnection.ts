@@ -33,20 +33,20 @@ export class SupabaseConnectionManager {
           supabase.from(table).select('count').limit(1)
         )
       );
-      
+
       const hasErrors = checks.some(result => 
         result.error && !['42P01', '42P17'].includes(result.error.code)
       );
-      
+
       if (!hasErrors && this.connectionStatus !== 'connected') {
         this.connectionStatus = 'connected';
         this.retryCount = 0;
         if (!this.isNodeEnvironment && typeof toast !== 'undefined') {
           toast.success('Database connection restored');
         }
-        console.log('Database connection restored');
+
       }
-      
+
       return !hasErrors;
     } catch (error) {
       await this.handleConnectionError(error);
@@ -56,7 +56,7 @@ export class SupabaseConnectionManager {
 
   private async handleConnectionError(error: any) {
     this.connectionStatus = 'disconnected';
-    
+
     if (this.retryCount < this.maxRetries) {
       this.retryCount++;
       const message = `Connection lost. Retrying (${this.retryCount}/${this.maxRetries})...`;
@@ -77,9 +77,9 @@ export class SupabaseConnectionManager {
 
   private async reconnect() {
     this.connectionStatus = 'connecting';
-    
+
     await new Promise(resolve => setTimeout(resolve, this.retryDelay * this.retryCount));
-    
+
     try {
       const isConnected = await this.checkConnection();
       if (!isConnected) {
@@ -92,7 +92,7 @@ export class SupabaseConnectionManager {
 
   private startConnectionMonitoring() {
     if (this.isNodeEnvironment) return;
-    
+
     // Check connection every 30 seconds
     this.connectionCheckInterval = setInterval(async () => {
       await this.checkConnection();

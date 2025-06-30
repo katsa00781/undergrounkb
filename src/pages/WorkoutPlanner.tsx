@@ -116,7 +116,6 @@ const WorkoutPlanner = () => {
   const onSubmit = async (data: WorkoutFormData) => {
     try {
       setIsLoading(true);
-      console.log('Form data to submit:', JSON.stringify(data, null, 2));
       
       if (!user) {
         throw new Error('User is not logged in');
@@ -149,14 +148,11 @@ const WorkoutPlanner = () => {
         }
       }
       
-      console.log('Calling createWorkout with user_id:', user.id);
-      
-      const savedWorkout = await createWorkout({
+      await createWorkout({
         ...data,
         user_id: user.id,
       });
 
-      console.log('Workout saved successfully:', savedWorkout);
       toast.success('Workout saved successfully');
       reset();
       setSections([{ id: '1', name: 'Main Workout', exercises: [{ id: '1' }] }]);
@@ -265,7 +261,6 @@ const WorkoutPlanner = () => {
 
   // Automatikusan beállítja a mozgásminta szűrőt a placeholder gyakorlat alapján
   const setMovementPatternForPlaceholder = (sectionId: string, exerciseId: string, placeholderId: string) => {
-    console.log(`Setting movement pattern for placeholder: ${placeholderId}, section: ${sectionId}, exercise: ${exerciseId}`);
     let movementPattern = '';
     
     // Térddominás gyakorlatok
@@ -302,30 +297,23 @@ const WorkoutPlanner = () => {
     } 
     // FMS korrekciók
     else if (placeholderId.includes('fms')) {
-      movementPattern = 'mobilization'; // FMS korrekciós gyakorlatok általában mobilizációsak
+      movementPattern = 'mobilization';
     }
     // Gait és core gyakorlatok
     else if (placeholderId.includes('gait')) {
-      movementPattern = 'mobilization'; // Gait gyakorlatok általában mobilizációsak
+      movementPattern = 'mobilization';
     }
     // Rehabilitációs gyakorlatok
     else if (placeholderId.includes('rehab')) {
-      movementPattern = 'mobilization'; // Rehab gyakorlatok általában mobilizációsak
+      movementPattern = 'mobilization';
     }
-    
-    console.log(`Determined movement pattern: ${movementPattern}`);
     
     if (movementPattern) {
       const exerciseKey = getExerciseKey(sectionId, exerciseId);
-      console.log(`Setting filter with key: ${exerciseKey} to pattern: ${movementPattern}`);
-      setMovementPatternFilters(prev => {
-        const newFilters = {
-          ...prev,
-          [exerciseKey]: movementPattern,
-        };
-        console.log('Updated movement pattern filters:', newFilters);
-        return newFilters;
-      });
+      setMovementPatternFilters(prev => ({
+        ...prev,
+        [exerciseKey]: movementPattern,
+      }));
     }
   };
 

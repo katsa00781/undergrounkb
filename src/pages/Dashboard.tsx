@@ -25,13 +25,13 @@ const Dashboard = () => {
       if (hour < 18) return 'Jó napot';
       return 'Jó estét';
     };
-    
+
     setGreeting(getGreeting());
   }, []);
 
   const loadDashboardData = useCallback(async () => {
     if (!user) return;
-    
+
     try {
       setIsLoading(true);
       const [weightsData, fmsData, bookingsData] = await Promise.all([
@@ -39,13 +39,13 @@ const Dashboard = () => {
         getLatestFMSAssessment(user.id),
         getUserBookings(user.id)
       ]);
-      
-      console.log('Weights data loaded:', weightsData); // Debug log
-      console.log('FMS data loaded:', fmsData); // Debug log
-      console.log('User ID:', user.id); // Debug log
+
+      // Debug log
+      // Debug log
+      // Debug log
       setWeights(weightsData);
       setLatestFMS(fmsData);
-      
+
       // Csak a jövőbeli foglalásokat jelenítjük meg
       const upcoming = bookingsData
         .filter(booking => 
@@ -55,7 +55,7 @@ const Dashboard = () => {
         .sort((a, b) => 
           new Date(a.appointments.start_time).getTime() - new Date(b.appointments.start_time).getTime()
         );
-      
+
       setUpcomingBookings(upcoming);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -68,12 +68,12 @@ const Dashboard = () => {
     if (user?.id) {
       loadDashboardData();
     }
-    
+
     // Check connection status
     const checkConnection = async () => {
       await connectionManager.checkConnection();
     };
-    
+
     checkConnection();
   }, [user, loadDashboardData]);
 
@@ -82,12 +82,12 @@ const Dashboard = () => {
   const monthAgoWeight = weights.find(w => 
     w.date && new Date(w.date) <= subDays(new Date(), 30)
   )?.weight;
-  
+
   const weightChange = latestWeight && monthAgoWeight 
     ? latestWeight - monthAgoWeight 
     : null;
 
-  console.log('Dashboard weight data:', { latestWeight, monthAgoWeight, weightChange, weights }); // Debug log
+  // Debug log
 
   const getFMSColor = (score: number) => {
     if (score >= 3) return 'text-success-600 dark:text-success-400';
@@ -122,7 +122,7 @@ const Dashboard = () => {
           <p className="mt-1 text-gray-600 dark:text-gray-400">Üdvözöljük az edzésnaplóban</p>
         </div>
       </div>
-      
+
       {/* Adatbázis kapcsolat teszt */}
       <ConnectionTest />
 
@@ -149,7 +149,7 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="card animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <div className="flex items-center">
             <div className="rounded-full bg-success-100 p-3 dark:bg-success-900">
@@ -408,7 +408,7 @@ const Dashboard = () => {
           <Calendar className="mb-2 h-8 w-8 text-primary-600 dark:text-primary-400" />
           <h3 className="font-semibold text-gray-900 dark:text-white">Időpontfoglalás</h3>
         </Link>
-        
+
         <Link
           to="/progress"
           className="flex flex-col items-center justify-center rounded-lg border border-gray-200 bg-white p-6 text-center shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
@@ -416,7 +416,7 @@ const Dashboard = () => {
           <BarChart2 className="mb-2 h-8 w-8 text-secondary-600 dark:text-secondary-400" />
           <h3 className="font-semibold text-gray-900 dark:text-white">Haladás követése</h3>
         </Link>
-        
+
         <Link
           to="/profile"
           className="flex flex-col items-center justify-center rounded-lg border border-gray-200 bg-white p-6 text-center shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"

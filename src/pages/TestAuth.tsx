@@ -16,7 +16,7 @@ const TestAuth = () => {
         email,
         password,
       });
-      
+
       if (error) {
         toast.error(error.message);
       } else {
@@ -36,7 +36,7 @@ const TestAuth = () => {
         email,
         password,
       });
-      
+
       if (error) {
         toast.error(error.message);
       } else {
@@ -89,10 +89,10 @@ const TestAuth = () => {
           toast.error('Error creating weight: ' + error.message);
           return;
         } else {
-          console.log('Created weight:', data);
+
         }
       }
-      
+
       toast.success('Test weights created successfully!');
     } catch {
       toast.error('Error creating test weights');
@@ -102,7 +102,7 @@ const TestAuth = () => {
   return (
     <div className="container py-8">
       <h1 className="text-2xl font-bold mb-6">Test Authentication</h1>
-      
+
       <div className="max-w-md space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Email</label>
@@ -114,7 +114,7 @@ const TestAuth = () => {
             disabled={loading}
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium mb-1">Password</label>
           <input
@@ -125,7 +125,7 @@ const TestAuth = () => {
             disabled={loading}
           />
         </div>
-        
+
         <div className="space-x-2">
           <button
             onClick={signUp}
@@ -134,7 +134,7 @@ const TestAuth = () => {
           >
             Sign Up
           </button>
-          
+
           <button
             onClick={signIn}
             disabled={loading}
@@ -142,7 +142,7 @@ const TestAuth = () => {
           >
             Sign In
           </button>
-          
+
           <button
             onClick={signOut}
             disabled={loading}

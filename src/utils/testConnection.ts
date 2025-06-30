@@ -24,10 +24,6 @@ export async function testConnection(): Promise<boolean> {
       key: process.env.VITE_SUPABASE_ANON_KEY || import.meta.env?.VITE_SUPABASE_ANON_KEY
     };
 
-    console.log('\nKörnyezeti változók ellenőrzése:');
-    console.log('- VITE_SUPABASE_URL:', envStatus.url ? envStatus.url : 'Hiányzik');
-    console.log('- VITE_SUPABASE_ANON_KEY:', envStatus.key ? '********' : 'Hiányzik');
-
     if (!envStatus.url || !envStatus.key) {
       console.error('\nHiányzó környezeti változók!');
       console.error('Kérem, ellenőrizze a .env fájlt és győződjön meg róla, hogy tartalmazza:');
@@ -49,11 +45,9 @@ export async function testConnection(): Promise<boolean> {
       return false;
     }
 
-    console.log('\nSupabase kapcsolat tesztelése...');
-    
     // Alapvető kapcsolat teszt
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
+
     if (sessionError) {
       console.error('\nHiba a session lekérdezése során:');
       console.error('- Hiba kód:', sessionError.status || 'N/A');
@@ -61,33 +55,26 @@ export async function testConnection(): Promise<boolean> {
       console.error('- Hiba részletek:', 'N/A');
       return false;
     }
-    
-    console.log('\nAuth session:', session ? 'Aktív' : 'Nincs');
+
     if (session) {
-      console.log('- User ID:', session.user.id);
-      console.log('- Email:', session.user.email);
-      console.log('- Token lejárat:', new Date(session.expires_at! * 1000).toLocaleString());
+
     }
-    
+
     // Részletes teszt futtatása
-    console.log('\nRészletes kapcsolat teszt futtatása...');
+
     const testResults = await runSupabaseConnectionTest();
     const formattedResults = formatTestResults(testResults);
-    
-    console.log('\nRészletes teszt eredmények:');
-    console.log(formattedResults);
-    
+
     // Ellenőrizzük, hogy van-e policy recursion hiba
     const hasPolicyRecursion = testResults.errors.some(error => 
       error.includes('infinite recursion') || error.includes('policy recursion')
     );
-    
+
     if (!testResults.success) {
       if (hasPolicyRecursion) {
         // Ha van policy recursion hiba, de egyébként működik a kapcsolat
         if (testResults.results.auth && testResults.results.database) {
-          console.log('\nFigyelmeztetés: A kapcsolat működik, de policy problémák vannak.');
-          console.log('Ez nem feltétlenül jelent problémát, csak azt jelzi, hogy egyes táblák jogosultsági beállításai komplexek.');
+
           if (typeof toast !== 'undefined') {
             toast('Adatbázis kapcsolat működik, de policy problémák vannak. Részletek a konzolban.', {
               icon: '⚠️',
@@ -118,8 +105,7 @@ export async function testConnection(): Promise<boolean> {
         return false;
       }
     }
-    
-    console.log('\nSikeres kapcsolat teszt!');
+
     if (typeof toast !== 'undefined') {
       toast.success('Adatbázis kapcsolat sikeres!');
     }
@@ -138,8 +124,7 @@ export async function testConnection(): Promise<boolean> {
 
 // Ha közvetlenül futtatjuk a fájlt
 if (typeof require !== 'undefined' && require.main === module) {
-  console.log('Supabase kapcsolat teszt indítása...\n');
-  
+
   // Várjuk meg a teszt befejezését és a folyamat kilépését
   (async () => {
     try {
@@ -163,12 +148,12 @@ if (typeof require !== 'undefined' && require.main === module) {
 export async function getDiagnosticInfo(): Promise<string> {
   try {
     let info = '=== Supabase Diagnosztika ===\n\n';
-    
+
     // Környezeti változók ellenőrzése
     info += 'Környezeti változók:\n';
     info += `- VITE_SUPABASE_URL: ${import.meta.env.VITE_SUPABASE_URL ? 'Beállítva' : 'Hiányzik'}\n`;
     info += `- VITE_SUPABASE_ANON_KEY: ${import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Beállítva' : 'Hiányzik'}\n\n`;
-    
+
     // Hálózati kapcsolat ellenőrzése
     info += 'Hálózati kapcsolat:\n';
     try {
@@ -177,7 +162,7 @@ export async function getDiagnosticInfo(): Promise<string> {
     } catch (error) {
       info += `- Supabase szerver elérése: Sikertelen (${error instanceof Error ? error.message : String(error)})\n`;
     }
-    
+
     // Auth állapot ellenőrzése
     info += '\nAuth állapot:\n';
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -190,12 +175,12 @@ export async function getDiagnosticInfo(): Promise<string> {
         info += `- Token lejárat: ${new Date(session.expires_at! * 1000).toLocaleString()}\n`;
       }
     }
-    
+
     // Táblák elérhetőségének ellenőrzése
     info += '\nTáblák elérhetősége:\n';
     const tables = ['profiles', 'users', 'exercises', 'workouts', 'appointments'];
     let policyRecursionDetected = false;
-    
+
     for (const table of tables) {
       try {
         const { error } = await supabase.from(table).select('count').limit(1);
@@ -213,7 +198,7 @@ export async function getDiagnosticInfo(): Promise<string> {
         info += `- ${table}: Kivétel (${error instanceof Error ? error.message : String(error)})\n`;
       }
     }
-    
+
     // Ha policy recursion hibát észleltünk, adjunk hozzá egy magyarázatot
     if (policyRecursionDetected) {
       info += '\nMegjegyzés a policy recursion hibákról:\n';
@@ -222,12 +207,12 @@ export async function getDiagnosticInfo(): Promise<string> {
       info += '- Az alkalmazás továbbra is működhet, de egyes funkciók korlátozottak lehetnek.\n';
       info += '- A probléma megoldásához a Supabase adatbázis adminisztrátorának módosítania kell a jogosultsági szabályokat.\n';
     }
-    
+
     // Részletes teszt futtatása
     info += '\nRészletes teszt eredmények:\n';
     const testResults = await runSupabaseConnectionTest();
     info += formatTestResults(testResults);
-    
+
     return info;
   } catch (error) {
     return `Hiba a diagnosztika során: ${error instanceof Error ? error.message : String(error)}`;

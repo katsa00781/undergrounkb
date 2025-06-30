@@ -14,7 +14,7 @@
     "diagnose:profile": "ts-node scripts/diagnose-profile-issue.ts",
     "fix:profile": "./fix-profile-columns.sh",
     "fix:profile:all": "./fix-profile-database.sh",
-    "fix:first-name": "./fix-first-name-column.sh", 
+    "fix:first-name": "./fix-first-name-column.sh",
     "reset:schema": "./reset-schema-cache.sh",
     "reset:schema:js": "ts-node scripts/reset-schema-cache.ts",
     "check:profile": "./check-profile-structure.sh"
@@ -28,6 +28,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.3.1",
+    "glob": "^11.0.3",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-chartjs-2": "^5.2.0",

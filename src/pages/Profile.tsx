@@ -28,7 +28,7 @@ const Profile = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [showSchemaFix, setShowSchemaFix] = useState(false);
-  
+
   // Clear error state on component mount
   useEffect(() => {
     setErrorMessage('');
@@ -55,19 +55,18 @@ const Profile = () => {
       experienceLevel: '',
     }
   });
-  
+
   // Use a ref to track initialization
   const initializedRef = useRef(false);
-  
+
   // Reset form when userProfile changes, with a more controlled approach
   useEffect(() => {
     // Do nothing if userProfile is not loaded yet
     if (!userProfile) return;
-    
+
     // Set form values only once when the profile first loads
     if (!initializedRef.current) {
-      console.log('[Profile] Setting initial form values from profile');
-      
+
       // Create a stable set of values for the form
       const formValues: ProfileFormData = {
         displayName: userProfile.displayName || '',
@@ -78,51 +77,51 @@ const Profile = () => {
         fitnessGoals: userProfile.fitnessGoals || [],
         experienceLevel: userProfile.experienceLevel || '',
       };
-      
+
       // Reset the form with these values
       reset(formValues);
-      
+
       // Mark as initialized
       initializedRef.current = true;
     }
   }, [userProfile, reset]);
-  
+
   // Form submission handler
   const onSubmit = async (data: ProfileFormData) => {
     // Clear any previous messages
     setSuccessMessage('');
     setErrorMessage('');
-    
+
     // Győződjünk meg róla, hogy a fitnessGoals tömb típusú
     const preparedData: ProfileFormData = {
       ...data,
       fitnessGoals: Array.isArray(data.fitnessGoals) ? data.fitnessGoals : []
     };
-    
-    console.log('Submitting form data:', preparedData);
-    
+
     try {
       // Auto-fix attempt for database schema issues
       if (errorMessage && errorMessage.includes('missing some profile fields')) {
-        console.log('Attempting to auto-fix database schema before submission...');
+
         try {
           // Try to run the fix script via fetch API
           await fetch('/api/fix-profile-schema', { method: 'POST' })
-            .catch(() => console.log('No server-side fix endpoint available, continuing with client-side'));
-        } catch (e) {
-          console.log('Auto-fix attempt failed, continuing with submission:', e);
+            .catch(() => {
+              // No server-side fix endpoint available, continuing with client-side
+            });
+        } catch {
+          // Auto-fix attempt failed, continuing with submission
         }
       }
-      
+
       // The useProfileProvider hook handles name splitting internally
       await updateUserProfile(preparedData);
       setSuccessMessage('Profile updated successfully');
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       console.error('Failed to update profile:', error);
-      
+
       // Set appropriate error message
       if (error instanceof Error) {
         if (error.message.includes('column') && error.message.includes('does not exist')) {
@@ -145,7 +144,7 @@ const Profile = () => {
       } else {
         setErrorMessage('An unexpected error occurred');
       }
-      
+
       // Clear error after 8 seconds
       setTimeout(() => setErrorMessage(''), 8000);
     }
@@ -302,7 +301,7 @@ const Profile = () => {
                   // Használjuk a Controller komponenst a komplex mezők kezeléséhez
                   const goalsArray = Array.isArray(watch('fitnessGoals')) ? watch('fitnessGoals') : [];
                   const isChecked = goalsArray.includes(goal);
-                  
+
                   return (
                     <label key={goal} className="flex items-center">
                       <input
@@ -392,7 +391,7 @@ const Profile = () => {
           </button>
         </div>
       </form>
-      
+
       {/* Schema Fix Notification */}
       <SchemaFixNotification 
         show={showSchemaFix}

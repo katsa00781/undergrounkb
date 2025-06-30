@@ -23,7 +23,6 @@ export async function testSupabaseQueries(): Promise<boolean> {
       return false;
     }
 
-    console.log('Supabase lekérdezések sikeresen lefutottak.');
     return true;
   } catch (error) {
     console.error('Hiba a Supabase lekérdezések tesztelése közben:', error);
@@ -35,9 +34,9 @@ export async function testSupabaseQueries(): Promise<boolean> {
 if (require.main === module) {
   testSupabaseQueries().then(success => {
     if (success) {
-      console.log('Supabase kapcsolat és lekérdezések rendben.');
+
     } else {
-      console.log('Supabase kapcsolat vagy lekérdezés hiba.');
+
     }
   });
 }

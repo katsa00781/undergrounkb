@@ -46,7 +46,7 @@ function App() {
       const isConnected = await connectionManager.checkConnection();
       setConnectionError(!isConnected);
     };
-    
+
     checkConnection();
   }, []);
 
@@ -61,7 +61,7 @@ function App() {
         }
 
         const role = await getCurrentUserRole();
-        console.log('User role in App:', role);
+
         setUserRole(role);
       } catch (error) {
         console.error('Error fetching user role:', error);

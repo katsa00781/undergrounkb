@@ -18,12 +18,11 @@ export interface FMSAssessment {
 }
 
 export async function createFMSAssessment(assessment: Omit<FMSAssessment, 'id' | 'created_at' | 'updated_at' | 'total_score'>) {
-  console.log('Creating FMS assessment:', assessment);
-  
+
   try {
     // Create a copy of the assessment object for the database operation
     const assessmentToInsert = { ...assessment };
-    
+
     const { data, error } = await supabase
       .from('fms_assessments')
       .insert(assessmentToInsert)
@@ -34,8 +33,7 @@ export async function createFMSAssessment(assessment: Omit<FMSAssessment, 'id' |
       console.error('Error inserting FMS assessment:', error);
       throw error;
     }
-    
-    console.log('FMS assessment created successfully:', data);
+
     return data as FMSAssessment;
   } catch (error) {
     console.error('Exception in createFMSAssessment:', error);
@@ -45,8 +43,7 @@ export async function createFMSAssessment(assessment: Omit<FMSAssessment, 'id' |
 
 export async function getLatestFMSAssessment(userId: string) {
   try {
-    console.log('Fetching latest FMS assessment for user:', userId);
-    
+
     const { data, error } = await supabase
       .from('fms_assessments')
       .select('*')
@@ -59,8 +56,7 @@ export async function getLatestFMSAssessment(userId: string) {
       console.error('Error fetching latest FMS assessment:', error);
       throw error;
     }
-    
-    console.log('Latest FMS assessment result:', data);
+
     return data as FMSAssessment | null;
   } catch (error) {
     console.error('Exception in getLatestFMSAssessment:', error);
@@ -70,8 +66,7 @@ export async function getLatestFMSAssessment(userId: string) {
 
 export async function getFMSAssessments(userId: string) {
   try {
-    console.log('Fetching FMS assessments for user:', userId);
-    
+
     const { data, error } = await supabase
       .from('fms_assessments')
       .select('*')
@@ -82,8 +77,7 @@ export async function getFMSAssessments(userId: string) {
       console.error('Error fetching FMS assessments:', error);
       throw error;
     }
-    
-    console.log(`Retrieved ${data?.length || 0} FMS assessments`);
+
     return data as FMSAssessment[];
   } catch (error) {
     console.error('Exception in getFMSAssessments:', error);
@@ -93,11 +87,9 @@ export async function getFMSAssessments(userId: string) {
 
 export async function getAllUsers() {
   try {
-    console.log('Fetching all users from profiles table');
-    
+
     // First, log the Supabase connection status
-    console.log('Supabase connection check...');
-    
+
     const { data, error } = await supabase
       .from('profiles')
       .select('id, email, full_name, role')
@@ -107,19 +99,11 @@ export async function getAllUsers() {
       console.error('Error fetching users:', error);
       throw error;
     }
-    
-    console.log(`Raw data from profiles table (${data.length} records):`, JSON.stringify(data, null, 2));
-    
+
     // Format the data to include a display name
     const formattedData = data.map(user => {
       // Log each user for debugging
-      console.log('User data from DB:', {
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name !== null ? `"${user.full_name}"` : 'null',
-        role: user.role
-      });
-      
+
       // Create a name with available information
       let displayName;
       if (user.full_name) {
@@ -129,9 +113,7 @@ export async function getAllUsers() {
       } else {
         displayName = `User ${user.id.slice(0, 8)}...`;
       }
-      
-      console.log(`Display name for ${user.id}: "${displayName}"`);
-      
+
       return {
         id: user.id,
         email: user.email,
@@ -139,8 +121,7 @@ export async function getAllUsers() {
         name: displayName // A kompatibilitás miatt megtartjuk
       };
     });
-    
-    console.log(`Formatted user data (${formattedData.length} records):`, JSON.stringify(formattedData, null, 2));
+
     return formattedData;
   } catch (error) {
     console.error('Exception in getAllUsers:', error);

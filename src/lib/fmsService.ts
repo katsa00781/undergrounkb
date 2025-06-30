@@ -50,7 +50,7 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
       variant: type === 'success' ? 'default' : 'destructive',
     });
   } else {
-    console.log(message);
+
   }
 };
 
@@ -65,7 +65,7 @@ function calculateTotalScore(assessment: CreateFMSAssessmentData): number {
     assessment.trunk_stability_pushup,
     Math.min(assessment.rotary_stability_left, assessment.rotary_stability_right)
   ];
-  
+
   return scores.reduce((sum, score) => sum + score, 0);
 }
 

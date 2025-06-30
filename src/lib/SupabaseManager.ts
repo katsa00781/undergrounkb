@@ -23,32 +23,32 @@ type RealtimePayload = {
 export class SupabaseManager {
   private static instance: SupabaseManager;
   private client: SupabaseClient;
-  
+
   // Connection monitoring
   private connectionStatus: 'connected' | 'disconnected' | 'connecting' = 'disconnected';
   private connectionCheckInterval: NodeJS.Timeout | null = null;
   private retryCount = 0;
   private maxRetries = 3;
   private retryDelay = 1000; // 1 second
-  
+
   // Realtime subscriptions
   private subscriptions: Map<string, RealtimeChannel> = new Map();
   private reconnectAttempts: Map<string, number> = new Map();
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000; // 1 second
-  
+
   // Sync queue
   private syncQueue: Map<string, SyncQueueItem> = new Map();
   private processingQueue = false;
   private offlineMode = false;
-  
+
   // Environment detection
   private isNodeEnvironment: boolean;
 
   private constructor(supabaseClient: SupabaseClient) {
     this.client = supabaseClient;
     this.isNodeEnvironment = typeof window === 'undefined';
-    
+
     if (!this.isNodeEnvironment) {
       this.startConnectionMonitoring();
       this.initializeOfflineDetection();
@@ -76,20 +76,20 @@ export class SupabaseManager {
           this.client.from(table).select('count').limit(1)
         )
       );
-      
+
       const hasErrors = checks.some(result => 
         result.error && !['42P01', '42P17'].includes(result.error.code)
       );
-      
+
       if (!hasErrors && this.connectionStatus !== 'connected') {
         this.connectionStatus = 'connected';
         this.retryCount = 0;
         if (!this.isNodeEnvironment && typeof toast !== 'undefined') {
           toast.success('Database connection restored');
         }
-        console.log('Database connection restored');
+
       }
-      
+
       return !hasErrors;
     } catch (connectionError) {
       await this.handleConnectionError(connectionError);
@@ -102,10 +102,10 @@ export class SupabaseManager {
    */
   private async handleConnectionError(error: unknown) {
     this.connectionStatus = 'disconnected';
-    
+
     // Log the actual error for debugging
     console.error('Database connection error:', error);
-    
+
     if (this.retryCount < this.maxRetries) {
       this.retryCount++;
       const message = `Connection lost. Retrying (${this.retryCount}/${this.maxRetries})...`;
@@ -129,9 +129,9 @@ export class SupabaseManager {
    */
   private async reconnect() {
     this.connectionStatus = 'connecting';
-    
+
     await new Promise(resolve => setTimeout(resolve, this.retryDelay * this.retryCount));
-    
+
     try {
       const isConnected = await this.checkConnection();
       if (!isConnected) {
@@ -147,7 +147,7 @@ export class SupabaseManager {
    */
   private startConnectionMonitoring() {
     if (this.isNodeEnvironment) return;
-    
+
     // Check connection every 30 seconds
     this.connectionCheckInterval = setInterval(async () => {
       await this.checkConnection();
@@ -182,13 +182,13 @@ export class SupabaseManager {
     try {
       // Create a channel with a specific name
       const channelName = `${channel}:${event}`;
-      
+
       // Create a subscription handler that can handle async operations
       const handleStatus = async (status: string) => {
         if (status === 'SUBSCRIBED') {
-          console.log(`Subscribed to ${channelName}`);
+
           this.reconnectAttempts.set(channelName, 0);
-          
+
           // We don't need to set up listeners here as they're already set up below
         } else if (status === 'CLOSED') {
           await this.handleSubscriptionDisconnect(channelName, event, callback);
@@ -197,10 +197,10 @@ export class SupabaseManager {
           await this.handleSubscriptionDisconnect(channelName, event, callback);
         }
       };
-      
+
       // Create the channel
       const subscription = this.client.channel(channelName);
-      
+
       // Set up the table change listener
       subscription.on(
         'broadcast',
@@ -209,7 +209,7 @@ export class SupabaseManager {
           callback(payload as RealtimePayload);
         }
       );
-      
+
       // Subscribe to the channel with our async handler
       await subscription.subscribe(handleStatus);
 

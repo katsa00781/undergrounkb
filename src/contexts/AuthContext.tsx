@@ -36,7 +36,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         setUser(session?.user ?? null);
-        
+
         // Ensure user profile exists if user is logged in
         if (session?.user) {
           await ensureUserProfileAuth(session.user);
@@ -54,12 +54,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
-      
+
       // Ensure user profile exists when auth state changes
       if (session?.user) {
         await ensureUserProfileAuth(session.user);
       }
-      
+
       setLoading(false);
     });
 
@@ -70,7 +70,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setLoading(true);
       setError(null);
-      
+
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (!authData.user) throw new Error('Failed to create user account');
 
       // Profile is automatically created by database trigger
-      console.log('User registered successfully');
+
       toast.success('Registration successful!');
     } catch (err) {
       const message = err instanceof AuthError ? err.message : 'Failed to register';
@@ -102,7 +102,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setLoading(true);
       setError(null);
-      
+
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -124,10 +124,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setLoading(true);
       setError(null);
-      
+
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      
+
       // Navigate to login page after successful logout
       navigate('/login');
       toast.success('Signed out successfully');
@@ -145,7 +145,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setLoading(true);
       setError(null);
-      
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });

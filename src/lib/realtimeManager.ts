@@ -32,7 +32,7 @@ export class RealtimeManager {
         })
         .subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
-            console.log(`Subscribed to ${channel}`);
+
             this.reconnectAttempts.set(channel, 0);
           } else if (status === 'CLOSED') {
             await this.handleDisconnect(channel, event, callback);

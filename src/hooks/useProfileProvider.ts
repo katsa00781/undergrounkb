@@ -35,19 +35,19 @@ async function verifyProfileSchema(): Promise<boolean> {
       .from('profiles')
       .select('id')
       .limit(1);
-    
+
     // If we can't even get the id, there's a more serious issue
     if (simpleError) {
       console.error('Basic profile table query failed:', simpleError);
       return false;
     }
-    
+
     // Now check for the full_name column specifically
     const { error: nameError } = await supabase
       .from('profiles')
       .select('full_name')
       .limit(1);
-    
+
     if (nameError) {
       // Check if the error is specifically about the missing column
       if (nameError.message.includes('does not exist')) {
@@ -57,18 +57,18 @@ async function verifyProfileSchema(): Promise<boolean> {
       }
       return false;
     }
-    
+
     // Check additional required columns
     const { error: additionalError } = await supabase
       .from('profiles')
       .select('height, weight, fitness_goals')
       .limit(1);
-    
+
     if (additionalError) {
       console.warn('Additional profile columns verification failed:', additionalError.message);
       return false;
     }
-    
+
     return true;
   } catch (err) {
     console.error('Error verifying profile schema:', err);
@@ -85,7 +85,7 @@ export const useProfileProvider = () => {
   useEffect(() => {
     const checkSchema = async () => {
       const isValid = await verifyProfileSchema();
-      
+
       if (!isValid) {
         // Use console.info instead of warn to avoid polluting error logs
         // This is expected behavior during initial load when columns might be missing
@@ -94,19 +94,15 @@ export const useProfileProvider = () => {
         console.info('Profile schema verification successful.');
       }
     };
-    
+
     checkSchema();
   }, []);
 
   // Debug profile properties
-  console.log('Profile object structure:', 
-    Object.keys(profile || {}).length > 0 
-      ? Object.keys(profile || {}) 
-      : 'Empty profile');
-  
+
   // Safely check for property existence
   const hasFullName = profile && 'full_name' in profile;
-  
+
   // Convert database profile to form data format
   const userProfile: ProfileFormData | null = profile ? {
     displayName: 
@@ -131,12 +127,10 @@ export const useProfileProvider = () => {
 
     try {
       setIsLoading(true);
-      
-      console.log('Form data to update:', data);
 
       // Use display name directly as full name
       let full_name: string | null = null;
-      
+
       if (data.displayName) {
         full_name = data.displayName.trim();
       }
@@ -144,17 +138,17 @@ export const useProfileProvider = () => {
       // Prepare the updates object with all fields
       // Make sure fitness_goals is always a valid array
       const fitnessGoalsArray = Array.isArray(data.fitnessGoals) ? data.fitnessGoals : [];
-      
+
       // If fitnessGoals array is empty, provide default values
       const backupGoals = ['Strength', 'Flexibility'].filter(g => !fitnessGoalsArray.includes(g));
-      
+
       // Verify schema but don't stop the operation if it fails
       const schemaValid = await verifyProfileSchema();
       if (!schemaValid) {
         console.info('Schema validation did not pass, but we will attempt to use fallback approaches');
         // We don't show toast error here anymore to reduce user confusion
       }
-      
+
       // Create the updates object based on what fields are available
       // Using our ProfileDatabaseUpdate type for type safety
       const updates: ProfileDatabaseUpdate = {
@@ -167,18 +161,15 @@ export const useProfileProvider = () => {
         experience_level: data.experienceLevel || null,
         updated_at: new Date().toISOString()
       };
-      
+
       // Add full name conditionally
       if (full_name !== null) {
         updates.full_name = full_name;
       }
-      
-      console.log('Updating profile with:', updates);
 
       // Try-Catch block specifically for the update operation
       try {
-        console.log('Attempting profile update with:', updates);
-        
+
         // First try with all fields
         let result = await supabase
           .from('profiles')
@@ -186,22 +177,21 @@ export const useProfileProvider = () => {
           .eq('id', user.id)
           .select()
           .single();
-        
+
         // If there's a schema error, try again with a reduced set of fields
         if (result.error && result.error.message.includes('column') && result.error.message.includes('does not exist')) {
           console.warn('Column error detected, trying with reduced field set:', result.error.message);
-          
+
           // Strip out the problematic fields based on the error message
           const errorField = result.error.message.match(/column ["']([^"']+)["']/)?.[1];
           if (errorField && errorField in updates) {
-            console.log(`Removing problematic field: ${errorField}`);
-            
+
             // Create a new object without the problematic field
             // Using explicit typing to avoid TypeScript errors
             const safeUpdates: ProfileDatabaseUpdate = Object.fromEntries(
               Object.entries(updates).filter(([key]) => key !== errorField)
             ) as ProfileDatabaseUpdate;
-            
+
             // Try again with the reduced field set
             result = await supabase
               .from('profiles')
@@ -211,15 +201,15 @@ export const useProfileProvider = () => {
               .single();
           }
         }
-        
+
         // Check if we still have an error
         if (result.error) {
           console.error('Database update error after retry:', result.error);
           throw result.error;
         }
-        
+
         const updatedProfile = result.data;
-        
+
         // Update the local profile state
         if (updatedProfile) {
           setProfile(updatedProfile);
@@ -230,11 +220,11 @@ export const useProfileProvider = () => {
         console.error('Error during profile update operation:', updateError);
         throw updateError; // Re-throw to be caught by the outer try-catch
       }
-      
+
       return null;
     } catch (error: unknown) {
       console.error('Error updating profile:', error);
-      
+
       // More user-friendly error message based on error type
       if (error instanceof Error) {
         if (error.message.includes('column') && error.message.includes('does not exist')) {
@@ -247,7 +237,7 @@ export const useProfileProvider = () => {
       } else {
         toast.error('Failed to update profile');
       }
-      
+
       return null;
     } finally {
       setIsLoading(false);

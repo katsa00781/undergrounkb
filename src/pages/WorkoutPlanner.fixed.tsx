@@ -37,7 +37,7 @@ type WorkoutFormData = z.infer<typeof workoutSchema>;
 const WorkoutPlanner = () => {
   const { user } = useAuth();
   const [exercises, setExercises] = useState<Exercise[]>([]);
-  
+
   type SectionExercise = { 
     id: string; 
     exerciseId?: string; 
@@ -49,13 +49,13 @@ const WorkoutPlanner = () => {
     notes?: string;
     restPeriod?: number;
   };
-  
+
   type Section = {
     id: string;
     name: string;
     exercises: SectionExercise[];
   };
-  
+
   const [sections, setSections] = useState<Section[]>([{ id: '1', name: 'Main Workout', exercises: [{ id: '1' }] }]);
   const [_isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -94,47 +94,43 @@ const WorkoutPlanner = () => {
   const _onSubmit = async (data: WorkoutFormData) => {
     try {
       setIsLoading(true);
-      console.log('Form data to submit:', JSON.stringify(data, null, 2));
-      
+
       if (!user) {
         throw new Error('User is not logged in');
       }
-      
+
       // Validate sections before saving
       if (!data.sections || data.sections.length === 0) {
         throw new Error('Workout must have at least one section');
       }
-      
+
       for (const section of data.sections) {
         if (!section.exercises || section.exercises.length === 0) {
           throw new Error(`Section "${section.name}" must have at least one exercise`);
         }
-        
+
         // Remove placeholder exercises before saving
         section.exercises = section.exercises.filter(exercise => 
           exercise.exerciseId && !exercise.exerciseId.startsWith('placeholder-')
         );
-        
+
         // Remove exerciseName field which is only used for UI display
         section.exercises.forEach(exercise => {
           if ('exerciseName' in exercise) {
             delete (exercise as {exerciseName?: string}).exerciseName;
           }
         });
-        
+
         if (section.exercises.length === 0) {
           throw new Error(`Section "${section.name}" must have at least one real exercise`);
         }
       }
-      
-      console.log('Calling createWorkout with user_id:', user.id);
-      
+
       const savedWorkout = await createWorkout({
         ...data,
         user_id: user.id,
       });
 
-      console.log('Workout saved successfully:', savedWorkout);
       toast.success('Workout saved successfully');
       reset();
       setSections([{ id: '1', name: 'Main Workout', exercises: [{ id: '1' }] }]);
@@ -183,14 +179,14 @@ const WorkoutPlanner = () => {
   const _getFilteredExercises = (sectionId: string) => {
     const selectedCategory = categoryFilters[sectionId];
     const selectedMovementPattern = movementPatternFilters[sectionId];
-    
+
     return exercises.filter(ex => {
       // Apply category filter
       const matchesCategory = !selectedCategory || ex.category.toLowerCase() === selectedCategory.toLowerCase();
-      
+
       // Apply movement pattern filter
       const matchesMovementPattern = !selectedMovementPattern || ex.movement_pattern === selectedMovementPattern;
-      
+
       return matchesCategory && matchesMovementPattern;
     });
   };
@@ -204,14 +200,14 @@ const WorkoutPlanner = () => {
         [sectionId]: newCategory,
       };
     });
-    
+
     // Reset movement pattern filter when category changes
     setMovementPatternFilters(prev => ({
       ...prev,
       [sectionId]: '', 
     }));
   };
-  
+
   const _updateMovementPatternFilter = (sectionId: string, movementPattern: string) => {
     setMovementPatternFilters(prev => ({
       ...prev,
@@ -224,11 +220,11 @@ const WorkoutPlanner = () => {
       toast.error('You must be logged in to generate a workout plan');
       return;
     }
-    
+
     try {
       setIsGenerating(true);
       setShowGenerateForm(false);
-      
+
       // Use the new V2 generator with program type support
       const generatedWorkout = await generateWorkoutPlanV2({
         userId: user.id,
@@ -237,7 +233,7 @@ const WorkoutPlanner = () => {
         includeWeights: true,
         adjustForFMS: true
       });
-      
+
       // Map the generated workout structure to our form structure
       const formattedSections = generatedWorkout.sections.map((section) => {
         return {
@@ -245,7 +241,7 @@ const WorkoutPlanner = () => {
           exercises: section.exercises.map(exercise => {
             // For placeholders, we need to save the name 
             const isPlaceholder = exercise.exerciseId.startsWith('placeholder-');
-            
+
             return {
               exerciseId: exercise.exerciseId,
               // For placeholders, store name to display it later
@@ -271,7 +267,7 @@ const WorkoutPlanner = () => {
         notes: generatedWorkout.notes || '',
         sections: formattedSections
       });
-      
+
       // Update sections state for UI rendering with names
       setSections(formattedSections.map((section, index) => ({
         id: (index + 1).toString(),
@@ -281,7 +277,7 @@ const WorkoutPlanner = () => {
           const exerciseDetails = exercise.exerciseId && !exercise.exerciseId.startsWith('placeholder-') 
             ? exercises.find(e => e.id === exercise.exerciseId) 
             : null;
-          
+
           return { 
             id: `${index + 1}-${exIndex + 1}`,
             ...exercise,
@@ -291,7 +287,7 @@ const WorkoutPlanner = () => {
           };
         })
       })));
-      
+
       toast.success('Workout plan generated successfully');
     } catch (error) {
       console.error('Failed to generate workout plan:', error);
@@ -309,7 +305,7 @@ const WorkoutPlanner = () => {
     <div className="container py-8">
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Workout Planner</h1>
-        
+
         <div className="mt-4 flex space-x-2 sm:mt-0">
           <button
             type="button"
@@ -329,7 +325,7 @@ const WorkoutPlanner = () => {
           <p className="mb-4 text-gray-600 dark:text-gray-400">
             Choose a workout program type and day to generate a structured training plan. Your workout will include exercises based on our program and any available FMS assessments.
           </p>
-          
+
           {/* Program Type Selection */}
           <div className="mb-6">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -383,7 +379,7 @@ const WorkoutPlanner = () => {
               </button>
             </div>
           </div>
-          
+
           {/* Workout Day Selection */}
           <div className="mb-4">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -427,7 +423,7 @@ const WorkoutPlanner = () => {
               ))}
             </div>
           </div>
-          
+
           {/* Program summary */}
           <div className="mb-6 mt-4 rounded bg-gray-50 p-3 dark:bg-gray-700">
             <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">

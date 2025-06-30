@@ -74,12 +74,9 @@ const FMSAssessment = () => {
   const loadUsers = async () => {
     try {
       setIsLoading(true);
-      console.log('Loading users for FMS assessment...');
-      
+
       const data = await getAllUsers();
-      console.log('Users loaded successfully:', data.length);
-      console.log('User data:', data);
-      
+
       if (data.length === 0) {
         console.warn('No users found in the database');
         toast('No users found in the database. Please add users first.', {
@@ -89,22 +86,22 @@ const FMSAssessment = () => {
       } else {
         // Log each user before setting state
         data.forEach(user => {
-          console.log(`User: ID=${user.id}, Email=${user.email}, Name="${user.full_name}"`);
+
         });
-        
+
         setUsers(data);
         toast.success(`Loaded ${data.length} user${data.length === 1 ? '' : 's'}`);
       }
     } catch (error) {
       console.error('Failed to load users:', error);
-      
+
       // Provide more helpful error message
       let errorMessage = 'Failed to load users';
       if (error instanceof Error) {
         errorMessage += `: ${error.message}`;
         console.error('Error details:', error);
       }
-      
+
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -113,7 +110,7 @@ const FMSAssessment = () => {
 
   // Define movement keys as a type to ensure type safety
   type MovementKey = keyof Omit<MovementScores, 'user_id' | 'notes'>;
-  
+
   const movements = [
     {
       id: 'deepSquat' as MovementKey,
@@ -197,7 +194,6 @@ const FMSAssessment = () => {
   const onSubmit = async (data: MovementScores) => {
     try {
       setIsSubmitting(true);
-      console.log('Submitting FMS assessment data:', data);
 
       const assessment = {
         user_id: data.user_id,
@@ -211,9 +207,8 @@ const FMSAssessment = () => {
         notes: data.notes || '',
       };
 
-      console.log('Formatted assessment data:', assessment);
       const result = await createFMSAssessment(assessment);
-      console.log('Assessment saved successfully:', result);
+
       toast.success('Assessment saved successfully');
       reset();
       setCurrentStep(0);
@@ -221,14 +216,14 @@ const FMSAssessment = () => {
     } catch (error) {
       console.error('Failed to save assessment:', error);
       let errorMessage = 'Failed to save assessment';
-      
+
       if (error instanceof Error) {
         errorMessage += `: ${error.message}`;
         console.error('Error details:', error);
       } else {
         console.error('Unknown error type:', error);
       }
-      
+
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -237,7 +232,7 @@ const FMSAssessment = () => {
 
   const currentMovement = movements[currentStep];
   const scores = watch();
-  
+
   // Calculate the total score by explicitly summing the movement scores
   const totalScore = 
     (typeof scores.deepSquat === 'number' ? scores.deepSquat : 0) +
@@ -303,7 +298,7 @@ const FMSAssessment = () => {
             Assess movement patterns and identify limitations
           </p>
         </div>
-        
+
         <button
           onClick={() => setShowInstructions(!showInstructions)}
           className="btn btn-outline inline-flex items-center gap-2"
@@ -413,7 +408,7 @@ const FMSAssessment = () => {
                     {users.map((user) => {
                       // Create a display string that shows whatever information is available
                       const displayName = user.full_name || user.email || `User ${user.id.slice(0, 8)}`;
-                      
+
                       return (
                         <option key={user.id} value={user.id}>
                           {displayName}
@@ -451,7 +446,7 @@ const FMSAssessment = () => {
                 // Type assertion is not needed as we've properly typed currentMovement.id
                 const currentScore = watch(currentMovement.id);
                 const isSelected = currentScore === score;
-                
+
                 return (
                   <button
                     key={score}
@@ -530,7 +525,7 @@ const FMSAssessment = () => {
             >
               Previous
             </button>
-            
+
             {currentStep < movements.length - 1 ? (
               <button
                 type="button"

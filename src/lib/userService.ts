@@ -18,7 +18,7 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
       variant: type === 'success' ? 'default' : 'destructive',
     });
   } else {
-    console.log(message);
+
   }
 };
 
@@ -116,7 +116,7 @@ export async function updateUserProfile(
   try {
     const isAdmin = await isCurrentUserAdmin();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+
     if (authError || !user) {
       showToast('You must be logged in to update profiles', 'error');
       return null;
