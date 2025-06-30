@@ -8,8 +8,7 @@ import {
   ExerciseCategory, 
   MovementPattern, 
   getExercises, 
-  deleteExercise, 
-  updateExercise 
+  deleteExercise
 } from '../lib/exerciseService';
 import ExerciseCard from '../components/exercises/ExerciseCard';
 import ExerciseForm from '../components/exercises/ExerciseForm';

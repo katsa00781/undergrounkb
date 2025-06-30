@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, Save, Trash2, GripVertical, Sparkles, RotateCw } from 'lucide-react';
+import { Sparkles, RotateCw } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { Exercise, getExercises } from '../lib/exercises';
+import { Exercise } from '../lib/exercises';
 import { createWorkout } from '../lib/workouts';
-import { getMovementPatterns } from '../lib/exerciseService';
+import { getExercises } from '../lib/exerciseService';
 import { WorkoutDay, generateWorkoutPlanV2, ProgramType } from '../lib/workoutGenerator.fixed';
 import toast from 'react-hot-toast';
 
@@ -57,7 +57,7 @@ const WorkoutPlanner = () => {
   };
   
   const [sections, setSections] = useState<Section[]>([{ id: '1', name: 'Main Workout', exercises: [{ id: '1' }] }]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [_isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [categoryFilters, setCategoryFilters] = useState<{ [sectionId: string]: string }>({});
   const [movementPatternFilters, setMovementPatternFilters] = useState<{ [sectionId: string]: string }>({});
@@ -66,9 +66,9 @@ const WorkoutPlanner = () => {
   const [showGenerateForm, setShowGenerateForm] = useState(false);
 
   const {
-    register,
-    handleSubmit,
-    formState: { errors },
+    register: _register,
+    handleSubmit: _handleSubmit,
+    formState: { errors: _errors },
     reset,
   } = useForm<WorkoutFormData>({
     resolver: zodResolver(workoutSchema),
@@ -91,7 +91,7 @@ const WorkoutPlanner = () => {
     }
   };
 
-  const onSubmit = async (data: WorkoutFormData) => {
+  const _onSubmit = async (data: WorkoutFormData) => {
     try {
       setIsLoading(true);
       console.log('Form data to submit:', JSON.stringify(data, null, 2));
@@ -149,19 +149,19 @@ const WorkoutPlanner = () => {
     }
   };
 
-  const addSection = () => {
+  const _addSection = () => {
     const newSectionId = Date.now().toString();
     setSections([...sections, { id: newSectionId, name: '', exercises: [{ id: '1' }] }]);
   };
 
-  const removeSection = (sectionIndex: number) => {
+  const _removeSection = (sectionIndex: number) => {
     setSections(sections.filter((_, i) => i !== sectionIndex));
     const newCategoryFilters = { ...categoryFilters };
     delete newCategoryFilters[sections[sectionIndex].id];
     setCategoryFilters(newCategoryFilters);
   };
 
-  const addExercise = (sectionIndex: number) => {
+  const _addExercise = (sectionIndex: number) => {
     const newSections = [...sections];
     // Simply add a new exercise with a unique ID
     newSections[sectionIndex].exercises.push({ 
@@ -172,15 +172,15 @@ const WorkoutPlanner = () => {
     setSections(newSections);
   };
 
-  const removeExercise = (sectionIndex: number, exerciseIndex: number) => {
+  const _removeExercise = (sectionIndex: number, exerciseIndex: number) => {
     const newSections = [...sections];
     newSections[sectionIndex].exercises = newSections[sectionIndex].exercises.filter((_, i) => i !== exerciseIndex);
     setSections(newSections);
   };
 
-  const categories = Array.from(new Set(exercises.map(ex => ex.category)));
+  const _categories = Array.from(new Set(exercises.map(ex => ex.category)));
 
-  const getFilteredExercises = (sectionId: string) => {
+  const _getFilteredExercises = (sectionId: string) => {
     const selectedCategory = categoryFilters[sectionId];
     const selectedMovementPattern = movementPatternFilters[sectionId];
     
@@ -195,7 +195,7 @@ const WorkoutPlanner = () => {
     });
   };
 
-  const updateCategoryFilter = (sectionId: string, category: string) => {
+  const _updateCategoryFilter = (sectionId: string, category: string) => {
     // Update category filter
     setCategoryFilters(prev => {
       const newCategory = category === prev[sectionId] ? '' : category;
@@ -212,7 +212,7 @@ const WorkoutPlanner = () => {
     }));
   };
   
-  const updateMovementPatternFilter = (sectionId: string, movementPattern: string) => {
+  const _updateMovementPatternFilter = (sectionId: string, movementPattern: string) => {
     setMovementPatternFilters(prev => ({
       ...prev,
       [sectionId]: movementPattern === prev[sectionId] ? '' : movementPattern,

@@ -71,7 +71,7 @@ function startSessionTimeout() {
   sessionTimeoutId = setTimeout(async () => {
     try {
       await supabase.auth.signOut();
-      toast.info('Session expired. Please sign in again.');
+      toast('Session expired. Please sign in again.', { icon: 'ℹ️' });
     } catch (error) {
       console.error('Error signing out:', error);
     }

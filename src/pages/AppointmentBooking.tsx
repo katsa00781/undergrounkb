@@ -23,7 +23,7 @@ const AppointmentBookingPage = () => {
   const [userBookings, setUserBookings] = useState<(AppointmentBooking & { appointments: Appointment })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string>('');
-  const [accessChecked, setAccessChecked] = useState(false);
+  const [_accessChecked, setAccessChecked] = useState(false);
   const [accessError, setAccessError] = useState<string | null>(null);
   const [bookingEnabled, setBookingEnabled] = useState(true); // Enable booking by default
 

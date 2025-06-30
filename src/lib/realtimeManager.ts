@@ -27,7 +27,7 @@ export class RealtimeManager {
     try {
       const subscription = supabase
         .channel(channel)
-        .on('presence', { event }, (payload) => {
+        .on('postgres_changes', { event: event as any, schema: 'public', table: channel }, (payload: any) => {
           callback(payload);
         })
         .subscribe(async (status) => {

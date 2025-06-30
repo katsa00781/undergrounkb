@@ -49,7 +49,7 @@ const Dashboard = () => {
       // Csak a jövőbeli foglalásokat jelenítjük meg
       const upcoming = bookingsData
         .filter(booking => 
-          booking.status === 'confirmed' && 
+          !booking.appointments.is_cancelled && 
           isFuture(parseISO(booking.appointments.start_time))
         )
         .sort((a, b) => 

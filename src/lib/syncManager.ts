@@ -44,7 +44,7 @@ export class SyncManager {
     window.addEventListener('offline', () => {
       this.offlineMode = true;
       if (typeof toast !== 'undefined') {
-        toast.warning('You are offline. Changes will be synced when connection is restored.');
+        toast('You are offline. Changes will be synced when connection is restored.', { icon: '⚠️' });
       }
     });
   }
@@ -91,7 +91,7 @@ export class SyncManager {
     }
   }
 
-  private async performSync(key: string, item: SyncQueueItem): Promise<void> {
+  private async performSync(_key: string, item: SyncQueueItem): Promise<void> {
     try {
       let error;
 

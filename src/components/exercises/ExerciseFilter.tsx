@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Search, Filter, X } from 'lucide-react';
-import type { ExerciseCategory, MovementPattern } from '../../lib/exerciseService';
 
 interface ExerciseFilterProps {
   categories: string[];

@@ -58,7 +58,7 @@ export async function testConnection(): Promise<boolean> {
       console.error('\nHiba a session lekérdezése során:');
       console.error('- Hiba kód:', sessionError.status || 'N/A');
       console.error('- Hiba üzenet:', sessionError.message);
-      console.error('- Hiba részletek:', sessionError.details || 'N/A');
+      console.error('- Hiba részletek:', 'N/A');
       return false;
     }
     

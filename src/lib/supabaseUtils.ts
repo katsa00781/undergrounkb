@@ -1,7 +1,6 @@
 import { supabase, getCurrentUserRole } from '../config/supabase';
 import { toast } from '../components/ui/use-toast';
-import { PostgrestError } from '@supabase/supabase-js';
-import { User } from '@supabase/supabase-js';
+import toastReact from 'react-hot-toast';
 
 /**
  * Utility functions for working with Supabase
@@ -24,8 +23,8 @@ export async function handleSupabaseError(error: any) {
   const errorMessage = error?.message || 'An unknown error occurred';
   
   console.error(`Supabase Error [${errorCode}]:`, error);
-  if (typeof toast !== 'undefined') {
-    toast.error(errorMessage);
+  if (typeof toastReact !== 'undefined') {
+    toastReact.error(errorMessage);
   }
   
   throw new SupabaseError(errorMessage, errorCode, error);
@@ -113,12 +112,11 @@ export async function testSupabaseConnection(): Promise<boolean> {
 
     // Try to access the auth API
     console.log('Testing Auth API...');
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const { error: authError } = await supabase.auth.getSession();
     if (authError) {
       console.error('Auth API error:', {
         code: authError.status,
-        message: authError.message,
-        details: authError.details
+        message: authError.message
       });
       return false;
     }

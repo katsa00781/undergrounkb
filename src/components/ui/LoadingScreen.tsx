@@ -14,7 +14,7 @@ const LoadingScreen = ({ message = 'Betöltés...' }: LoadingScreenProps) => {
         <h1 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">
           UGKettlebell Pro
         </h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">Betöltés...</p>
+        <p className="mt-2 text-gray-600 dark:text-gray-400">{message}</p>
       </div>
     </div>
   );

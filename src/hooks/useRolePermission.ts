@@ -6,7 +6,7 @@ import { getCurrentUserRole } from '../lib/users';
  * @returns Objektum, amely tartalmazza a felhasználó jogosultságait és a szerepkörét
  */
 export function useRolePermission() {
-  const [role, setRole] = useState<'admin' | 'user' | 'anonymous'>('anonymous');
+  const [role, setRole] = useState<'admin' | 'user' | 'anonymous' | 'disabled'>('anonymous');
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, Dumbbell, BarChart2, Trash2, Edit2, Plus, Filter } from 'lucide-react';
+import { Calendar, Clock, Dumbbell, BarChart2, Trash2, Edit2, Filter } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { getWorkouts, deleteWorkout, Workout } from '../lib/workouts';
 import { getExercises, Exercise } from '../lib/exercises';
@@ -11,7 +11,7 @@ const WorkoutLog = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [exercises, setExercises] = useState<{ [key: string]: Exercise }>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
+  const [_selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
   const [dateFilter, setDateFilter] = useState<string>('');
 
   useEffect(() => {
@@ -21,6 +21,8 @@ const WorkoutLog = () => {
   }, [user]);
 
   const loadData = async () => {
+    if (!user) return;
+    
     try {
       setIsLoading(true);
       const [workoutsData, exercisesData] = await Promise.all([

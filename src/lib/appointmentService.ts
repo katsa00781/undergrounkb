@@ -2,7 +2,6 @@ import { supabase } from '../config/supabase';
 import { toast } from '../components/ui/use-toast';
 import {
   Appointment,
-  AppointmentParticipant,
   CreateAppointmentData,
   UpdateAppointmentData,
   AppointmentWithParticipants
@@ -245,10 +244,12 @@ export async function getUserAppointments(): Promise<Appointment[]> {
     // Get appointments where the user is a participant
     const { data: participatingAppointments, error: participatingError } = await supabase
       .from('appointments')
-      .select('appointments.*')
-      .join('appointments_participants', { 'appointments.id': 'appointments_participants.appointment_id' })
+      .select(`
+        *,
+        appointments_participants!inner(user_id)
+      `)
       .eq('appointments_participants.user_id', userId)
-      .order('appointments.start_time', { ascending: true });
+      .order('start_time', { ascending: true });
 
     if (participatingError) {
       console.error('Error fetching participating appointments:', participatingError);

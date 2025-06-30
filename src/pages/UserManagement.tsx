@@ -16,7 +16,7 @@ const userSchema = z.object({
 type UserFormData = z.infer<typeof userSchema>;
 
 const UserManagement = () => {
-  const { user: currentUser } = useAuth();
+  const { user: _currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [showDisabled, setShowDisabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
