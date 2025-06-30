@@ -225,10 +225,10 @@ const WorkoutPlanner = () => {
     const selectedMovementPattern = movementPatternFilters[exerciseKey];
     
     return exercises.filter(ex => {
-      // Apply category filter
-      const matchesCategory = !selectedCategory || ex.category.toLowerCase() === selectedCategory.toLowerCase();
+      // Apply category filter - exact match (categories come from database, should match exactly)
+      const matchesCategory = !selectedCategory || ex.category === selectedCategory;
       
-      // Apply movement pattern filter
+      // Apply movement pattern filter - exact match
       const matchesMovementPattern = !selectedMovementPattern || ex.movement_pattern === selectedMovementPattern;
       
       return matchesCategory && matchesMovementPattern;
@@ -237,6 +237,7 @@ const WorkoutPlanner = () => {
 
   const updateCategoryFilter = (sectionId: string, exerciseId: string, category: string) => {
     const exerciseKey = getExerciseKey(sectionId, exerciseId);
+    
     // Update category filter
     setCategoryFilters(prev => {
       const newCategory = category === prev[exerciseKey] ? '' : category;
@@ -255,6 +256,7 @@ const WorkoutPlanner = () => {
   
   const updateMovementPatternFilter = (sectionId: string, exerciseId: string, movementPattern: string) => {
     const exerciseKey = getExerciseKey(sectionId, exerciseId);
+    
     setMovementPatternFilters(prev => ({
       ...prev,
       [exerciseKey]: movementPattern === prev[exerciseKey] ? '' : movementPattern,
@@ -263,36 +265,67 @@ const WorkoutPlanner = () => {
 
   // Automatikusan beállítja a mozgásminta szűrőt a placeholder gyakorlat alapján
   const setMovementPatternForPlaceholder = (sectionId: string, exerciseId: string, placeholderId: string) => {
+    console.log(`Setting movement pattern for placeholder: ${placeholderId}, section: ${sectionId}, exercise: ${exerciseId}`);
     let movementPattern = '';
     
+    // Térddominás gyakorlatok
     if (placeholderId.includes('terddom-bi')) {
       movementPattern = 'knee_dominant_bilateral';
     } else if (placeholderId.includes('terddom-uni')) {
       movementPattern = 'knee_dominant_unilateral';
-    } else if (placeholderId.includes('csipo-bi') || placeholderId.includes('csipo-uni')) {
-      movementPattern = placeholderId.includes('csipo-bi') ? 'hip_dominant_bilateral' : 'hip_dominant_unilateral';
-    } else if (placeholderId.includes('horiz-nyomas-bi')) {
+    } 
+    // Csípődominás gyakorlatok
+    else if (placeholderId.includes('csipo-bi')) {
+      movementPattern = 'hip_dominant_bilateral';
+    } else if (placeholderId.includes('csipo-uni')) {
+      movementPattern = 'hip_dominant_unilateral';
+    } 
+    // Horizontális nyomás
+    else if (placeholderId.includes('horiz-nyomas-bi')) {
       movementPattern = 'horizontal_push_bilateral';
     } else if (placeholderId.includes('horiz-nyomas-uni')) {
       movementPattern = 'horizontal_push_unilateral';
-    } else if (placeholderId.includes('vert-nyomas') || placeholderId.includes('vertikalis-nyomas')) {
-      movementPattern = 'vertical_push_bilateral';
-    } else if (placeholderId.includes('vert-huzas') || placeholderId.includes('vertikalis-huzas')) {
-      movementPattern = 'vertical_pull_bilateral';
-    } else if (placeholderId.includes('horiz-huzas-bi')) {
+    } 
+    // Horizontális húzás
+    else if (placeholderId.includes('horiz-huzas-bi')) {
       movementPattern = 'horizontal_pull_bilateral';
     } else if (placeholderId.includes('horiz-huzas-uni')) {
       movementPattern = 'horizontal_pull_unilateral';
-    } else if (placeholderId.includes('fms')) {
+    } 
+    // Vertikális nyomás
+    else if (placeholderId.includes('vert-nyomas')) {
+      movementPattern = 'vertical_push_bilateral';
+    } 
+    // Vertikális húzás
+    else if (placeholderId.includes('vert-huzas')) {
+      movementPattern = 'vertical_pull_bilateral';
+    } 
+    // FMS korrekciók
+    else if (placeholderId.includes('fms')) {
       movementPattern = 'mobilization'; // FMS korrekciós gyakorlatok általában mobilizációsak
     }
+    // Gait és core gyakorlatok
+    else if (placeholderId.includes('gait')) {
+      movementPattern = 'mobilization'; // Gait gyakorlatok általában mobilizációsak
+    }
+    // Rehabilitációs gyakorlatok
+    else if (placeholderId.includes('rehab')) {
+      movementPattern = 'mobilization'; // Rehab gyakorlatok általában mobilizációsak
+    }
+    
+    console.log(`Determined movement pattern: ${movementPattern}`);
     
     if (movementPattern) {
       const exerciseKey = getExerciseKey(sectionId, exerciseId);
-      setMovementPatternFilters(prev => ({
-        ...prev,
-        [exerciseKey]: movementPattern,
-      }));
+      console.log(`Setting filter with key: ${exerciseKey} to pattern: ${movementPattern}`);
+      setMovementPatternFilters(prev => {
+        const newFilters = {
+          ...prev,
+          [exerciseKey]: movementPattern,
+        };
+        console.log('Updated movement pattern filters:', newFilters);
+        return newFilters;
+      });
     }
   };
 
@@ -355,7 +388,7 @@ const WorkoutPlanner = () => {
       });
       
       // Update sections state for UI rendering with names
-      setSections(formattedSections.map((section, index) => ({
+      const newSections = formattedSections.map((section, index) => ({
         id: (index + 1).toString(),
         name: section.name,
         exercises: section.exercises.map((exercise, exIndex) => {
@@ -372,27 +405,23 @@ const WorkoutPlanner = () => {
                   (exercise.exerciseId?.startsWith('placeholder-') ? exercise.exerciseName : undefined)
           };
         })
-      })));
+      }));
+      
+      setSections(newSections);
 
-      // Automatikusan beállítjuk a mozgásminta szűrőket minden placeholder gyakorlathoz
-      // We need to use the sections state for this since formattedSections doesn't have IDs
+      // Clear existing filters before setting new ones
+      setCategoryFilters({});
+      setMovementPatternFilters({});
+      
+      // Set movement pattern filters for placeholders immediately after state update
+      // This needs to happen after setSections completes, so we use a timeout
       setTimeout(() => {
-        sections.forEach((section) => {
-          // Ellenőrizzük, hogy van-e placeholder gyakorlat ebben a szekcióban
-          const hasPlaceholder = section.exercises.some(exercise => 
-            exercise.exerciseId?.startsWith('placeholder-')
-          );
-          
-          if (hasPlaceholder) {
-            // Megkeressük az első placeholder gyakorlatot és beállítjuk a szűrőt
-            const firstPlaceholder = section.exercises.find(exercise => 
-              exercise.exerciseId?.startsWith('placeholder-')
-            );
-            
-            if (firstPlaceholder?.exerciseId && firstPlaceholder.id) {
-              setMovementPatternForPlaceholder(section.id, firstPlaceholder.id, firstPlaceholder.exerciseId);
+        newSections.forEach((section) => {
+          section.exercises.forEach((exercise) => {
+            if (exercise.exerciseId?.startsWith('placeholder-')) {
+              setMovementPatternForPlaceholder(section.id, exercise.id, exercise.exerciseId);
             }
-          }
+          });
         });
       }, 200);
 
@@ -763,61 +792,73 @@ const WorkoutPlanner = () => {
                         
                         {/* Exercise-specific filters */}
                         <div className="mt-2 mb-3">
-                          <div className="mb-2">
-                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Category Filter:</span>
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              {categories.map((category) => {
-                                const exerciseKey = getExerciseKey(section.id, exercise.id);
-                                return (
-                                  <button
-                                    key={category}
-                                    type="button"
-                                    onClick={() => updateCategoryFilter(section.id, exercise.id, category)}
-                                    className={`rounded px-2 py-1 text-xs ${
-                                      categoryFilters[exerciseKey] === category
-                                        ? 'bg-primary-500 text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                                    }`}
-                                  >
-                                    {category}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
+                          {/* Only show filters if exercises are loaded */}
+                          {exercises.length > 0 && (
+                            <>
+                              <div className="mb-2">
+                                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Category Filter:</span>
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {categories.map((category) => {
+                                    const exerciseKey = getExerciseKey(section.id, exercise.id);
+                                    return (
+                                      <button
+                                        key={category}
+                                        type="button"
+                                        onClick={() => updateCategoryFilter(section.id, exercise.id, category)}
+                                        className={`rounded px-2 py-1 text-xs ${
+                                          categoryFilters[exerciseKey] === category
+                                            ? 'bg-primary-500 text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                                        }`}
+                                      >
+                                        {category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                              
+                              <div className="mb-2">
+                                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Movement Pattern:</span>
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {getMovementPatterns().map((pattern) => {
+                                    const exerciseKey = getExerciseKey(section.id, exercise.id);
+                                    return (
+                                      <button
+                                        key={pattern.id}
+                                        type="button"
+                                        onClick={() => updateMovementPatternFilter(section.id, exercise.id, pattern.id)}
+                                        className={`rounded px-2 py-1 text-xs ${
+                                          movementPatternFilters[exerciseKey] === pattern.id
+                                            ? 'bg-primary-500 text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                                        }`}
+                                      >
+                                        {pattern.label}
+                                      </button>
+                                    );
+                                  })}
+                                  {/* Clear filter button */}
+                                  {movementPatternFilters[getExerciseKey(section.id, exercise.id)] && (
+                                    <button
+                                      type="button"
+                                      onClick={() => updateMovementPatternFilter(section.id, exercise.id, '')}
+                                      className="rounded px-2 py-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800"
+                                    >
+                                      Clear
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </>
+                          )}
                           
-                          <div className="mb-2">
-                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Movement Pattern:</span>
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              {getMovementPatterns().map((pattern) => {
-                                const exerciseKey = getExerciseKey(section.id, exercise.id);
-                                return (
-                                  <button
-                                    key={pattern.id}
-                                    type="button"
-                                    onClick={() => updateMovementPatternFilter(section.id, exercise.id, pattern.id)}
-                                    className={`rounded px-2 py-1 text-xs ${
-                                      movementPatternFilters[exerciseKey] === pattern.id
-                                        ? 'bg-primary-500 text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                                    }`}
-                                  >
-                                    {pattern.label}
-                                  </button>
-                                );
-                              })}
-                              {/* Clear filter button */}
-                              {movementPatternFilters[getExerciseKey(section.id, exercise.id)] && (
-                                <button
-                                  type="button"
-                                  onClick={() => updateMovementPatternFilter(section.id, exercise.id, '')}
-                                  className="rounded px-2 py-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800"
-                                >
-                                  Clear
-                                </button>
-                              )}
+                          {/* Show loading state if exercises are not loaded yet */}
+                          {exercises.length === 0 && (
+                            <div className="mb-2">
+                              <span className="text-xs text-gray-500 dark:text-gray-400">Loading filters...</span>
                             </div>
-                          </div>
+                          )}
                         </div>
                         
                         <select
@@ -842,6 +883,26 @@ const WorkoutPlanner = () => {
                             </option>
                           ))}
                         </select>
+                        
+                        {/* Show filter info */}
+                        {exercises.length > 0 && (
+                          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Showing {getFilteredExercises(section.id, exercise.id).length} of {exercises.length} exercises
+                            {(categoryFilters[getExerciseKey(section.id, exercise.id)] || movementPatternFilters[getExerciseKey(section.id, exercise.id)]) && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const exerciseKey = getExerciseKey(section.id, exercise.id);
+                                  setCategoryFilters(prev => ({ ...prev, [exerciseKey]: '' }));
+                                  setMovementPatternFilters(prev => ({ ...prev, [exerciseKey]: '' }));
+                                }}
+                                className="ml-2 text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300"
+                              >
+                                Clear all filters
+                              </button>
+                            )}
+                          </div>
+                        )}
                         
                         {/* Show placeholder exercise name and movement pattern below select */}
                         {exercise.exerciseId?.startsWith('placeholder-') && exercise.name && (
