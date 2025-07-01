@@ -274,7 +274,11 @@ const WorkoutPlanner = () => {
       movementPattern = 'hip_dominant_bilateral';
     } else if (placeholderId.includes('csipo-uni')) {
       movementPattern = 'hip_dominant_unilateral';
-    } 
+    } else if (placeholderId.includes('csipo-hajlitott')) {
+      movementPattern = 'hip_dominant_bent_leg';
+    } else if (placeholderId.includes('csipo-nyujtott')) {
+      movementPattern = 'hip_dominant_straight_leg';
+    }
     // Horizontális nyomás
     else if (placeholderId.includes('horiz-nyomas-bi')) {
       movementPattern = 'horizontal_push_bilateral';
@@ -288,13 +292,21 @@ const WorkoutPlanner = () => {
       movementPattern = 'horizontal_pull_unilateral';
     } 
     // Vertikális nyomás
-    else if (placeholderId.includes('vert-nyomas')) {
+    else if (placeholderId.includes('vert-nyomas-bi')) {
       movementPattern = 'vertical_push_bilateral';
-    } 
+    } else if (placeholderId.includes('vert-nyomas-uni')) {
+      movementPattern = 'vertical_push_unilateral';
+    } else if (placeholderId.includes('vert-nyomas')) {
+      movementPattern = 'vertical_push_bilateral';
+    }
     // Vertikális húzás
-    else if (placeholderId.includes('vert-huzas')) {
+    else if (placeholderId.includes('vert-huzas-bi')) {
       movementPattern = 'vertical_pull_bilateral';
-    } 
+    } else if (placeholderId.includes('vert-huzas-uni')) {
+      movementPattern = 'vertical_pull_unilateral';
+    } else if (placeholderId.includes('vert-huzas')) {
+      movementPattern = 'vertical_pull_bilateral';
+    }
     // FMS korrekciók
     else if (placeholderId.includes('fms')) {
       movementPattern = 'mobilization';
@@ -306,6 +318,10 @@ const WorkoutPlanner = () => {
     // Rehabilitációs gyakorlatok
     else if (placeholderId.includes('rehab')) {
       movementPattern = 'mobilization';
+    }
+    // Rotációs gyakorlatok
+    else if (placeholderId.includes('rotacios')) {
+      movementPattern = 'rotation';
     }
     
     if (movementPattern) {
