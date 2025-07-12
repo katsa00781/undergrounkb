@@ -122,7 +122,7 @@ export const useProfileProvider = () => {
 
   const updateUserProfile = async (data: ProfileFormData) => {
     if (!user) {
-      toast.error('You must be logged in to update your profile');
+      toast.error('Be kell jelentkezned a profil frissítéséhez');
       return null;
     }
 
@@ -176,7 +176,7 @@ export const useProfileProvider = () => {
         if (!functionError && functionResult && functionResult.length > 0) {
           const updatedProfile = functionResult[0];
           setProfile(updatedProfile);
-          toast.success('Profile updated successfully');
+          toast.success('Profil sikeresen frissítve');
           return updatedProfile;
         }
 
@@ -226,7 +226,7 @@ export const useProfileProvider = () => {
         // Update the local profile state
         if (updatedProfile) {
           setProfile(updatedProfile);
-          toast.success('Profile updated successfully');
+          toast.success('Profil sikeresen frissítve');
           return updatedProfile;
         }
       } catch (updateError) {
@@ -243,16 +243,16 @@ export const useProfileProvider = () => {
         if (error.message.includes('permission denied')) {
           toast.error('Engedély hiba: RLS policy-k szükségesek. Futtasd le a fix_profiles_permissions.sql script-et!');
         } else if (error.message.includes('column') && error.message.includes('does not exist')) {
-          toast.error('Database schema mismatch. Please contact the administrator.');
+          toast.error('Adatbázis séma eltérés. Kérlek vedd fel a kapcsolatot az adminisztrátorral.');
         } else if (error.message.includes('not found in the schema cache')) {
-          toast.error('Schema cache issue. Please reload the page and try again.');
+          toast.error('Séma cache hiba. Kérlek töltsd újra az oldalt és próbáld újra.');
         } else if (error.message.includes('42501')) {
           toast.error('Adatbázis jogosultsági hiba. Ellenőrizd a RLS policy-kat a profiles táblán.');
         } else {
-          toast.error('Failed to update profile: ' + error.message);
+          toast.error('Profil frissítése sikertelen: ' + error.message);
         }
       } else {
-        toast.error('Failed to update profile');
+        toast.error('Profil frissítése sikertelen');
       }
 
       return null;

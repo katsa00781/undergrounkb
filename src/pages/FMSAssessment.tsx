@@ -16,7 +16,7 @@ import { createFMSAssessment, getAllUsers } from '../lib/fms';
 import toast from 'react-hot-toast';
 
 const movementSchema = z.object({
-  user_id: z.string().min(1, 'Please select a user'),
+  user_id: z.string().min(1, 'Kérlek válassz egy felhasználót'),
   deepSquat: z.number().min(0).max(3),
   hurdleStep: z.number().min(0).max(3),
   inlineLunge: z.number().min(0).max(3),
@@ -79,7 +79,7 @@ const FMSAssessment = () => {
 
       if (data.length === 0) {
         console.warn('No users found in the database');
-        toast('No users found in the database. Please add users first.', {
+        toast('Nincsenek felhasználók az adatbázisban. Először adj hozzá felhasználókat.', {
           icon: '⚠️',
           duration: 5000
         });
@@ -90,13 +90,13 @@ const FMSAssessment = () => {
         });
 
         setUsers(data);
-        toast.success(`Loaded ${data.length} user${data.length === 1 ? '' : 's'}`);
+        toast.success(`${data.length} felhasználó betöltve`);
       }
     } catch (error) {
       console.error('Failed to load users:', error);
 
       // Provide more helpful error message
-      let errorMessage = 'Failed to load users';
+      let errorMessage = 'Felhasználók betöltése sikertelen';
       if (error instanceof Error) {
         errorMessage += `: ${error.message}`;
         console.error('Error details:', error);
@@ -209,13 +209,13 @@ const FMSAssessment = () => {
 
       const result = await createFMSAssessment(assessment);
 
-      toast.success('Assessment saved successfully');
+      toast.success('Értékelés sikeresen mentve');
       reset();
       setCurrentStep(0);
       setShowConfirmDialog(false);
     } catch (error) {
       console.error('Failed to save assessment:', error);
-      let errorMessage = 'Failed to save assessment';
+      let errorMessage = 'Értékelés mentése sikertelen';
 
       if (error instanceof Error) {
         errorMessage += `: ${error.message}`;
@@ -256,7 +256,7 @@ const FMSAssessment = () => {
     // Type assertion is not needed as we've properly typed currentMovement.id
     const currentScore = watch(currentMovement.id);
     if (currentScore === undefined || currentScore === null) {
-      toast.error('Please select a score before continuing');
+      toast.error('Kérlek válassz pontszámot a folytatás előtt');
       return;
     }
     setCurrentStep(Math.min(movements.length - 1, currentStep + 1));
@@ -270,7 +270,7 @@ const FMSAssessment = () => {
     // Type assertion is not needed as we've properly typed currentMovement.id
     const currentScore = watch(currentMovement.id);
     if (currentScore === undefined || currentScore === null) {
-      toast.error('Please select a score before saving');
+      toast.error('Kérlek válassz pontszámot a mentés előtt');
       return;
     }
     setShowConfirmDialog(true);

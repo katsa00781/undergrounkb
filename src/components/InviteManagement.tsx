@@ -60,7 +60,7 @@ export const InviteManagement: React.FC<InviteManagementProps> = ({ onInviteCrea
   const copyInviteLink = (token: string) => {
     const inviteUrl = `${window.location.origin}/invite/${token}`;
     navigator.clipboard.writeText(inviteUrl).then(() => {
-      toast.success('Meghívó link vágólapra másolva!');
+      toast.success('Meghívó link a vágólapra másolva!');
     }).catch(() => {
       toast.error('Nem sikerült a vágólapra másolni');
     });
@@ -79,7 +79,7 @@ ${inviteUrl}
 UG KettleBell Pro csapat`;
 
     navigator.clipboard.writeText(emailText).then(() => {
-      toast.success('Email szöveg vágólapra másolva! Most küldheted el emailben.');
+      toast.success('Email szöveg a vágólapra másolva! Most elküldheted emailben.');
     }).catch(() => {
       toast.error('Nem sikerült a vágólapra másolni');
     });

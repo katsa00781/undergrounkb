@@ -45,7 +45,7 @@ const UserManagement = () => {
       setUsers(data);
     } catch (error) {
       console.error('Failed to load users:', error);
-      toast.error('Failed to load users');
+      toast.error('Felhasználók betöltése sikertelen');
     } finally {
       setIsLoading(false);
     }
@@ -72,7 +72,7 @@ const UserManagement = () => {
       if (editingUser) {
         console.log('🔄 Updating existing user:', editingUser.id);
         await updateUser(editingUser.id, data);
-        toast.success('User updated successfully');
+        toast.success('Felhasználó sikeresen frissítve');
       } else {
         console.log('📧 Creating new invite for:', data.email);
         
@@ -128,7 +128,7 @@ const UserManagement = () => {
           
           console.log('🔗 Generated invite URL:', inviteUrl);
         } else {
-          toast.success('Invite sent successfully! User will receive an invitation link.');
+          toast.success('Meghívó sikeresen elküldve! A felhasználó kap egy meghívó linket.');
         }
       }
       
@@ -164,10 +164,10 @@ const UserManagement = () => {
     try {
       await deleteUser(id);
       await loadUsers();
-      toast.success('User disabled successfully');
+      toast.success('Felhasználó sikeresen letiltva');
     } catch (error) {
       console.error('Failed to disable user:', error);
-      toast.error('Failed to disable user');
+      toast.error('Felhasználó letiltása sikertelen');
     }
   };
 
@@ -177,10 +177,10 @@ const UserManagement = () => {
     try {
       await restoreUser(id, 'user');
       await loadUsers();
-      toast.success('User restored successfully');
+      toast.success('Felhasználó sikeresen visszaállítva');
     } catch (error) {
       console.error('Failed to restore user:', error);
-      toast.error('Failed to restore user');
+      toast.error('Felhasználó visszaállítása sikertelen');
     }
   };
 
@@ -195,16 +195,16 @@ const UserManagement = () => {
         toast.success('✅ Supabase connection test passed! Invite system should work.');
         console.log('✅ Test result:', result.message);
       } else {
-        toast.error(`❌ Test failed: ${result.error}`);
+        toast.error(`❌ Teszt sikertelen: ${result.error}`);
         console.error('❌ Test failed:', result);
         
         if (result.suggestion) {
-          toast.error(`💡 Suggestion: ${result.suggestion}`, { duration: 8000 });
+          toast.error(`💡 Javaslat: ${result.suggestion}`, { duration: 8000 });
         }
       }
     } catch (error) {
       console.error('❌ Test error:', error);
-      toast.error('Test failed: ' + (error as Error).message);
+      toast.error('Teszt sikertelen: ' + (error as Error).message);
     } finally {
       setTesting(false);
     }
@@ -226,8 +226,8 @@ const UserManagement = () => {
       {/* Header section - responsive */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">User Management</h1>
-          <p className="mt-1 text-gray-600 dark:text-gray-400">Manage users and their roles</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Felhasználó kezelés</h1>
+          <p className="mt-1 text-gray-600 dark:text-gray-400">Felhasználók és szerepköreik kezelése</p>
         </div>
         
         {/* Controls - responsive layout */}
@@ -239,7 +239,7 @@ const UserManagement = () => {
               onChange={(e) => setShowDisabled(e.target.checked)}
               className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700"
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">Show disabled users</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">Letiltott felhasználók megjelenítése</span>
           </label>
           
           <div className="flex flex-col xs:flex-row gap-2 w-full sm:w-auto order-1 sm:order-2">
@@ -252,7 +252,7 @@ const UserManagement = () => {
               className="btn btn-primary inline-flex items-center justify-center gap-2 text-sm md:text-base"
             >
               <UserPlus size={18} className="md:w-5 md:h-5" />
-              <span>Invite User</span>
+              <span>Meghívó küldése</span>
             </button>
             <button
               onClick={handleTestConnection}
@@ -264,7 +264,7 @@ const UserManagement = () => {
               ) : (
                 <span>🧪</span>
               )}
-              <span>Test Connection</span>
+              <span>Kapcsolat tesztelése</span>
             </button>
           </div>
         </div>
@@ -273,14 +273,14 @@ const UserManagement = () => {
       {showForm && (
         <div className="rounded-lg border border-gray-200 bg-white p-4 md:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <h2 className="mb-4 md:mb-6 text-lg md:text-xl font-semibold text-gray-900 dark:text-white">
-            {editingUser ? 'Edit User' : 'Invite New User'}
+            {editingUser ? 'Felhasználó szerkesztése' : 'Új felhasználó meghívása'}
           </h2>
           
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
             <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
               <div className="lg:col-span-1">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Email
+                  Email cím
                 </label>
                 <div className="relative mt-1">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -300,7 +300,7 @@ const UserManagement = () => {
 
               <div className="lg:col-span-1">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Name
+                  Teljes név
                 </label>
                 <div className="relative mt-1">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -310,7 +310,7 @@ const UserManagement = () => {
                     type="text"
                     {...register('full_name')}
                     className="input pl-8 md:pl-10 text-sm md:text-base"
-                    placeholder="John Doe"
+                    placeholder="Kovács János"
                   />
                 </div>
                 {errors.full_name && (
@@ -320,16 +320,16 @@ const UserManagement = () => {
 
               <div className="lg:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Role
+                  Szerepkör
                 </label>
                 <select
                   {...register('role')}
                   className="input mt-1 text-sm md:text-base"
                 >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
+                  <option value="user">Felhasználó</option>
+                  <option value="admin">Adminisztrátor</option>
                   {editingUser?.role === 'disabled' && (
-                    <option value="disabled">Disabled</option>
+                    <option value="disabled">Letiltott</option>
                   )}
                 </select>
                 {errors.role && (
@@ -348,7 +348,7 @@ const UserManagement = () => {
                 }}
                 className="btn btn-outline w-full sm:w-auto order-2 sm:order-1"
               >
-                Cancel
+                Mégse
               </button>
               <button
                 type="submit"
@@ -358,10 +358,10 @@ const UserManagement = () => {
                 {isSubmitting ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="h-4 w-4 md:h-5 md:w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    <span className="text-sm md:text-base">Saving...</span>
+                    <span className="text-sm md:text-base">Mentés...</span>
                   </div>
                 ) : (
-                  <span className="text-sm md:text-base">{editingUser ? 'Update User' : 'Send Invite'}</span>
+                  <span className="text-sm md:text-base">{editingUser ? 'Felhasználó frissítése' : 'Meghívó küldése'}</span>
                 )}
               </button>
             </div>
@@ -385,11 +385,11 @@ const UserManagement = () => {
                 <table className="w-full text-left text-sm">
                   <thead className="bg-gray-50 text-xs uppercase text-gray-700 dark:bg-gray-700/50 dark:text-gray-400">
                     <tr>
-                      <th scope="col" className="px-6 py-3">Name</th>
+                      <th scope="col" className="px-6 py-3">Név</th>
                       <th scope="col" className="px-6 py-3">Email</th>
-                      <th scope="col" className="px-6 py-3">Role</th>
-                      <th scope="col" className="px-6 py-3">Created</th>
-                      <th scope="col" className="px-6 py-3">Actions</th>
+                      <th scope="col" className="px-6 py-3">Szerepkör</th>
+                      <th scope="col" className="px-6 py-3">Létrehozva</th>
+                      <th scope="col" className="px-6 py-3">Műveletek</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -429,14 +429,14 @@ const UserManagement = () => {
                                 <button
                                   onClick={() => setEditingUser(user)}
                                   className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-400"
-                                  title="Edit user"
+                                  title="Felhasználó szerkesztése"
                                 >
                                   <Edit2 size={18} />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteUser(user.id)}
                                   className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-error-500 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-error-400"
-                                  title="Disable user"
+                                  title="Felhasználó letiltása"
                                 >
                                   <Trash2 size={18} />
                                 </button>
@@ -445,7 +445,7 @@ const UserManagement = () => {
                               <button
                                 onClick={() => handleRestoreUser(user.id)}
                                 className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-green-500 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-green-400"
-                                title="Restore user"
+                                title="Felhasználó visszaállítása"
                               >
                                 <UserIcon size={18} />
                               </button>

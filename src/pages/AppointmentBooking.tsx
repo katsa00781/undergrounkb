@@ -47,7 +47,7 @@ const AppointmentBookingPage = () => {
     } catch (error) {
       console.error('Failed to load appointments:', error);
       console.error('Error details:', JSON.stringify(error));
-      toast.error('Failed to load appointments');
+      toast.error('Időpontok betöltése sikertelen');
       setAccessError('Failed to load appointments data. Please try again later.');
     } finally {
       setIsLoading(false);
@@ -100,22 +100,22 @@ const AppointmentBookingPage = () => {
 
   const handleBook = async (appointmentId: string) => {
     if (!bookingEnabled) {
-      toast.error('Booking is currently unavailable');
+      toast.error('Foglalás jelenleg nem elérhető');
       return;
     }
 
     try {
       await bookAppointment(appointmentId, user!.id);
       await loadData();
-      toast.success('Appointment booked successfully!');
+      toast.success('Időpont sikeresen lefoglalva!');
 
       // Show notification about assigned workout
       toast((t) => (
         <div className="flex items-start gap-3">
           <Dumbbell className="h-5 w-5 text-primary-500" />
           <div className="flex flex-1 flex-col gap-2">
-            <span className="font-semibold">Workout assigned!</span>
-            <p className="text-sm text-gray-600">Check your Workout Log to see the workout plan for this session.</p>
+            <span className="font-semibold">Edzés hozzárendelve!</span>
+            <p className="text-sm text-gray-600">Nézd meg az Edzés Naplót, hogy lásd az edzéstervet ehhez az alkalmhoz.</p>
             <div className="flex gap-2 mt-1">
               <button 
                 onClick={() => {
@@ -124,13 +124,13 @@ const AppointmentBookingPage = () => {
                 }} 
                 className="rounded-md bg-primary-600 px-3 py-1 text-xs text-white hover:bg-primary-700"
               >
-                Go to Workout Log
+                Edzés Napló
               </button>
               <button 
                 onClick={() => toast.dismiss(t.id)} 
                 className="rounded-md px-3 py-1 text-xs text-gray-500 hover:text-gray-700"
               >
-                Dismiss
+                Bezárás
               </button>
             </div>
           </div>
@@ -144,7 +144,7 @@ const AppointmentBookingPage = () => {
       if (error instanceof Error && error.message.includes('unavailable')) {
         toast.error(error.message);
       } else {
-        toast.error('Failed to book appointment');
+        toast.error('Időpont foglalása sikertelen');
       }
     }
   };
@@ -152,15 +152,15 @@ const AppointmentBookingPage = () => {
   const handleCancel = async (appointmentId: string) => {
     try {
       if (!user?.id) {
-        toast.error('User not authenticated');
+        toast.error('Felhasználó nincs bejelentkezve');
         return;
       }
       await cancelBooking(appointmentId, user.id);
       await loadData();
-      toast.success('Booking cancelled successfully');
+      toast.success('Foglalás sikeresen törölve');
     } catch (error) {
       console.error('Failed to cancel booking:', error);
-      toast.error('Failed to cancel booking');
+      toast.error('Foglalás törlése sikertelen');
     }
   };
 
