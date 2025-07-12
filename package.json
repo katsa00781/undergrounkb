@@ -20,6 +20,7 @@
     "check:profile": "./check-profile-structure.sh"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@headlessui/react": "^1.7.18",
     "@hookform/resolvers": "^3.3.4",
     "@radix-ui/react-toast": "^1.2.14",

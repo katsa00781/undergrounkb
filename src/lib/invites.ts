@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase';
+import { sendInviteEmail, checkEmailJSConfig } from './emailService';
 import toast from 'react-hot-toast';
 
 export interface PendingInvite {
@@ -70,9 +71,33 @@ export async function createInvite(inviteData: InviteData): Promise<PendingInvit
     // Meghívó URL generálása
     const inviteUrl = `${window.location.origin}/invite/${invite.invite_token}`;
     
-    toast.success(`Meghívó létrehozva! Link: ${inviteUrl}`);
+    // Email küldés megkísérlése
+    console.log('📧 Attempting to send invite email...');
     
-    // TODO: Email küldés implementálása
+    // EmailJS konfiguráció ellenőrzése
+    const emailConfig = checkEmailJSConfig();
+    console.log('📋 Email configuration:', emailConfig);
+    
+    try {
+      const emailSent = await sendInviteEmail(invite.email, invite.invite_token);
+      
+      if (emailSent) {
+        if (emailConfig.configured) {
+          toast.success(`✅ Meghívó létrehozva és email elküldve: ${invite.email}`);
+          console.log('✅ Real email sent successfully to:', invite.email);
+        } else {
+          toast.success(`✅ Meghívó létrehozva! (Email mock mode) Link: ${inviteUrl}`);
+          console.log('🎭 Mock email sent to:', invite.email);
+        }
+      } else {
+        toast.success(`⚠️ Meghívó létrehozva, de email küldés sikertelen. Link: ${inviteUrl}`);
+        console.warn('⚠️ Email sending failed, but invite created');
+      }
+    } catch (emailError) {
+      console.error('❌ Email service error:', emailError);
+      toast.success(`⚠️ Meghívó létrehozva, email hiba miatt manual küldés szükséges. Link: ${inviteUrl}`);
+    }
+    
     console.log('🔗 Invite URL:', inviteUrl);
     
     return invite;

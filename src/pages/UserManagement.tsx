@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Users, UserPlus, Edit2, Trash2, Mail, User as UserIcon } from 'lucide-react';
 import { User, getUsers, updateUser, deleteUser, getAllUsers, restoreUser } from '../lib/users';
-import { createInvite } from '../lib/invites';
+import { createInvite, PendingInvite } from '../lib/invites';
 import { testSupabaseConnection } from '../lib/supabaseTest';
 import { InviteManagement } from '../components/InviteManagement';
 import toast from 'react-hot-toast';
@@ -87,9 +87,49 @@ const UserManagement = () => {
         });
         
         // Race between invite creation and timeout
-        await Promise.race([invitePromise, timeoutPromise]);
+        const inviteResult = await Promise.race([invitePromise, timeoutPromise]) as PendingInvite;
         
-        toast.success('Invite sent successfully! User will receive an invitation link.');
+        // Ha sikeres volt a meghívó létrehozása, generáljuk a linket
+        if (inviteResult && inviteResult.invite_token) {
+          const inviteUrl = `${window.location.origin}/invite/${inviteResult.invite_token}`;
+          
+          // Megjelenítjük a sikeres üzenetet link másolási opcióval
+          const copyToClipboard = () => {
+            navigator.clipboard.writeText(inviteUrl).then(() => {
+              toast.success('✅ Meghívó link vágólapra másolva!');
+            }).catch(() => {
+              toast.error('❌ Nem sikerült a vágólapra másolni');
+            });
+          };
+
+          // Toast üzenet linkkel
+          toast.success(`✅ Meghívó létrehozva: ${data.email}`, {
+            duration: 8000,
+          });
+          
+          // Egy másik toast a link másoláshoz
+          toast((t) => (
+            <div className="flex flex-col gap-2">
+              <div className="font-medium">📋 Meghívó link készen áll</div>
+              <div className="text-sm text-gray-600 break-all">{inviteUrl}</div>
+              <button
+                onClick={() => {
+                  copyToClipboard();
+                  toast.dismiss(t.id);
+                }}
+                className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+              >
+                📋 Link másolása
+              </button>
+            </div>
+          ), {
+            duration: 15000, // 15 másodpercig látható
+          });
+          
+          console.log('🔗 Generated invite URL:', inviteUrl);
+        } else {
+          toast.success('Invite sent successfully! User will receive an invitation link.');
+        }
       }
       
       await loadUsers();
@@ -182,117 +222,123 @@ const UserManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="space-y-6 p-4 md:p-6">
+      {/* Header section - responsive */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">User Management</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">User Management</h1>
           <p className="mt-1 text-gray-600 dark:text-gray-400">Manage users and their roles</p>
         </div>
-        <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2">
+        
+        {/* Controls - responsive layout */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 lg:gap-4">
+          <label className="flex items-center gap-2 order-2 sm:order-1">
             <input
               type="checkbox"
               checked={showDisabled}
               onChange={(e) => setShowDisabled(e.target.checked)}
-              className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700"
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300">Show disabled users</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">Show disabled users</span>
           </label>
-          <button
-            onClick={() => {
-              setEditingUser(null);
-              setShowForm(!showForm);
-              reset();
-            }}
-            className="btn btn-primary inline-flex items-center gap-2"
-          >
-            <UserPlus size={20} />
-            <span>Invite User</span>
-          </button>
-          <button
-            onClick={handleTestConnection}
-            disabled={testing}
-            className="btn btn-outline inline-flex items-center gap-2"
-          >
-            {testing ? (
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            ) : (
-              <span>🧪</span>
-            )}
-            <span>Test Connection</span>
-          </button>
+          
+          <div className="flex flex-col xs:flex-row gap-2 w-full sm:w-auto order-1 sm:order-2">
+            <button
+              onClick={() => {
+                setEditingUser(null);
+                setShowForm(!showForm);
+                reset();
+              }}
+              className="btn btn-primary inline-flex items-center justify-center gap-2 text-sm md:text-base"
+            >
+              <UserPlus size={18} className="md:w-5 md:h-5" />
+              <span>Invite User</span>
+            </button>
+            <button
+              onClick={handleTestConnection}
+              disabled={testing}
+              className="btn btn-outline inline-flex items-center justify-center gap-2 text-sm md:text-base"
+            >
+              {testing ? (
+                <div className="h-4 w-4 md:h-5 md:w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                <span>🧪</span>
+              )}
+              <span>Test Connection</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {showForm && (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <h2 className="mb-6 text-xl font-semibold text-gray-900 dark:text-white">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 md:p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <h2 className="mb-4 md:mb-6 text-lg md:text-xl font-semibold text-gray-900 dark:text-white">
             {editingUser ? 'Edit User' : 'Invite New User'}
           </h2>
           
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              <div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
+            <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
+              <div className="lg:col-span-1">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Email
                 </label>
                 <div className="relative mt-1">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                    <Mail className="h-5 w-5 text-gray-400" />
+                    <Mail className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
                   </div>
                   <input
                     type="email"
                     {...register('email')}
-                    className="input pl-10"
+                    className="input pl-8 md:pl-10 text-sm md:text-base"
                     placeholder="user@example.com"
                   />
                 </div>
                 {errors.email && (
-                  <p className="mt-1 text-sm text-error-600 dark:text-error-400">{errors.email.message}</p>
+                  <p className="mt-1 text-xs md:text-sm text-error-600 dark:text-error-400">{errors.email.message}</p>
                 )}
               </div>
 
-              <div>
+              <div className="lg:col-span-1">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Name
                 </label>
                 <div className="relative mt-1">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                    <UserIcon className="h-5 w-5 text-gray-400" />
+                    <UserIcon className="h-4 w-4 md:h-5 md:w-5 text-gray-400" />
                   </div>
                   <input
                     type="text"
                     {...register('full_name')}
-                    className="input pl-10"
+                    className="input pl-8 md:pl-10 text-sm md:text-base"
                     placeholder="John Doe"
                   />
                 </div>
                 {errors.full_name && (
-                  <p className="mt-1 text-sm text-error-600 dark:text-error-400">{errors.full_name.message}</p>
+                  <p className="mt-1 text-xs md:text-sm text-error-600 dark:text-error-400">{errors.full_name.message}</p>
                 )}
               </div>
 
-              <div>
+              <div className="lg:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Role
                 </label>
                 <select
                   {...register('role')}
-                  className="input mt-1"
+                  className="input mt-1 text-sm md:text-base"
                 >
                   <option value="user">User</option>
                   <option value="admin">Admin</option>
-                  {editingUser && editingUser.role === 'disabled' && (
+                  {editingUser?.role === 'disabled' && (
                     <option value="disabled">Disabled</option>
                   )}
                 </select>
                 {errors.role && (
-                  <p className="mt-1 text-sm text-error-600 dark:text-error-400">{errors.role.message}</p>
+                  <p className="mt-1 text-xs md:text-sm text-error-600 dark:text-error-400">{errors.role.message}</p>
                 )}
               </div>
             </div>
 
-            <div className="flex justify-end gap-4">
+            <div className="flex flex-col sm:flex-row justify-end gap-3 md:gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <button
                 type="button"
                 onClick={() => {
@@ -300,22 +346,22 @@ const UserManagement = () => {
                   setEditingUser(null);
                   reset();
                 }}
-                className="btn btn-outline"
+                className="btn btn-outline w-full sm:w-auto order-2 sm:order-1"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="btn btn-primary"
+                className="btn btn-primary w-full sm:w-auto order-1 sm:order-2"
               >
                 {isSubmitting ? (
-                  <div className="flex items-center gap-2">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    <span>Saving...</span>
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="h-4 w-4 md:h-5 md:w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <span className="text-sm md:text-base">Saving...</span>
                   </div>
                 ) : (
-                  <span>{editingUser ? 'Update User' : 'Send Invite'}</span>
+                  <span className="text-sm md:text-base">{editingUser ? 'Update User' : 'Send Invite'}</span>
                 )}
               </button>
             </div>
@@ -324,92 +370,169 @@ const UserManagement = () => {
       )}
 
       <div className="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <div className="p-6">
-          <div className="relative overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-xs uppercase text-gray-700 dark:bg-gray-700/50 dark:text-gray-400">
-                <tr>
-                  <th scope="col" className="px-6 py-3">Name</th>
-                  <th scope="col" className="px-6 py-3">Email</th>
-                  <th scope="col" className="px-6 py-3">Role</th>
-                  <th scope="col" className="px-6 py-3">Created</th>
-                  <th scope="col" className="px-6 py-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+        <div className="p-4 md:p-6">
+          {users.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Users className="h-12 w-12 text-gray-400" />
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                No users found
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop/Tablet táblázat nézet */}
+              <div className="hidden lg:block relative overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-50 text-xs uppercase text-gray-700 dark:bg-gray-700/50 dark:text-gray-400">
+                    <tr>
+                      <th scope="col" className="px-6 py-3">Name</th>
+                      <th scope="col" className="px-6 py-3">Email</th>
+                      <th scope="col" className="px-6 py-3">Role</th>
+                      <th scope="col" className="px-6 py-3">Created</th>
+                      <th scope="col" className="px-6 py-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((user) => (
+                      <tr
+                        key={user.id}
+                        className={`border-b border-gray-200 ${
+                          user.role === 'disabled' 
+                            ? 'bg-gray-50 dark:bg-gray-900/50 opacity-75' 
+                            : 'bg-white dark:bg-gray-800'
+                        }`}
+                      >
+                        <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                          {user.full_name || '—'}
+                        </td>
+                        <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                          {user.email}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                            user.role === 'admin'
+                              ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400'
+                              : user.role === 'disabled'
+                              ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                          }`}>
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                          {new Date(user.created_at!).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            {user.role !== 'disabled' ? (
+                              <>
+                                <button
+                                  onClick={() => setEditingUser(user)}
+                                  className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-400"
+                                  title="Edit user"
+                                >
+                                  <Edit2 size={18} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteUser(user.id)}
+                                  className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-error-500 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-error-400"
+                                  title="Disable user"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => handleRestoreUser(user.id)}
+                                className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-green-500 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-green-400"
+                                title="Restore user"
+                              >
+                                <UserIcon size={18} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile/Tablet kártya nézet */}
+              <div className="lg:hidden space-y-4">
                 {users.map((user) => (
-                  <tr
-                    key={user.id}
-                    className={`border-b border-gray-200 ${
+                  <div 
+                    key={user.id} 
+                    className={`rounded-lg p-4 border ${
                       user.role === 'disabled' 
-                        ? 'bg-gray-50 dark:bg-gray-900/50 opacity-75' 
-                        : 'bg-white dark:bg-gray-800'
+                        ? 'bg-gray-50 dark:bg-gray-900/50 opacity-75 border-gray-200 dark:border-gray-700' 
+                        : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
                     }`}
                   >
-                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                      {user.full_name || '—'}
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                      {user.email}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                        user.role === 'admin'
-                          ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400'
-                          : user.role === 'disabled'
-                          ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                      }`}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                      {new Date(user.created_at!).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-col space-y-3">
+                      {/* Felhasználó adatok */}
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {user.full_name || 'Névtelen felhasználó'}
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 break-all">
+                            {user.email}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            user.role === 'admin'
+                              ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400'
+                              : user.role === 'disabled'
+                              ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                          }`}>
+                            {user.role}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Meta adatok */}
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="font-medium">Regisztrált:</span> {new Date(user.created_at!).toLocaleDateString('hu-HU')}
+                      </div>
+
+                      {/* Műveletek - responsive gombok */}
+                      <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-gray-200 dark:border-gray-600">
                         {user.role !== 'disabled' ? (
                           <>
                             <button
                               onClick={() => setEditingUser(user)}
-                              className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-400"
-                              title="Edit user"
+                              className="flex-1 flex items-center justify-center gap-2 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 px-3 py-2 rounded-md transition-colors text-sm font-medium"
                             >
-                              <Edit2 size={18} />
+                              <Edit2 size={16} />
+                              Szerkesztés
                             </button>
                             <button
                               onClick={() => handleDeleteUser(user.id)}
-                              className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-error-500 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-error-400"
-                              title="Disable user"
+                              className="flex-1 sm:flex-initial flex items-center justify-center gap-2 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 px-3 py-2 rounded-md transition-colors text-sm font-medium"
                             >
-                              <Trash2 size={18} />
+                              <Trash2 size={16} />
+                              Letiltás
                             </button>
                           </>
                         ) : (
                           <button
                             onClick={() => handleRestoreUser(user.id)}
-                            className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-green-500 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-green-400"
-                            title="Restore user"
+                            className="flex-1 flex items-center justify-center gap-2 text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/50 px-3 py-2 rounded-md transition-colors text-sm font-medium"
                           >
-                            <UserIcon size={18} />
+                            <UserIcon size={16} />
+                            Visszaállítás
                           </button>
                         )}
                       </div>
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-
-            {users.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Users className="h-12 w-12 text-gray-400" />
-                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  No users found
-                </p>
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </div>
 

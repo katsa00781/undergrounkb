@@ -1,4 +1,5 @@
 import { getCurrentUserRole } from './lib/users';
+import { initializeEmailJS } from './lib/emailService';
 import { useEffect, useState } from 'react';
 import { Toaster } from './components/ui/toaster';
 import { supabase, connectionManager } from './config/supabase';
@@ -70,6 +71,14 @@ function App() {
         setIsLoading(false);
       }
     };
+
+    // EmailJS inicializálás
+    try {
+      initializeEmailJS();
+      console.log('📧 EmailJS initialized for invite emails');
+    } catch (error) {
+      console.warn('⚠️ EmailJS initialization failed, emails will not be sent automatically:', error);
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {

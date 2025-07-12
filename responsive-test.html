@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UG KettleBell Pro - Responsive Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    screens: {
+                        'xs': '475px',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.375rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            outline: none;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:focus {
+            box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.5);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .btn-primary {
+            background-color: #0284c7;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0369a1;
+        }
+        .btn-outline {
+            border: 1px solid #d1d5db;
+            background-color: transparent;
+            color: #374151;
+        }
+        .btn-outline:hover {
+            background-color: #f3f4f6;
+        }
+        .input {
+            display: block;
+            width: 100%;
+            border-radius: 0.375rem;
+            border: 1px solid #d1d5db;
+            background-color: white;
+            padding: 0.5rem 0.75rem;
+            color: #111827;
+        }
+        .input:focus {
+            border-color: #0ea5e9;
+            outline: none;
+            box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.5);
+        }
+        .input::placeholder {
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+    <div class="min-h-screen">
+        <!-- Header Navigation -->
+        <nav class="bg-white shadow-sm border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <h1 class="text-xl font-bold text-primary-600">UG KettleBell Pro</h1>
+                    </div>
+                    <div class="hidden md:flex items-center space-x-4">
+                        <span class="text-gray-700">Admin User</span>
+                        <button class="btn btn-outline text-sm">Logout</button>
+                    </div>
+                    <!-- Mobile menu button -->
+                    <div class="md:hidden flex items-center">
+                        <button class="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <!-- User Management Section -->
+            <div class="space-y-6">
+                <!-- Header section - responsive -->
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-bold text-gray-900">User Management</h1>
+                        <p class="mt-1 text-gray-600">Manage users and their roles</p>
+                    </div>
+                    
+                    <!-- Controls - responsive layout -->
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 lg:gap-4">
+                        <label class="flex items-center gap-2 order-2 sm:order-1">
+                            <input type="checkbox" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500">
+                            <span class="text-sm text-gray-700 whitespace-nowrap">Show disabled users</span>
+                        </label>
+                        
+                        <div class="flex flex-col xs:flex-row gap-2 w-full sm:w-auto order-1 sm:order-2">
+                            <button class="btn btn-primary inline-flex items-center justify-center gap-2 text-sm md:text-base">
+                                <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                </svg>
+                                <span>Invite User</span>
+                            </button>
+                            <button class="btn btn-outline inline-flex items-center justify-center gap-2 text-sm md:text-base">
+                                <span>🧪</span>
+                                <span>Test Connection</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invite Form - responsive -->
+                <div class="rounded-lg border border-gray-200 bg-white p-4 md:p-6 shadow-sm">
+                    <h2 class="mb-4 md:mb-6 text-lg md:text-xl font-semibold text-gray-900">
+                        Invite New User
+                    </h2>
+                    
+                    <form class="space-y-4 md:space-y-6">
+                        <div class="grid gap-4 md:gap-6 lg:grid-cols-2">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Email Address
+                                </label>
+                                <div class="relative">
+                                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                        <svg class="h-4 w-4 md:h-5 md:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/>
+                                        </svg>
+                                    </div>
+                                    <input type="email" class="input pl-8 md:pl-10 text-sm md:text-base" placeholder="user@example.com">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Full Name
+                                </label>
+                                <div class="relative">
+                                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                        <svg class="h-4 w-4 md:h-5 md:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                        </svg>
+                                    </div>
+                                    <input type="text" class="input pl-8 md:pl-10 text-sm md:text-base" placeholder="John Doe">
+                                </div>
+                            </div>
+
+                            <div class="lg:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                                <select class="input text-sm md:text-base">
+                                    <option value="user">User</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row justify-end gap-3 md:gap-4 pt-4 border-t border-gray-200">
+                            <button type="button" class="btn btn-outline w-full sm:w-auto order-2 sm:order-1">
+                                Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary w-full sm:w-auto order-1 sm:order-2">
+                                Send Invite
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Users Table/Cards Section -->
+                <div class="bg-white shadow rounded-lg p-4 md:p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">
+                        Registered Users (5)
+                    </h3>
+
+                    <!-- Desktop Table View -->
+                    <div class="hidden lg:block overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        John Doe
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        john.doe@example.com
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                            User
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        Jan 10, 2024
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <div class="flex justify-end space-x-2">
+                                            <button class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 p-2 rounded-full transition-colors">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                </svg>
+                                            </button>
+                                            <button class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        Jane Smith
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        jane.smith@example.com
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                            Admin
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        Jan 8, 2024
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <div class="flex justify-end space-x-2">
+                                            <button class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 p-2 rounded-full transition-colors">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                </svg>
+                                            </button>
+                                            <button class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Mobile/Tablet Card View -->
+                    <div class="lg:hidden space-y-4">
+                        <!-- User Card 1 -->
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <div class="flex flex-col space-y-3">
+                                <!-- User info -->
+                                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="text-sm font-medium text-gray-900 truncate">
+                                            John Doe
+                                        </h3>
+                                        <p class="text-sm text-gray-500 break-all">
+                                            john.doe@example.com
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                            User
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Meta info -->
+                                <div class="text-xs text-gray-500">
+                                    <span class="font-medium">Registered:</span> Jan 10, 2024
+                                </div>
+
+                                <!-- Actions - responsive buttons -->
+                                <div class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-gray-200">
+                                    <button class="flex-1 flex items-center justify-center gap-2 text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-md transition-colors text-sm font-medium">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                        Edit
+                                    </button>
+                                    <button class="flex-1 sm:flex-initial flex items-center justify-center gap-2 text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-2 rounded-md transition-colors text-sm font-medium">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                        Disable
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- User Card 2 - Admin -->
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <div class="flex flex-col space-y-3">
+                                <!-- User info -->
+                                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="text-sm font-medium text-gray-900 truncate">
+                                            Jane Smith
+                                        </h3>
+                                        <p class="text-sm text-gray-500 break-all">
+                                            jane.smith@example.com
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                            Admin
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Meta info -->
+                                <div class="text-xs text-gray-500">
+                                    <span class="font-medium">Registered:</span> Jan 8, 2024
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-gray-200">
+                                    <button class="flex-1 flex items-center justify-center gap-2 text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-md transition-colors text-sm font-medium">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                        Edit
+                                    </button>
+                                    <button class="flex-1 sm:flex-initial flex items-center justify-center gap-2 text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-2 rounded-md transition-colors text-sm font-medium">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                        Disable
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Disabled User Card -->
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 opacity-75">
+                            <div class="flex flex-col space-y-3">
+                                <!-- User info -->
+                                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="text-sm font-medium text-gray-900 truncate">
+                                            Bob Wilson
+                                        </h3>
+                                        <p class="text-sm text-gray-500 break-all">
+                                            bob.wilson@example.com
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                            Disabled
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Meta info -->
+                                <div class="text-xs text-gray-500">
+                                    <span class="font-medium">Registered:</span> Jan 5, 2024
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="flex pt-2 border-t border-gray-200">
+                                    <button class="flex-1 flex items-center justify-center gap-2 text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-2 rounded-md transition-colors text-sm font-medium">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                        </svg>
+                                        Restore
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white shadow rounded-lg p-4 md:p-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                        <h3 class="text-lg font-medium text-gray-900">
+                            Active Invites (3)
+                        </h3>
+                        <button class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-md transition-colors w-full sm:w-auto">
+                            🗑️ Delete Expired
+                        </button>
+                    </div>
+
+                    <!-- Desktop Table View -->
+                    <div class="hidden lg:block overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        john.doe@example.com
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                            User
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        Jan 12, 2024 14:30
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        Jan 19, 2024 14:30
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <div class="flex justify-end space-x-2">
+                                            <button class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-md transition-colors text-xs">
+                                                📋 Link
+                                            </button>
+                                            <button class="text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-1 rounded-md transition-colors text-xs">
+                                                ✉️ Email
+                                            </button>
+                                            <button class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md transition-colors text-xs">
+                                                🗑️ Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Mobile/Tablet Card View -->
+                    <div class="lg:hidden space-y-4">
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <div class="flex flex-col space-y-3">
+                                <!-- Email és szerepkör -->
+                                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                                    <div class="flex-1">
+                                        <p class="text-sm font-medium text-gray-900 break-all">
+                                            john.doe@example.com
+                                        </p>
+                                        <span class="inline-flex mt-1 px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                            User
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Dátumok -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-500">
+                                    <div>
+                                        <span class="font-medium">Created:</span><br>
+                                        Jan 12, 2024 14:30
+                                    </div>
+                                    <div>
+                                        <span class="font-medium">Expires:</span><br>
+                                        Jan 19, 2024 14:30
+                                    </div>
+                                </div>
+
+                                <!-- Actions - responsive buttons -->
+                                <div class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-gray-200">
+                                    <button class="flex-1 flex items-center justify-center gap-2 text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-md transition-colors text-sm font-medium">
+                                        📋 Copy Link
+                                    </button>
+                                    <button class="flex-1 flex items-center justify-center gap-2 text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-2 rounded-md transition-colors text-sm font-medium">
+                                        ✉️ Email Text
+                                    </button>
+                                    <button class="flex-1 sm:flex-initial flex items-center justify-center gap-2 text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-2 rounded-md transition-colors text-sm font-medium">
+                                        🗑️ Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invite Accept Form Simulation -->
+                <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+                    <div class="text-center mb-6">
+                        <h2 class="text-2xl md:text-3xl font-extrabold text-gray-900">Create Account</h2>
+                        <p class="mt-2 text-sm text-gray-600">You've been invited to:</p>
+                        <p class="text-lg font-medium text-blue-600">john.doe@example.com</p>
+                        <p class="text-sm text-gray-500">Role: <span class="font-medium">User</span></p>
+                    </div>
+                    
+                    <form class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Display Name</label>
+                            <input type="text" class="input mt-1" placeholder="Enter display name" value="john.doe">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Password</label>
+                            <input type="password" class="input mt-1" placeholder="Minimum 6 characters">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                            <input type="password" class="input mt-1" placeholder="Repeat password">
+                        </div>
+
+                        <button type="submit" class="w-full btn btn-primary">
+                            Create Account
+                        </button>
+                        
+                        <div class="text-center">
+                            <p class="text-sm text-gray-600">
+                                The invite expires on January 19, 2024.
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+
+        <!-- Mobile Bottom Navigation -->
+        <nav class="fixed bottom-0 left-0 right-0 z-10 border-t border-gray-200 bg-white md:hidden">
+            <div class="flex items-center justify-around">
+                <a href="#" class="flex flex-1 flex-col items-center justify-center py-2 text-xs font-medium text-primary-600">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="flex flex-1 flex-col items-center justify-center py-2 text-xs font-medium text-gray-500">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <span>Calendar</span>
+                </a>
+                <a href="#" class="flex flex-1 flex-col items-center justify-center py-2 text-xs font-medium text-gray-500">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-2.025"/>
+                    </svg>
+                    <span>Users</span>
+                </a>
+                <a href="#" class="flex flex-1 flex-col items-center justify-center py-2 text-xs font-medium text-gray-500">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                    <span>Profile</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Responsive Test Info -->
+    <div class="fixed top-4 right-4 bg-black bg-opacity-75 text-white px-3 py-2 rounded text-sm z-50">
+        <div class="block sm:hidden">📱 Mobile</div>
+        <div class="hidden sm:block md:hidden">📱 Tablet</div>
+        <div class="hidden md:block lg:hidden">💻 Desktop</div>
+        <div class="hidden lg:block">🖥️ Large</div>
+    </div>
+</body>
+</html>

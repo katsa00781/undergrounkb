@@ -66,6 +66,25 @@ export const InviteManagement: React.FC<InviteManagementProps> = ({ onInviteCrea
     });
   };
 
+  const copyEmailText = (_email: string, token: string) => {
+    const inviteUrl = `${window.location.origin}/invite/${token}`;
+    const emailText = `Szia!
+
+Meghívást kaptál a UG KettleBell Pro rendszerbe!
+
+Kattints a linkre a regisztrációhoz:
+${inviteUrl}
+
+Üdvözlettel,
+UG KettleBell Pro csapat`;
+
+    navigator.clipboard.writeText(emailText).then(() => {
+      toast.success('Email szöveg vágólapra másolva! Most küldheted el emailben.');
+    }).catch(() => {
+      toast.error('Nem sikerült a vágólapra másolni');
+    });
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('hu-HU', {
       year: 'numeric',
@@ -89,87 +108,161 @@ export const InviteManagement: React.FC<InviteManagementProps> = ({ onInviteCrea
   }
 
   return (
-    <div className="bg-white shadow rounded-lg p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium text-gray-900">
+    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
           Aktív meghívók ({invites.length})
         </h3>
         <button
           onClick={handleCleanupExpired}
-          className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-md transition-colors"
+          className="text-sm bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md transition-colors w-full sm:w-auto"
         >
-          Lejárt meghívók törlése
+          🗑️ Lejárt meghívók törlése
         </button>
       </div>
 
       {invites.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          <div className="text-4xl mb-2">📧</div>
           <p>Nincsenek aktív meghívók</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Szerepkör
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Létrehozva
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Lejárat
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Műveletek
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {invites.map((invite) => (
-                <tr key={invite.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {invite.email}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      invite.role === 'admin' 
-                        ? 'bg-purple-100 text-purple-800' 
-                        : 'bg-green-100 text-green-800'
-                    }`}>
-                      {invite.role === 'admin' ? 'Admin' : 'Felhasználó'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(invite.created_at)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(invite.expires_at)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+        <>
+          {/* Desktop/Tablet nézet - táblázat */}
+          <div className="hidden lg:block overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Szerepkör
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Létrehozva
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Lejárat
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Műveletek
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {invites.map((invite) => (
+                  <tr key={invite.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {invite.email}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        invite.role === 'admin' 
+                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' 
+                          : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                      }`}>
+                        {invite.role === 'admin' ? 'Admin' : 'Felhasználó'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {formatDate(invite.created_at)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {formatDate(invite.expires_at)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={() => copyInviteLink(invite.invite_token)}
+                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 px-3 py-1 rounded-md transition-colors text-xs"
+                          title="Meghívó link másolása"
+                        >
+                          📋 Link
+                        </button>
+                        <button
+                          onClick={() => copyEmailText(invite.email, invite.invite_token)}
+                          className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/50 px-3 py-1 rounded-md transition-colors text-xs"
+                          title="Email szöveg másolása"
+                        >
+                          ✉️ Email
+                        </button>
+                        <button
+                          onClick={() => handleCancelInvite(invite.id)}
+                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 px-3 py-1 rounded-md transition-colors text-xs"
+                          title="Meghívó törlése"
+                        >
+                          🗑️ Törlés
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile/Tablet nézet - kártyák */}
+          <div className="lg:hidden space-y-4">
+            {invites.map((invite) => (
+              <div key={invite.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                <div className="flex flex-col space-y-3">
+                  {/* Email és szerepkör */}
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white break-all">
+                        {invite.email}
+                      </p>
+                      <span className={`inline-flex mt-1 px-2 py-1 text-xs font-semibold rounded-full ${
+                        invite.role === 'admin' 
+                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' 
+                          : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                      }`}>
+                        {invite.role === 'admin' ? 'Admin' : 'Felhasználó'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Dátumok */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <div>
+                      <span className="font-medium">Létrehozva:</span>
+                      <br />
+                      {formatDate(invite.created_at)}
+                    </div>
+                    <div>
+                      <span className="font-medium">Lejárat:</span>
+                      <br />
+                      {formatDate(invite.expires_at)}
+                    </div>
+                  </div>
+
+                  {/* Műveletek - reszponzív gombok */}
+                  <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-gray-200 dark:border-gray-600">
                     <button
                       onClick={() => copyInviteLink(invite.invite_token)}
-                      className="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-md transition-colors"
-                      title="Meghívó link másolása"
+                      className="flex-1 flex items-center justify-center gap-2 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 px-3 py-2 rounded-md transition-colors text-sm font-medium"
                     >
-                      📋 Link
+                      📋 Link másolása
+                    </button>
+                    <button
+                      onClick={() => copyEmailText(invite.email, invite.invite_token)}
+                      className="flex-1 flex items-center justify-center gap-2 text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/50 px-3 py-2 rounded-md transition-colors text-sm font-medium"
+                    >
+                      ✉️ Email szöveg
                     </button>
                     <button
                       onClick={() => handleCancelInvite(invite.id)}
-                      className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md transition-colors"
-                      title="Meghívó törlése"
+                      className="flex-1 sm:flex-initial flex items-center justify-center gap-2 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 px-3 py-2 rounded-md transition-colors text-sm font-medium"
                     >
                       🗑️ Törlés
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
