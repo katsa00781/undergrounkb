@@ -32,11 +32,57 @@ ChartJS.register(
 const weightSchema = z.object({
   date: z.string().min(1, 'Date is required'),
   weight: z.number().min(20, 'Weight must be at least 20 kg').max(300, 'Weight must be less than 300 kg'),
-  bodyfat: z.number().min(1, 'Body fat must be at least 1%').max(60, 'Body fat must be less than 60%').optional(),
-  muscle: z.number().min(10, 'Muscle mass must be at least 10%').max(80, 'Muscle mass must be less than 80%').optional(),
-  bmi: z.number().min(10, 'BMI must be at least 10').max(60, 'BMI must be less than 60').optional(),
-  deep_sleep: z.number().min(0, 'Deep sleep cannot be negative').max(600, 'Deep sleep must be less than 10 hours').optional(),
-  rest_rating: z.number().min(1, 'Rating must be between 1-5').max(5, 'Rating must be between 1-5').optional(),
+  bodyfat: z.preprocess(
+    (val) => {
+      // Handle NaN, empty string, null, undefined
+      if (val === '' || val === null || val === undefined || Number.isNaN(Number(val))) {
+        return undefined;
+      }
+      const num = Number(val);
+      return Number.isNaN(num) ? undefined : num;
+    },
+    z.number().min(1, 'Body fat must be at least 1%').max(60, 'Body fat must be less than 60%').optional()
+  ),
+  muscle: z.preprocess(
+    (val) => {
+      if (val === '' || val === null || val === undefined || Number.isNaN(Number(val))) {
+        return undefined;
+      }
+      const num = Number(val);
+      return Number.isNaN(num) ? undefined : num;
+    },
+    z.number().min(10, 'Muscle mass must be at least 10%').max(80, 'Muscle mass must be less than 80%').optional()
+  ),
+  bmi: z.preprocess(
+    (val) => {
+      if (val === '' || val === null || val === undefined || Number.isNaN(Number(val))) {
+        return undefined;
+      }
+      const num = Number(val);
+      return Number.isNaN(num) ? undefined : num;
+    },
+    z.number().min(10, 'BMI must be at least 10').max(60, 'BMI must be less than 60').optional()
+  ),
+  deep_sleep: z.preprocess(
+    (val) => {
+      if (val === '' || val === null || val === undefined || Number.isNaN(Number(val))) {
+        return undefined;
+      }
+      const num = Number(val);
+      return Number.isNaN(num) ? undefined : num;
+    },
+    z.number().min(0, 'Deep sleep cannot be negative').max(600, 'Deep sleep must be less than 10 hours').optional()
+  ),
+  rest_rating: z.preprocess(
+    (val) => {
+      if (val === '' || val === null || val === undefined || Number.isNaN(Number(val))) {
+        return undefined;
+      }
+      const num = Number(val);
+      return Number.isNaN(num) ? undefined : num;
+    },
+    z.number().min(1, 'Rating must be between 1-5').max(5, 'Rating must be between 1-5').optional()
+  ),
   notes: z.string().optional(),
 });
 
@@ -285,7 +331,7 @@ const ProgressTracking = () => {
                 <input
                   type="number"
                   step="0.1"
-                  {...register('bodyfat', { valueAsNumber: true })}
+                  {...register('bodyfat')}
                   className="input mt-1"
                   placeholder="20.5"
                 />
@@ -301,7 +347,7 @@ const ProgressTracking = () => {
                 <input
                   type="number"
                   step="0.1"
-                  {...register('muscle', { valueAsNumber: true })}
+                  {...register('muscle')}
                   className="input mt-1"
                   placeholder="40.0"
                 />
@@ -317,7 +363,7 @@ const ProgressTracking = () => {
                 <input
                   type="number"
                   step="0.1"
-                  {...register('bmi', { valueAsNumber: true })}
+                  {...register('bmi')}
                   className="input mt-1"
                   placeholder="25.0"
                 />
@@ -332,7 +378,7 @@ const ProgressTracking = () => {
                 </label>
                 <input
                   type="number"
-                  {...register('deep_sleep', { valueAsNumber: true })}
+                  {...register('deep_sleep')}
                   className="input mt-1"
                   placeholder="120"
                 />
@@ -367,7 +413,7 @@ const ProgressTracking = () => {
                 </div>
                 
                 {/* Hidden field to store the value in the form */}
-                <input type="hidden" {...register('rest_rating', { valueAsNumber: true })} />
+                <input type="hidden" {...register('rest_rating')} />
                 
                 {errors.rest_rating && (
                   <p className="mt-1 text-sm text-error-600 dark:text-error-400">{errors.rest_rating.message}</p>

@@ -13,7 +13,6 @@ import {
   cancelBooking
 } from '../lib/appointments';
 import toast from 'react-hot-toast';
-import RoleDebug from '../components/ui/RoleDebug';
 
 const AppointmentBookingPage = () => {
   const { user } = useAuth();
@@ -23,7 +22,6 @@ const AppointmentBookingPage = () => {
   const [userBookings, setUserBookings] = useState<(AppointmentBooking & { appointments: Appointment })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string>('');
-  const [_accessChecked, setAccessChecked] = useState(false);
   const [accessError, setAccessError] = useState<string | null>(null);
   const [bookingEnabled, setBookingEnabled] = useState(true); // Enable booking by default
 
@@ -67,33 +65,6 @@ const AppointmentBookingPage = () => {
           return false;
         }
 
-        // Get user role to ensure access rights
-        try {
-          // Debug: Override role check to allow any authenticated user to access
-
-          // Először közvetlen lekérdezés a profiles táblában
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
-
-          if (profileError) {
-            console.error('Error getting profile role:', profileError);
-            console.warn('Could not determine user role, defaulting to "user"');
-            return 'user';
-          }
-
-          // Debug: Temporarily force update the role in profiles and memory for testing
-          // Figyelem: Ez csak ideiglenes tesztelésre szolgál!
-          // // await supabase
-          //   .from('profiles')
-          //   .update({ role: 'admin' })
-          //   .eq('id', user.id);
-        } catch (roleError) {
-          console.error('Error checking roles:', roleError);
-        }
-
         // Check if the appointments_participants table exists 
         const { error } = await supabase
           .from('appointments_participants')
@@ -111,20 +82,17 @@ const AppointmentBookingPage = () => {
           }
         }
 
-        // Always allow access for now (debug mode)
+        // Allow access for authenticated users
         return true;
       } catch (err) {
         console.error('Access check error:', err);
         setAccessError('Error checking access');
         return false;
-      } finally {
-        setAccessChecked(true);
       }
     };
 
     checkAccess().then(hasAccess => {
       if (hasAccess && user) {
-
         loadData();
       }
     });
@@ -241,9 +209,6 @@ const AppointmentBookingPage = () => {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Book an Appointment</h1>
         <p className="mt-1 text-gray-600 dark:text-gray-400">View and book available time slots</p>
       </div>
-
-      {/* Szerepkör hibakereső - csak fejlesztési időszakra */}
-      <RoleDebug />
 
       <div className="flex gap-4">
         <input

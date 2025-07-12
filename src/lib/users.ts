@@ -64,15 +64,31 @@ export async function getUser(id: string) {
 }
 
 export async function createUser(user: Omit<User, 'id' | 'created_at' | 'updated_at'>) {
-  // Create in profiles table
-  const { data, error } = await supabase
-    .from('profiles')
-    .insert({ ...user, role: user.role || 'user' })
-    .select()
-    .single();
+  // MEGHÍVÓ RENDSZER: Felhasználó létrehozás helyett meghívót küldünk
+  try {
+    const inviteData = {
+      email: user.email,
+      role: user.role === 'disabled' ? 'user' : user.role // disabled role-t user-re alakítjuk
+    } as const;
 
-  if (error) throw error;
-  return data as User;
+    // Meghívó létrehozása az új invite service-szel
+    const { createInvite } = await import('./invites');
+    const invite = await createInvite(inviteData);
+    
+    // Visszatérünk egy "mock" user objektummal a UI kompatibilitás miatt
+    return {
+      id: invite.id, // invite id-t használjuk
+      email: invite.email,
+      full_name: `[PENDING INVITE] ${invite.email}`,
+      role: invite.role,
+      created_at: invite.created_at,
+      updated_at: invite.updated_at
+    } as User;
+    
+  } catch (error) {
+    console.error('Error creating invite:', error);
+    throw error;
+  }
 }
 
 export async function updateUser(id: string, user: Partial<User>) {
@@ -89,21 +105,18 @@ export async function updateUser(id: string, user: Partial<User>) {
 }
 
 export async function deleteUser(id: string) {
-  // Soft delete: Set role to 'disabled' instead of hard delete
-
-  const { data, error } = await supabase
-    .from('profiles')
-    .update({ role: 'disabled' })
-    .eq('id', id)
-    .select()
-    .single();
+  // Use RPC function for soft delete via admin function
+  const { error } = await supabase
+    .rpc('delete_admin_user', {
+      user_id: id
+    });
 
   if (error) {
-    console.error('Error soft deleting user:', error);
+    console.error('RPC Error soft deleting user:', error);
     throw error;
   }
 
-  return data as User;
+  return true;
 }
 
 export async function getCurrentUserRole(): Promise<'admin' | 'user' | 'disabled'> {
@@ -175,24 +188,17 @@ export async function getAllUsers() {
 }
 
 export async function restoreUser(id: string, newRole: 'admin' | 'user' = 'user') {
-  // Restore a disabled user by setting their role back to admin or user
-
-  const { data, error } = await supabase
-    .from('profiles')
-    .update({ role: newRole })
-    .eq('id', id)
-    .eq('role', 'disabled')  // Only restore if currently disabled
-    .select()
-    .single();
+  // Use RPC function to restore user via admin function
+  const { error } = await supabase
+    .rpc('restore_admin_user', {
+      user_id: id,
+      new_role: newRole
+    });
 
   if (error) {
-    console.error('Error restoring user:', error);
+    console.error('RPC Error restoring user:', error);
     throw error;
   }
 
-  if (!data) {
-    throw new Error('User not found or not disabled');
-  }
-
-  return data as User;
+  return true;
 }

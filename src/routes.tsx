@@ -19,6 +19,7 @@ const UserManagement = lazy(() => import('./pages/UserManagement'));
 const AppointmentManager = lazy(() => import('./pages/AppointmentManager'));
 const TestAuth = lazy(() => import('./pages/TestAuth'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const InviteAccept = lazy(() => import('./pages/InviteAccept'));
 
 interface AppRoutesProps {
   userRole: string;
@@ -54,6 +55,8 @@ export const AppRoutes = ({ userRole }: AppRoutesProps) => {
         <Route path="/login" element={
           userRole !== 'anonymous' ? <Navigate to="/dashboard" replace /> : <Login />
         } />
+        {/* Invite acceptance - public route */}
+        <Route path="/invite/:token" element={<InviteAccept />} />
         <Route path="/test-auth" element={<TestAuth />} />
 
         {/* Protected routes */}

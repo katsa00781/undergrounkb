@@ -40,6 +40,7 @@ const Profile = () => {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -298,34 +299,50 @@ const Profile = () => {
               </label>
               <div className="mt-2 space-y-2">
                 {AVAILABLE_FITNESS_GOALS.map((goal) => {
-                  // Használjuk a Controller komponenst a komplex mezők kezeléséhez
+                  // Használjuk a watch-ot a friss adatok eléréséhez
                   const goalsArray = Array.isArray(watch('fitnessGoals')) ? watch('fitnessGoals') : [];
                   const isChecked = goalsArray.includes(goal);
 
+                  const handleGoalToggle = () => {
+                    console.log('🎯 Fitness Goal clicked:', goal, 'Currently checked:', isChecked);
+                    const currentGoals = watch('fitnessGoals') || [];
+                    let updatedGoals = Array.isArray(currentGoals) ? [...currentGoals] : [];
+                    
+                    if (isChecked) {
+                      updatedGoals = updatedGoals.filter(g => g !== goal);
+                      console.log('📤 Removing goal:', goal);
+                    } else {
+                      updatedGoals.push(goal);
+                      console.log('📥 Adding goal:', goal);
+                    }
+                    
+                    console.log('🔄 Updated goals array:', updatedGoals);
+                    setValue('fitnessGoals', updatedGoals, { shouldValidate: true });
+                  };
+
                   return (
-                    <label key={goal} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        value={goal}
-                        checked={isChecked}
-                        onChange={(e) => {
-                          let updatedGoals = [...goalsArray];
-                          if (e.target.checked) {
-                            // Ha bejelöltük és még nincs benne, adjuk hozzá
-                            if (!updatedGoals.includes(goal)) {
-                              updatedGoals.push(goal);
-                            }
-                          } else {
-                            // Ha kijelöltük, távolítsuk el
-                            updatedGoals = updatedGoals.filter(g => g !== goal);
-                          }
-                          // Frissítsük a form értékét
-                          reset({ ...watch(), fitnessGoals: updatedGoals }, { keepValues: true });
-                        }}
-                        className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-600"
-                      />
-                      <span className="ml-2 text-gray-700 dark:text-gray-300">{goal}</span>
-                    </label>
+                    <div key={goal} className="flex items-center space-x-3">
+                      <button
+                        type="button"
+                        onClick={handleGoalToggle}
+                        className="flex items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      >
+                        <div className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-all ${
+                          isChecked 
+                            ? 'bg-primary-600 border-primary-600 text-white' 
+                            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-primary-400'
+                        }`}>
+                          {isChecked && (
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className="ml-3 text-gray-700 dark:text-gray-300 select-none">
+                          {goal}
+                        </span>
+                      </button>
+                    </div>
                   );
                 })}
               </div>

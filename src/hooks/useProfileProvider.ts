@@ -25,6 +25,7 @@ export type ProfileDatabaseUpdate = {
   experience_level?: string | null;
   updated_at: string;
   full_name?: string | null;
+  display_name?: string | null;
 };
 
 // Function to check if the db schema has the required columns
@@ -128,13 +129,6 @@ export const useProfileProvider = () => {
     try {
       setIsLoading(true);
 
-      // Use display name directly as full name
-      let full_name: string | null = null;
-
-      if (data.displayName) {
-        full_name = data.displayName.trim();
-      }
-
       // Prepare the updates object with all fields
       // Make sure fitness_goals is always a valid array
       const fitnessGoalsArray = Array.isArray(data.fitnessGoals) ? data.fitnessGoals : [];
@@ -162,15 +156,34 @@ export const useProfileProvider = () => {
         updated_at: new Date().toISOString()
       };
 
-      // Add full name conditionally
-      if (full_name !== null) {
-        updates.full_name = full_name;
+      // Add full name and display name conditionally
+      if (data.displayName && data.displayName.trim()) {
+        updates.full_name = data.displayName.trim();
+        // We also send display_name for SQL compatibility
+        updates.display_name = data.displayName.trim();
       }
 
       // Try-Catch block specifically for the update operation
       try {
 
-        // First try with all fields
+        // ELSŐ MEGOLDÁS: Security Definer function használata (biztonságosabb)
+        const { data: functionResult, error: functionError } = await supabase
+          .rpc('update_user_profile', {
+            user_id: user.id,
+            profile_data: updates
+          });
+
+        if (!functionError && functionResult && functionResult.length > 0) {
+          const updatedProfile = functionResult[0];
+          setProfile(updatedProfile);
+          toast.success('Profile updated successfully');
+          return updatedProfile;
+        }
+
+        // Ha a function nem működik, próbáljuk a direkt UPDATE-et
+        console.info('Function approach failed, trying direct update:', functionError?.message);
+
+        // MÁSODIK MEGOLDÁS: Direkt tábla frissítés
         let result = await supabase
           .from('profiles')
           .update(updates)
@@ -227,10 +240,14 @@ export const useProfileProvider = () => {
 
       // More user-friendly error message based on error type
       if (error instanceof Error) {
-        if (error.message.includes('column') && error.message.includes('does not exist')) {
+        if (error.message.includes('permission denied')) {
+          toast.error('Engedély hiba: RLS policy-k szükségesek. Futtasd le a fix_profiles_permissions.sql script-et!');
+        } else if (error.message.includes('column') && error.message.includes('does not exist')) {
           toast.error('Database schema mismatch. Please contact the administrator.');
         } else if (error.message.includes('not found in the schema cache')) {
           toast.error('Schema cache issue. Please reload the page and try again.');
+        } else if (error.message.includes('42501')) {
+          toast.error('Adatbázis jogosultsági hiba. Ellenőrizd a RLS policy-kat a profiles táblán.');
         } else {
           toast.error('Failed to update profile: ' + error.message);
         }

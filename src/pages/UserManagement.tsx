@@ -3,25 +3,27 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Users, UserPlus, Edit2, Trash2, Mail, User as UserIcon } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { User, getUsers, createUser, updateUser, deleteUser, getAllUsers, restoreUser } from '../lib/users';
+import { User, getUsers, updateUser, deleteUser, getAllUsers, restoreUser } from '../lib/users';
+import { createInvite } from '../lib/invites';
+import { testSupabaseConnection } from '../lib/supabaseTest';
+import { InviteManagement } from '../components/InviteManagement';
 import toast from 'react-hot-toast';
 
 const userSchema = z.object({
   email: z.string().email('Invalid email address'),
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
-  role: z.enum(['admin', 'user', 'disabled']),
+  role: z.enum(['admin', 'user']), // Removed 'disabled' since we use invites now
 });
 
 type UserFormData = z.infer<typeof userSchema>;
 
 const UserManagement = () => {
-  const { user: _currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [showDisabled, setShowDisabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [testing, setTesting] = useState(false);
 
   const {
     register,
@@ -57,19 +59,37 @@ const UserManagement = () => {
     if (editingUser) {
       setValue('email', editingUser.email);
       setValue('full_name', editingUser.full_name || '');
-      setValue('role', editingUser.role);
+      // Ha a user disabled, akkor user role-t állítunk be alapértelmezettként
+      setValue('role', editingUser.role === 'disabled' ? 'user' : editingUser.role);
       setShowForm(true);
     }
   }, [editingUser, setValue]);
 
   const onSubmit = async (data: UserFormData) => {
+    console.log('🚀 Form submitted:', data);
+    
     try {
       if (editingUser) {
+        console.log('🔄 Updating existing user:', editingUser.id);
         await updateUser(editingUser.id, data);
         toast.success('User updated successfully');
       } else {
-        await createUser(data);
-        toast.success('User created successfully');
+        console.log('📧 Creating new invite for:', data.email);
+        
+        // Timeout protection
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
+        );
+        
+        const invitePromise = createInvite({
+          email: data.email,
+          role: data.role
+        });
+        
+        // Race between invite creation and timeout
+        await Promise.race([invitePromise, timeoutPromise]);
+        
+        toast.success('Invite sent successfully! User will receive an invitation link.');
       }
       
       await loadUsers();
@@ -77,8 +97,24 @@ const UserManagement = () => {
       setEditingUser(null);
       reset();
     } catch (error) {
-      console.error('Failed to save user:', error);
-      toast.error('Failed to save user');
+      console.error('❌ Failed to save user:', error);
+      
+      // Jobb hibaüzenetek
+      if (error instanceof Error) {
+        if (error.message.includes('timeout')) {
+          toast.error('A kérés túl sokáig tartott. Ellenőrizd a hálózati kapcsolatot és próbáld újra.');
+        } else if (error.message.includes('function') && error.message.includes('not found')) {
+          toast.error('Database hiba: A meghívó funkció nincs telepítve. Futtasd le az SQL scripteket!');
+        } else if (error.message.includes('permission') || error.message.includes('Unauthorized')) {
+          toast.error('Jogosultság hiba: Nincs admin jogosultságod meghívó küldésére.');
+        } else if (error.message.includes('already exists')) {
+          toast.error('Ez az email cím már használatban van.');
+        } else {
+          toast.error(`Hiba: ${error.message}`);
+        }
+      } else {
+        toast.error('Ismeretlen hiba történt. Próbáld újra.');
+      }
     }
   };
 
@@ -105,6 +141,32 @@ const UserManagement = () => {
     } catch (error) {
       console.error('Failed to restore user:', error);
       toast.error('Failed to restore user');
+    }
+  };
+
+  const handleTestConnection = async () => {
+    setTesting(true);
+    console.log('🧪 Starting Supabase connection test...');
+    
+    try {
+      const result = await testSupabaseConnection();
+      
+      if (result.success) {
+        toast.success('✅ Supabase connection test passed! Invite system should work.');
+        console.log('✅ Test result:', result.message);
+      } else {
+        toast.error(`❌ Test failed: ${result.error}`);
+        console.error('❌ Test failed:', result);
+        
+        if (result.suggestion) {
+          toast.error(`💡 Suggestion: ${result.suggestion}`, { duration: 8000 });
+        }
+      }
+    } catch (error) {
+      console.error('❌ Test error:', error);
+      toast.error('Test failed: ' + (error as Error).message);
+    } finally {
+      setTesting(false);
     }
   };
 
@@ -145,7 +207,19 @@ const UserManagement = () => {
             className="btn btn-primary inline-flex items-center gap-2"
           >
             <UserPlus size={20} />
-            <span>Add User</span>
+            <span>Invite User</span>
+          </button>
+          <button
+            onClick={handleTestConnection}
+            disabled={testing}
+            className="btn btn-outline inline-flex items-center gap-2"
+          >
+            {testing ? (
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : (
+              <span>🧪</span>
+            )}
+            <span>Test Connection</span>
           </button>
         </div>
       </div>
@@ -153,7 +227,7 @@ const UserManagement = () => {
       {showForm && (
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <h2 className="mb-6 text-xl font-semibold text-gray-900 dark:text-white">
-            {editingUser ? 'Edit User' : 'Add New User'}
+            {editingUser ? 'Edit User' : 'Invite New User'}
           </h2>
           
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -241,7 +315,7 @@ const UserManagement = () => {
                     <span>Saving...</span>
                   </div>
                 ) : (
-                  <span>{editingUser ? 'Update User' : 'Create User'}</span>
+                  <span>{editingUser ? 'Update User' : 'Send Invite'}</span>
                 )}
               </button>
             </div>
@@ -338,6 +412,9 @@ const UserManagement = () => {
           </div>
         </div>
       </div>
+
+      {/* Meghívó kezelő komponens */}
+      <InviteManagement />
     </div>
   );
 };

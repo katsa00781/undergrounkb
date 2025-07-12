@@ -70,11 +70,13 @@ export interface Database {
           email: string | null
           first_name: string | null
           last_name: string | null
+          full_name: string | null  // Új mező - ProfileFormData.displayName
+          display_name: string | null  // Új mező - ProfileFormData.displayName
           role: string | null
           avatar_url: string | null
           created_at: string
           updated_at: string
-          // Extended profile fields
+          // Extended profile fields - ProfileFormData mezők
           height: number | null
           weight: number | null
           birthdate: string | null
@@ -87,6 +89,8 @@ export interface Database {
           email?: string | null
           first_name?: string | null
           last_name?: string | null
+          full_name?: string | null  // Új mező
+          display_name?: string | null  // Új mező
           role?: string | null
           avatar_url?: string | null
           created_at?: string
@@ -104,6 +108,8 @@ export interface Database {
           email?: string | null
           first_name?: string | null
           last_name?: string | null
+          full_name?: string | null  // Új mező
+          display_name?: string | null  // Új mező
           role?: string | null
           avatar_url?: string | null
           created_at?: string
