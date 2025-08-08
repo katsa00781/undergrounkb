@@ -117,6 +117,20 @@ const MobileNav = () => {
         </NavLink>
 
         <NavLink
+          to="/calendar"
+          className={({ isActive }) =>
+            `mobile-tab ${
+              isActive
+                ? 'text-primary-600 dark:text-primary-400'
+                : 'text-gray-500 dark:text-gray-400'
+            }`
+          }
+        >
+          <Calendar size={20} />
+          <span>Naptár</span>
+        </NavLink>
+
+        <NavLink
           to="/progress"
           className={({ isActive }) =>
             `mobile-tab ${

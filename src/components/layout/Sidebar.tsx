@@ -8,7 +8,8 @@ import {
   User,
   Users,
   Activity,
-  Target
+  Target,
+  CalendarDays
 } from 'lucide-react';
 import { useRolePermission } from '../../hooks/useRolePermission';
 
@@ -74,6 +75,17 @@ const Sidebar = ({ open, onClose, isMobile }: SidebarProps) => {
           <span>Edzésnapló</span>
         </NavLink>
 
+        <NavLink
+          to="/calendar"
+          className={({ isActive }) =>
+            `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+          }
+          onClick={onClose}
+        >
+          <Calendar size={20} />
+          <span>Edzésnaptár</span>
+        </NavLink>
+
         {permissions.canAccessWorkoutPlanner && (
           <NavLink
             to="/planner"
@@ -82,7 +94,7 @@ const Sidebar = ({ open, onClose, isMobile }: SidebarProps) => {
             }
             onClick={onClose}
           >
-            <Calendar size={20} />
+            <CalendarDays size={20} />
             <span>Edzéstervező</span>
           </NavLink>
         )}
