@@ -7,7 +7,8 @@ import {
   ClipboardList,
   User,
   Users,
-  Activity
+  Activity,
+  Target
 } from 'lucide-react';
 import { useRolePermission } from '../../hooks/useRolePermission';
 
@@ -121,6 +122,17 @@ const Sidebar = ({ open, onClose, isMobile }: SidebarProps) => {
         >
           <BarChart2 size={20} />
           <span>Fejlődés Követése</span>
+        </NavLink>
+
+        <NavLink
+          to="/goals"
+          className={({ isActive }) =>
+            `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+          }
+          onClick={onClose}
+        >
+          <Target size={20} />
+          <span>Célok</span>
         </NavLink>
 
         {permissions.canAccessUserManagement && (

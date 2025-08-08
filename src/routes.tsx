@@ -20,6 +20,7 @@ const AppointmentManager = lazy(() => import('./pages/AppointmentManager'));
 const TestAuth = lazy(() => import('./pages/TestAuth'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const InviteAccept = lazy(() => import('./pages/InviteAccept'));
+const Goals = lazy(() => import('./pages/Goals'));
 
 interface AppRoutesProps {
   userRole: string;
@@ -71,6 +72,7 @@ export const AppRoutes = ({ userRole }: AppRoutesProps) => {
           <Route path="/log" element={<WorkoutLog />} />
           <Route path="/progress" element={<ProgressTracking />} />
           <Route path="/appointments" element={<AppointmentBookingPage />} />
+          <Route path="/goals" element={<Goals />} />
           
           {/* Admin-only routes */}
           <Route path="/planner" element={

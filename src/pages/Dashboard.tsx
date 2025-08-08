@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, BarChart2, TrendingUp, Activity, Dumbbell } from 'lucide-react';
+import { Calendar, BarChart2, TrendingUp, Activity, Dumbbell, Target } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { getWeightMeasurements, WeightMeasurement } from '../lib/weights';
 import { getLatestFMSAssessment, FMSAssessment } from '../lib/fms';
 import { getUserBookings, AppointmentBooking, Appointment } from '../lib/appointments';
+import { getGoals, getGoalStats, Goal, GoalStats } from '../lib/goals';
 import { format, subDays, parseISO, isFuture } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import ConnectionTest from '../components/ui/ConnectionTest';
@@ -16,6 +17,8 @@ const Dashboard = () => {
   const [weights, setWeights] = useState<WeightMeasurement[]>([]);
   const [latestFMS, setLatestFMS] = useState<FMSAssessment | null>(null);
   const [upcomingBookings, setUpcomingBookings] = useState<(AppointmentBooking & { appointments: Appointment })[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [goalStats, setGoalStats] = useState<GoalStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -34,10 +37,12 @@ const Dashboard = () => {
 
     try {
       setIsLoading(true);
-      const [weightsData, fmsData, bookingsData] = await Promise.all([
+      const [weightsData, fmsData, bookingsData, goalsData, statsData] = await Promise.all([
         getWeightMeasurements(user.id),
         getLatestFMSAssessment(user.id),
-        getUserBookings(user.id)
+        getUserBookings(user.id),
+        getGoals('active'),
+        getGoalStats()
       ]);
 
       // Debug log
@@ -45,6 +50,8 @@ const Dashboard = () => {
       // Debug log
       setWeights(weightsData);
       setLatestFMS(fmsData);
+      setGoals(goalsData);
+      setGoalStats(statsData);
 
       // Csak a jövőbeli foglalásokat jelenítjük meg
       const upcoming = bookingsData
@@ -127,7 +134,7 @@ const Dashboard = () => {
       <ConnectionTest />
 
       {/* Quick stats */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="card animate-fade-in" style={{ animationDelay: '0.1s' }}>
           <div className="flex items-center">
             <div className="rounded-full bg-accent-100 p-3 dark:bg-accent-900">
@@ -170,8 +177,36 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Goals statisztika */}
+        <div className="card animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <div className="flex items-center">
+            <div className="rounded-full bg-blue-100 p-3 dark:bg-blue-900">
+              <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Aktív célok</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                {goalStats ? goalStats.activeGoals : goals.length}
+              </p>
+              {goalStats && goalStats.todayCompletions > 0 && (
+                <p className="text-xs text-green-600 dark:text-green-400">
+                  +{goalStats.todayCompletions} ma teljesítve
+                </p>
+              )}
+              {goals.length === 0 && (
+                <Link 
+                  to="/goals" 
+                  className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  Cél hozzáadása →
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+
         {latestFMS && (
-          <div className="card animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <div className="card animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <div className="flex items-center">
               <div className="rounded-full bg-primary-100 p-3 dark:bg-primary-900">
                 <Activity className="h-6 w-6 text-primary-600 dark:text-primary-400" />
@@ -190,7 +225,7 @@ const Dashboard = () => {
         )}
 
         {!latestFMS && !isLoading && (
-          <div className="card animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <div className="card animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <div className="flex items-center">
               <div className="rounded-full bg-gray-100 p-3 dark:bg-gray-700">
                 <Activity className="h-6 w-6 text-gray-400" />
@@ -399,8 +434,80 @@ const Dashboard = () => {
         </div>
       )}
 
+      {/* Recent Goals */}
+      {goals.length > 0 && (
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Aktív célok
+            </h2>
+            <Link
+              to="/goals"
+              className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400"
+            >
+              Összes cél →
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {goals.slice(0, 3).map((goal) => (
+              <div 
+                key={goal.id} 
+                className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/30"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-medium text-gray-900 dark:text-white">
+                      {goal.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {goal.description}
+                    </p>
+                    <div className="mt-2 flex items-center gap-2 text-xs">
+                      <span className={`px-2 py-1 rounded ${
+                        goal.type === 'daily' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
+                        goal.type === 'weekly' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                        goal.type === 'monthly' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                        goal.type === 'quarterly' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' :
+                        'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'
+                      }`}>
+                        {goal.type === 'daily' ? 'Napi' :
+                         goal.type === 'weekly' ? 'Heti' :
+                         goal.type === 'monthly' ? 'Havi' :
+                         goal.type === 'quarterly' ? 'Negyedéves' : 'Éves'}
+                      </span>
+                      <span className="text-gray-500">
+                        {goal.current_value}/{goal.target_value || 0} {goal.target_unit}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                    <Target className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                </div>
+                
+                {/* Progress bar */}
+                <div className="mt-3">
+                  <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                    <span>Teljesítés</span>
+                    <span>{(goal.target_value || 0) > 0 ? Math.round((goal.current_value / (goal.target_value || 1)) * 100) : 0}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                    <div 
+                      className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
+                      style={{ 
+                        width: `${(goal.target_value || 0) > 0 ? Math.min(100, (goal.current_value / (goal.target_value || 1)) * 100) : 0}%` 
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Quick actions */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
         <Link
           to="/appointments"
           className="flex flex-col items-center justify-center rounded-lg border border-gray-200 bg-white p-6 text-center shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
@@ -415,6 +522,14 @@ const Dashboard = () => {
         >
           <BarChart2 className="mb-2 h-8 w-8 text-secondary-600 dark:text-secondary-400" />
           <h3 className="font-semibold text-gray-900 dark:text-white">Haladás követése</h3>
+        </Link>
+
+        <Link
+          to="/goals"
+          className="flex flex-col items-center justify-center rounded-lg border border-gray-200 bg-white p-6 text-center shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
+        >
+          <Target className="mb-2 h-8 w-8 text-blue-600 dark:text-blue-400" />
+          <h3 className="font-semibold text-gray-900 dark:text-white">Célok</h3>
         </Link>
 
         <Link
