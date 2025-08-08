@@ -46,9 +46,11 @@ dist/assets/ProgressTracking-DI1XVgg9.js   176.32 kB │ gzip:  59.38 kB
 ```
 
 ### 🔄 Auto-deployment:
-- ✅ Git push automatikusan triggeli új deployment-et
+- ✅ Git push automatikusan triggeli új deployment-et (Vercel)
 - ✅ Branch-alapú preview deployments
 - ✅ Production deployment a main branch-re
+- ✅ GitHub Actions: Build és lint tesztek
+- ❌ GitHub Pages deployment eltávolítva (Vercel-t használunk)
 
 ### 🎯 Új Funkciók Live-ban:
 1. **Edzésnaptár nézet** - Magyar nyelvű havi naptár
@@ -71,6 +73,17 @@ dist/assets/ProgressTracking-DI1XVgg9.js   176.32 kB │ gzip:  59.38 kB
 3. ✅ Auto-deployment engedélyezve
 4. 🔄 Környezeti változók beállítása a Vercel dashboard-on
 5. 🔄 SSL automatikusan aktív
+
+### 🔧 Hibaelhárítás:
+**GitHub Actions hiba megoldva:**
+- ❌ GitHub Pages deployment workflow eltávolítva
+- ✅ Új build-test workflow létrehozva
+- ✅ Vercel automatikus deployment használatban
+- 📋 Hiba: "Permission denied to github-actions[bot]" - megoldva workflow törlésével
+
+**Workflow váltás:**
+- Régi: GitHub Actions → GitHub Pages
+- Új: GitHub Actions (build/test) + Vercel (deployment)
 
 ---
 

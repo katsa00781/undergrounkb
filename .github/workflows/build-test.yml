@@ -1,0 +1,40 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run linting
+      run: npm run lint
+      
+    - name: Build application
+      run: npm run build
+      env:
+        # Dummy values for build test - real values are set in Vercel
+        VITE_SUPABASE_URL: "https://dummy.supabase.co"
+        VITE_SUPABASE_ANON_KEY: "dummy_key_for_build_test"
+        
+    - name: Build success notification
+      run: |
+        echo "✅ Build successful!"
+        echo "🚀 Deployment will be handled automatically by Vercel"
+        echo "🌐 Live URL: https://ugkettlebellpro.vercel.app"
