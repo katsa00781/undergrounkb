@@ -22,6 +22,7 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 const InviteAccept = lazy(() => import('./pages/InviteAccept'));
 const Goals = lazy(() => import('./pages/Goals'));
 const WorkoutCalendarPage = lazy(() => import('./pages/WorkoutCalendarPage'));
+const MyWorkouts = lazy(() => import('./pages/MyWorkouts'));
 
 interface AppRoutesProps {
   userRole: string;
@@ -72,6 +73,7 @@ export const AppRoutes = ({ userRole }: AppRoutesProps) => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/log" element={<WorkoutLog />} />
           <Route path="/calendar" element={<WorkoutCalendarPage />} />
+          <Route path="/my-workouts" element={<MyWorkouts />} />
           <Route path="/progress" element={<ProgressTracking />} />
           <Route path="/appointments" element={<AppointmentBookingPage />} />
           <Route path="/goals" element={<Goals />} />

@@ -10,6 +10,12 @@ export interface WorkoutSection {
     weight?: number;
     notes?: string;
     restPeriod?: number;
+    // Personal tracking fields
+    actualSets?: number;
+    actualReps?: number | string;
+    actualWeight?: number;
+    personalNotes?: string;
+    completed?: boolean;
   }[];
 }
 
@@ -23,6 +29,11 @@ export interface Workout {
   created_at?: string;
   updated_at?: string;
   user_id: string;
+  // Shared workout fields
+  is_template?: boolean;
+  original_workout_id?: string;
+  shared_from?: string;
+  appointment_id?: string;
 }
 
 // Define the database types
@@ -206,5 +217,197 @@ export async function copyWorkoutToUser(appointmentDate: string, adminId: string
   } catch (error) {
     console.error('Exception in copyWorkoutToUser:', error);
     return null;
+  }
+}
+
+// Share workout with appointment participants
+export async function shareWorkoutWithParticipants(workoutId: string, appointmentId: string) {
+  try {
+    // Get the original workout
+    const { data: originalWorkout, error: workoutError } = await supabase
+      .from('workouts')
+      .select('*')
+      .eq('id', workoutId)
+      .single();
+
+    if (workoutError || !originalWorkout) {
+      throw new Error('Workout not found');
+    }
+
+    // Get appointment participants
+    const { data: bookings, error: bookingsError } = await supabase
+      .from('appointment_bookings')
+      .select('user_id, profiles!inner(id, first_name, last_name)')
+      .eq('appointment_id', appointmentId)
+      .eq('status', 'confirmed');
+
+    if (bookingsError) {
+      throw new Error('Error fetching participants');
+    }
+
+    // Parse sections if needed
+    let sections = originalWorkout.sections;
+    if (typeof sections === 'string') {
+      sections = JSON.parse(sections);
+    }
+
+    // Create personal copies for each participant
+    const personalWorkouts = [];
+    
+    for (const booking of bookings) {
+      const personalWorkout = {
+        title: `${originalWorkout.title} (Shared)`,
+        date: originalWorkout.date,
+        duration: originalWorkout.duration,
+        notes: `${originalWorkout.notes || ''}\n\nShared from group session.`,
+        sections: sections,
+        user_id: booking.user_id,
+        is_template: false,
+        original_workout_id: workoutId,
+        shared_from: originalWorkout.user_id,
+        appointment_id: appointmentId
+      };
+
+      const { data: newWorkout, error: insertError } = await supabase
+        .from('workouts')
+        .insert(personalWorkout)
+        .select()
+        .single();
+
+      if (!insertError && newWorkout) {
+        personalWorkouts.push(newWorkout);
+      }
+    }
+
+    return personalWorkouts;
+  } catch (error) {
+    console.error('Error sharing workout with participants:', error);
+    throw error;
+  }
+}
+
+// Update personal workout with actual performance
+export async function updatePersonalWorkoutPerformance(
+  workoutId: string, 
+  sectionIndex: number, 
+  exerciseIndex: number, 
+  performance: {
+    actualSets?: number;
+    actualReps?: number | string;
+    actualWeight?: number;
+    personalNotes?: string;
+    completed?: boolean;
+  }
+) {
+  try {
+    // Get the current workout
+    const { data: workout, error: fetchError } = await supabase
+      .from('workouts')
+      .select('*')
+      .eq('id', workoutId)
+      .single();
+
+    if (fetchError || !workout) {
+      throw new Error('Workout not found');
+    }
+
+    // Parse sections
+    let sections = workout.sections;
+    if (typeof sections === 'string') {
+      sections = JSON.parse(sections);
+    }
+
+    // Update the specific exercise with performance data
+    if (sections[sectionIndex] && sections[sectionIndex].exercises[exerciseIndex]) {
+      sections[sectionIndex].exercises[exerciseIndex] = {
+        ...sections[sectionIndex].exercises[exerciseIndex],
+        ...performance
+      };
+    }
+
+    // Update the workout
+    const { data: updatedWorkout, error: updateError } = await supabase
+      .from('workouts')
+      .update({ sections })
+      .eq('id', workoutId)
+      .select()
+      .single();
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    return updatedWorkout;
+  } catch (error) {
+    console.error('Error updating workout performance:', error);
+    throw error;
+  }
+}
+
+// Get workout progress/trend data for a user
+export async function getWorkoutProgressTrend(userId: string, exerciseId?: string, dateRange?: { start: string; end: string }) {
+  try {
+    let query = supabase
+      .from('workouts')
+      .select('*')
+      .eq('user_id', userId)
+      .order('date', { ascending: true });
+
+    if (dateRange) {
+      query = query.gte('date', dateRange.start).lte('date', dateRange.end);
+    }
+
+    const { data: workouts, error } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    // Process workouts to extract progress data
+    const progressData: Array<{
+      date: string;
+      workoutTitle: string;
+      exerciseId: string;
+      exerciseName: string;
+      plannedSets: number;
+      actualSets?: number;
+      plannedReps: number | string;
+      actualReps?: number | string;
+      plannedWeight?: number;
+      actualWeight?: number;
+      completed?: boolean;
+    }> = [];
+
+    workouts.forEach(workout => {
+      let sections = workout.sections;
+      if (typeof sections === 'string') {
+        sections = JSON.parse(sections);
+      }
+
+      sections.forEach((section: WorkoutSection) => {
+        section.exercises.forEach((exercise) => {
+          if (!exerciseId || exercise.exerciseId === exerciseId) {
+            progressData.push({
+              date: workout.date,
+              workoutTitle: workout.title,
+              exerciseId: exercise.exerciseId,
+              exerciseName: exercise.exerciseId, // TODO: Get actual exercise name
+              plannedSets: exercise.sets,
+              actualSets: exercise.actualSets,
+              plannedReps: exercise.reps,
+              actualReps: exercise.actualReps,
+              plannedWeight: exercise.weight,
+              actualWeight: exercise.actualWeight,
+              completed: exercise.completed
+            });
+          }
+        });
+      });
+    });
+
+    return progressData;
+  } catch (error) {
+    console.error('Error getting workout progress trend:', error);
+    throw error;
   }
 }

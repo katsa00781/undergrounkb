@@ -29,7 +29,8 @@ import {
   GoalCategory,
   CreateGoalData,
   GOAL_TEMPLATES
-} from '../lib/goals';const GoalsManagement: React.FC = () => {
+} from '../lib/goals';
+import EnhancedGoalForm from './EnhancedGoalForm';const GoalsManagement: React.FC = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [stats, setStats] = useState<GoalStats | null>(null);
   const [goalProgress, setGoalProgress] = useState<Record<string, GoalProgress>>({});
@@ -89,55 +90,12 @@ import {
     }
   };
 
-  const handleCreateGoal = async () => {
+  const handleCreateGoal = async (goalData: CreateGoalData) => {
     try {
-      // End date kiszámítása ha nincs megadva
-      let endDate = formData.end_date;
-      if (!endDate) {
-        const start = new Date(formData.start_date);
-        const end = new Date(start);
-        
-        switch (formData.type) {
-          case 'daily':
-            end.setDate(end.getDate() + 30); // 30 nap
-            break;
-          case 'weekly':
-            end.setDate(end.getDate() + 84); // 12 hét
-            break;
-          case 'monthly':
-            end.setMonth(end.getMonth() + 6); // 6 hónap
-            break;
-          case 'quarterly':
-            end.setMonth(end.getMonth() + 3); // 3 hónap
-            break;
-          case 'yearly':
-            end.setFullYear(end.getFullYear() + 1); // 1 év
-            break;
-        }
-        endDate = end.toISOString().split('T')[0];
-      }
-
-      await createGoal({
-        ...formData,
-        end_date: endDate
-      });
-
+      await createGoal(goalData);
       await loadGoals();
       await loadStats();
       setIsCreateDialogOpen(false);
-      
-      // Form reset
-      setFormData({
-        title: '',
-        description: '',
-        category: 'fitness',
-        type: 'daily',
-        target_value: 1,
-        target_unit: '',
-        start_date: new Date().toISOString().split('T')[0],
-        end_date: ''
-      });
-
       alert('Cél sikeresen létrehozva');
     } catch (error) {
       console.error('Error creating goal:', error);
@@ -538,127 +496,13 @@ import {
         </div>
       )}
 
-      {/* Új cél létrehozási dialog */}
+      {/* Új cél létrehozási dialog - EnhancedGoalForm */}
       {isCreateDialogOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md max-h-screen overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Új cél létrehozása</h3>
-              <button 
-                onClick={() => setIsCreateDialogOpen(false)}
-                className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">Adj meg egy új célt amit el szeretnél érni</p>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">Cél neve</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="pl. Napi 10,000 lépés"
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">Leírás</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Részletek a célról..."
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg h-20 text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">Kategória</label>
-                  <select 
-                    value={formData.category} 
-                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as GoalCategory }))}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="fitness">Fitness</option>
-                    <option value="nutrition">Táplálkozás</option>
-                    <option value="health">Egészség</option>
-                    <option value="lifestyle">Életmód</option>
-                    <option value="personal">Személyes</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">Típus</label>
-                  <select 
-                    value={formData.type} 
-                    onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as GoalType }))}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="daily">Napi</option>
-                    <option value="weekly">Heti</option>
-                    <option value="monthly">Havi</option>
-                    <option value="quarterly">Negyedéves</option>
-                    <option value="yearly">Éves</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">Célérték</label>
-                  <input
-                    type="number"
-                    value={formData.target_value}
-                    onChange={(e) => setFormData(prev => ({ ...prev, target_value: parseInt(e.target.value) || 1 }))}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">Egység</label>
-                  <input
-                    type="text"
-                    value={formData.target_unit}
-                    onChange={(e) => setFormData(prev => ({ ...prev, target_unit: e.target.value }))}
-                    placeholder="pl. lépés, liter, perc"
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">Kezdő dátum</label>
-                  <input
-                    type="date"
-                    value={formData.start_date}
-                    onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">Záró dátum (opcionális)</label>
-                  <input
-                    type="date"
-                    value={formData.end_date}
-                    onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <button 
-                onClick={handleCreateGoal} 
-                className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Cél létrehozása
-              </button>
-            </div>
-          </div>
-        </div>
+        <EnhancedGoalForm
+          isOpen={isCreateDialogOpen}
+          onClose={() => setIsCreateDialogOpen(false)}
+          onSubmit={handleCreateGoal}
+        />
       )}
 
       {/* Cél szerkesztési dialog */}
@@ -738,8 +582,16 @@ import {
                   <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-white">Célérték</label>
                   <input
                     type="number"
-                    value={formData.target_value}
-                    onChange={(e) => setFormData(prev => ({ ...prev, target_value: parseInt(e.target.value) || 1 }))}
+                    min="1"
+                    value={formData.target_value || ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        target_value: value === '' ? 0 : parseInt(value) || 1 
+                      }));
+                    }}
+                    placeholder="Célérték"
                     className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>

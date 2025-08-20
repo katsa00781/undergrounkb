@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, Save, Trash2, GripVertical, Sparkles, RotateCw } from 'lucide-react';
+import { Plus, Save, Trash2, GripVertical, Sparkles, RotateCw, Share2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Exercise, getExercises } from '../lib/exercises';
 import { createWorkout } from '../lib/workouts';
 import { getMovementPatterns } from '../lib/exerciseService';
 import { WorkoutDay, generateWorkoutPlanV2, ProgramType } from '../lib/workoutGenerator.fixed';
+import WorkoutSharingDialog from '../components/WorkoutSharingDialog';
 import toast from 'react-hot-toast';
 
 const workoutSchema = z.object({
@@ -76,6 +77,8 @@ const WorkoutPlanner = () => {
   const [selectedWorkoutDay, setSelectedWorkoutDay] = useState<WorkoutDay>(1);
   const [selectedProgramType, setSelectedProgramType] = useState<ProgramType>('4napos');
   const [showGenerateForm, setShowGenerateForm] = useState(false);
+  const [showSharingDialog, setShowSharingDialog] = useState(false);
+  const [lastCreatedWorkoutId, setLastCreatedWorkoutId] = useState<string | null>(null);
 
   const {
     register,
@@ -148,11 +151,12 @@ const WorkoutPlanner = () => {
         }
       }
       
-      await createWorkout({
+      const createdWorkout = await createWorkout({
         ...data,
         user_id: user.id,
       });
 
+      setLastCreatedWorkoutId(createdWorkout.id);
       toast.success('Workout saved successfully');
       reset();
       setSections([{ id: '1', name: 'Main Workout', exercises: [{ id: '1' }] }]);
@@ -964,10 +968,12 @@ const WorkoutPlanner = () => {
                           type="number"
                           min="1"
                           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                          value={exercise.sets || 3}
+                          placeholder="3"
+                          value={exercise.sets || ''}
                           onChange={(e) => {
                             const newSections = [...sections];
-                            newSections[sectionIndex].exercises[exerciseIndex].sets = Number(e.target.value);
+                            const value = e.target.value;
+                            newSections[sectionIndex].exercises[exerciseIndex].sets = value === '' ? undefined : Number(value) || 1;
                             setSections(newSections);
                           }}
                         />
@@ -982,7 +988,7 @@ const WorkoutPlanner = () => {
                           {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.reps`)}
                           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                           placeholder="10 or 8-12"
-                          value={exercise.reps || 10}
+                          value={exercise.reps || ''}
                           onChange={(e) => {
                             const newSections = [...sections];
                             newSections[sectionIndex].exercises[exerciseIndex].reps = e.target.value;
@@ -1008,7 +1014,8 @@ const WorkoutPlanner = () => {
                           value={exercise.weight || ''}
                           onChange={(e) => {
                             const newSections = [...sections];
-                            newSections[sectionIndex].exercises[exerciseIndex].weight = Number(e.target.value) || undefined;
+                            const value = e.target.value;
+                            newSections[sectionIndex].exercises[exerciseIndex].weight = value === '' ? undefined : Number(value) || undefined;
                             setSections(newSections);
                           }}
                         />
@@ -1030,7 +1037,8 @@ const WorkoutPlanner = () => {
                           value={exercise.restPeriod || ''}
                           onChange={(e) => {
                             const newSections = [...sections];
-                            newSections[sectionIndex].exercises[exerciseIndex].restPeriod = Number(e.target.value) || undefined;
+                            const value = e.target.value;
+                            newSections[sectionIndex].exercises[exerciseIndex].restPeriod = value === '' ? undefined : Number(value) || undefined;
                             setSections(newSections);
                           }}
                         />
@@ -1063,7 +1071,7 @@ const WorkoutPlanner = () => {
         </div>
 
         {/* Submit Button */}
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-4">
           <button
             type="submit"
             disabled={isLoading}
@@ -1081,8 +1089,30 @@ const WorkoutPlanner = () => {
               </>
             )}
           </button>
+          
+          {lastCreatedWorkoutId && (
+            <button
+              type="button"
+              onClick={() => setShowSharingDialog(true)}
+              className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 flex items-center gap-2"
+            >
+              <Share2 size={16} />
+              Share Workout
+            </button>
+          )}
         </div>
       </form>
+      
+      {/* Workout Sharing Dialog */}
+      <WorkoutSharingDialog
+        workoutId={lastCreatedWorkoutId || ''}
+        isOpen={showSharingDialog}
+        onClose={() => setShowSharingDialog(false)}
+        onSuccess={() => {
+          toast.success('Edzés sikeresen megosztva!');
+          setShowSharingDialog(false);
+        }}
+      />
     </div>
   );
 };

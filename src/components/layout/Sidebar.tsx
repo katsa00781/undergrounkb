@@ -86,6 +86,17 @@ const Sidebar = ({ open, onClose, isMobile }: SidebarProps) => {
           <span>Edzésnaptár</span>
         </NavLink>
 
+        <NavLink
+          to="/my-workouts"
+          className={({ isActive }) =>
+            `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+          }
+          onClick={onClose}
+        >
+          <Dumbbell size={20} />
+          <span>Edzéseim</span>
+        </NavLink>
+
         {permissions.canAccessWorkoutPlanner && (
           <NavLink
             to="/planner"

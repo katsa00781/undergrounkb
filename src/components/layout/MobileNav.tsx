@@ -103,7 +103,7 @@ const MobileNav = () => {
         </NavLink>
 
         <NavLink
-          to="/log"
+          to="/my-workouts"
           className={({ isActive }) =>
             `mobile-tab ${
               isActive

@@ -9,6 +9,7 @@ import { getGoals, getGoalStats, Goal, GoalStats } from '../lib/goals';
 import { format, subDays, parseISO, isFuture } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import ConnectionTest from '../components/ui/ConnectionTest';
+import GoalsDashboard from '../components/GoalsDashboard';
 import { connectionManager } from '../config/supabase';
 
 const Dashboard = () => {
@@ -434,77 +435,10 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Recent Goals */}
-      {goals.length > 0 && (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Aktív célok
-            </h2>
-            <Link
-              to="/goals"
-              className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400"
-            >
-              Összes cél →
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {goals.slice(0, 3).map((goal) => (
-              <div 
-                key={goal.id} 
-                className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/30"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-900 dark:text-white">
-                      {goal.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {goal.description}
-                    </p>
-                    <div className="mt-2 flex items-center gap-2 text-xs">
-                      <span className={`px-2 py-1 rounded ${
-                        goal.type === 'daily' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
-                        goal.type === 'weekly' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                        goal.type === 'monthly' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                        goal.type === 'quarterly' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' :
-                        'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'
-                      }`}>
-                        {goal.type === 'daily' ? 'Napi' :
-                         goal.type === 'weekly' ? 'Heti' :
-                         goal.type === 'monthly' ? 'Havi' :
-                         goal.type === 'quarterly' ? 'Negyedéves' : 'Éves'}
-                      </span>
-                      <span className="text-gray-500">
-                        {goal.current_value}/{goal.target_value || 0} {goal.target_unit}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-                    <Target className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                </div>
-                
-                {/* Progress bar */}
-                <div className="mt-3">
-                  <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
-                    <span>Teljesítés</span>
-                    <span>{(goal.target_value || 0) > 0 ? Math.round((goal.current_value / (goal.target_value || 1)) * 100) : 0}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                    <div 
-                      className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
-                      style={{ 
-                        width: `${(goal.target_value || 0) > 0 ? Math.min(100, (goal.current_value / (goal.target_value || 1)) * 100) : 0}%` 
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Goals Dashboard */}
+      <div className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
+        <GoalsDashboard />
+      </div>
 
       {/* Quick actions */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
