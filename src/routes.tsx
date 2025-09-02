@@ -77,6 +77,7 @@ export const AppRoutes = ({ userRole }: AppRoutesProps) => {
           <Route path="/progress" element={<ProgressTracking />} />
           <Route path="/appointments" element={<AppointmentBookingPage />} />
           <Route path="/goals" element={<Goals />} />
+          <Route path="/workout-planner" element={<WorkoutPlanner />} />
           
           {/* Admin-only routes */}
           <Route path="/planner" element={

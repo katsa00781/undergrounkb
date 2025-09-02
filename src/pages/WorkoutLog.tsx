@@ -5,14 +5,21 @@ import { getWorkouts, deleteWorkout, Workout } from '../lib/workouts';
 import { getExercises, Exercise } from '../lib/exercises';
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 const WorkoutLog = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [exercises, setExercises] = useState<{ [key: string]: Exercise }>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [_selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
+  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
   const [dateFilter, setDateFilter] = useState<string>('');
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ show: boolean; workoutId: string; workoutTitle: string }>({ 
+    show: false, 
+    workoutId: '', 
+    workoutTitle: '' 
+  });
 
   useEffect(() => {
     if (user?.id) {
@@ -51,11 +58,25 @@ const WorkoutLog = () => {
       await deleteWorkout(id);
       setWorkouts(workouts.filter(workout => workout.id !== id));
       setSelectedWorkout(null);
+      setDeleteConfirmation({ show: false, workoutId: '', workoutTitle: '' });
       toast.success('Workout deleted successfully');
     } catch (error) {
       console.error('Failed to delete workout:', error);
       toast.error('Failed to delete workout');
     }
+  };
+
+  const handleEditWorkout = (workout: Workout) => {
+    // Navigate to workout planner with prefilled data
+    navigate('/workout-planner', { state: { editWorkout: workout } });
+  };
+
+  const showDeleteConfirmation = (workout: Workout) => {
+    setDeleteConfirmation({
+      show: true,
+      workoutId: workout.id,
+      workoutTitle: workout.title
+    });
   };
 
   const filteredWorkouts = dateFilter
@@ -132,8 +153,9 @@ const WorkoutLog = () => {
                       className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-400"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Handle edit
+                        handleEditWorkout(workout);
                       }}
+                      title="Edzésterv szerkesztése"
                     >
                       <Edit2 size={18} />
                     </button>
@@ -141,8 +163,9 @@ const WorkoutLog = () => {
                       className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-error-500 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-error-400"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteWorkout(workout.id);
+                        showDeleteConfirmation(workout);
                       }}
+                      title="Edzésterv törlése"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -240,6 +263,34 @@ const WorkoutLog = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirmation.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Edzésterv törlése
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Biztosan törölni szeretnéd a(z) <strong>"{deleteConfirmation.workoutTitle}"</strong> edzéstervet? Ez a művelet nem vonható vissza.
+            </p>
+            <div className="flex gap-4 justify-end">
+              <button
+                onClick={() => setDeleteConfirmation({ show: false, workoutId: '', workoutTitle: '' })}
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+              >
+                Mégse
+              </button>
+              <button
+                onClick={() => handleDeleteWorkout(deleteConfirmation.workoutId)}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Törlés
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

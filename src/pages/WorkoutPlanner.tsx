@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, Save, Trash2, GripVertical, Sparkles, RotateCw, Share2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Exercise, getExercises } from '../lib/exercises';
-import { createWorkout } from '../lib/workouts';
+import { createWorkout, updateWorkout, Workout } from '../lib/workouts';
 import { getMovementPatterns } from '../lib/exerciseService';
 import { WorkoutDay, generateWorkoutPlanV2, ProgramType } from '../lib/workoutGenerator.fixed';
 import WorkoutSharingDialog from '../components/WorkoutSharingDialog';
@@ -37,6 +38,13 @@ type WorkoutFormData = z.infer<typeof workoutSchema>;
 
 const WorkoutPlanner = () => {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Check if we're editing an existing workout
+  const editWorkout = location.state?.editWorkout as Workout | undefined;
+  const isEditMode = !!editWorkout;
+  
   const [exercises, setExercises] = useState<Exercise[]>([]);
   
   type SectionExercise = { 
@@ -105,6 +113,43 @@ const WorkoutPlanner = () => {
   useEffect(() => {
     loadExercises();
   }, []);
+
+  // Initialize form with edit data when in edit mode
+  useEffect(() => {
+    if (isEditMode && editWorkout) {
+      // Convert workout data to form format
+      const formSections = editWorkout.sections.map((section) => ({
+        name: section.name,
+        exercises: section.exercises.map((exercise) => ({
+          exerciseId: exercise.exerciseId,
+          sets: exercise.sets,
+          reps: exercise.reps,
+          weight: exercise.weight,
+          notes: exercise.notes || '',
+          restPeriod: exercise.restPeriod,
+        }))
+      }));
+
+      const sectionsWithIds = formSections.map((section, index) => ({
+        id: (index + 1).toString(),
+        name: section.name,
+        exercises: section.exercises.map((exercise, exerciseIndex) => ({
+          id: (exerciseIndex + 1).toString(),
+          ...exercise
+        }))
+      }));
+
+      setSections(sectionsWithIds);
+
+      reset({
+        title: editWorkout.title,
+        date: editWorkout.date,
+        duration: editWorkout.duration,
+        notes: editWorkout.notes || '',
+        sections: formSections,
+      });
+    }
+  }, [isEditMode, editWorkout, reset]);
 
   const loadExercises = async () => {
     try {
