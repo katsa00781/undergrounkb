@@ -14,7 +14,8 @@ export function isValidEmail(email: string): boolean {
 export async function ensureUserProfile(user: User) {
   const email = user.email;
   if (!email || !isValidEmail(email)) {
-    throw new SupabaseError('Invalid email address', 'INVALID_EMAIL');
+    console.error('Invalid email address');
+    return; // Don't throw, just return
   }
 
   try {
@@ -24,8 +25,10 @@ export async function ensureUserProfile(user: User) {
       .eq('id', user.id)
       .single();
 
-    if (error) {
-      await handleSupabaseError(error);
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116 means no rows returned, which is expected for new users
+      console.error('Error fetching profile:', error);
+      return; // Don't throw, just return
     }
 
     if (!profile) {
@@ -34,7 +37,8 @@ export async function ensureUserProfile(user: User) {
 
     startSessionTimeout();
   } catch (error) {
-    await handleSupabaseError(error);
+    console.error('Error ensuring user profile:', error);
+    // Don't re-throw to avoid loop
   }
 }
 
@@ -54,12 +58,15 @@ async function createUserProfile(user: User) {
       });
 
     if (insertError) {
-      throw insertError;
+      console.error('Error creating profile:', insertError);
+      // Don't throw to avoid loop
+      return;
     }
 
     toast.success('Profile created successfully');
   } catch (error) {
-    await handleSupabaseError(error);
+    console.error('Error creating user profile:', error);
+    // Don't re-throw to avoid loop
   }
 }
 
