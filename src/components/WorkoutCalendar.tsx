@@ -101,7 +101,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
     return classes;
   };
 
-  const weekDays = ['H', 'K', 'Sz', 'Cs', 'P', 'Sz', 'V'];
+  const weekDays = ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'];
 
   if (loading) {
     return (
@@ -163,8 +163,8 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
       <div className="p-4">
         {/* Week days header */}
         <div className="grid grid-cols-7 gap-1 mb-2">
-          {weekDays.map((day) => (
-            <div key={day} className="h-8 flex items-center justify-center text-sm font-medium text-gray-600 dark:text-gray-400">
+          {weekDays.map((day, index) => (
+            <div key={`weekday-${index}`} className="h-8 flex items-center justify-center text-sm font-medium text-gray-600 dark:text-gray-400">
               {day}
             </div>
           ))}
