@@ -34,6 +34,16 @@ function AppWithSupabase() {
     };
 
     init();
+
+    // Enable HMR for better development experience
+    if (import.meta.hot) {
+      import.meta.hot.accept();
+      
+      // Force reload on certain module updates
+      import.meta.hot.on('vite:beforeUpdate', () => {
+        console.log('[HMR] Module update detected');
+      });
+    }
   }, []);
 
   // Show loading state while initializing

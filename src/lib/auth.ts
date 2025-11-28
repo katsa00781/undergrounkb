@@ -1,6 +1,6 @@
 import { supabase } from '../config/supabase';
 import { User } from '@supabase/supabase-js';
-import { handleSupabaseError, SupabaseError } from './supabaseUtils';
+import { handleSupabaseError } from './supabaseUtils';
 import toast from 'react-hot-toast';
 
 export const AUTH_TIMEOUT = 1000 * 60 * 60; // 1 hour
