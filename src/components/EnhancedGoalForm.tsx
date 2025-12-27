@@ -23,6 +23,8 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
     description: initialData?.description || '',
     category: initialData?.category || 'fitness',
     type: initialData?.type || 'daily',
+    starting_value: initialData?.starting_value,
+    current_value: initialData?.current_value || 0,
     target_value: initialData?.target_value || 1,
     target_unit: initialData?.target_unit || '',
     start_date: initialData?.start_date || new Date().toISOString().split('T')[0],
@@ -36,34 +38,17 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
   const calculateEndDate = (startDate: string, type: GoalType, durationType: 'days' | 'weeks' | 'months', durationValue: number) => {
     const start = new Date(startDate);
     
-    if (type === 'daily') {
-      switch (durationType) {
-        case 'days':
-          return format(addDays(start, durationValue), 'yyyy-MM-dd');
-        case 'weeks':
-          return format(addWeeks(start, durationValue), 'yyyy-MM-dd');
-        case 'months':
-          return format(addMonths(start, durationValue), 'yyyy-MM-dd');
-      }
+    // Mindig a durationType alapján számolunk, függetlenül a goal type-tól
+    switch (durationType) {
+      case 'days':
+        return format(addDays(start, durationValue), 'yyyy-MM-dd');
+      case 'weeks':
+        return format(addWeeks(start, durationValue), 'yyyy-MM-dd');
+      case 'months':
+        return format(addMonths(start, durationValue), 'yyyy-MM-dd');
+      default:
+        return format(addDays(start, 30), 'yyyy-MM-dd');
     }
-    
-    if (type === 'weekly') {
-      return format(addWeeks(start, durationValue), 'yyyy-MM-dd');
-    }
-    
-    if (type === 'monthly') {
-      return format(addMonths(start, durationValue), 'yyyy-MM-dd');
-    }
-    
-    if (type === 'quarterly') {
-      return format(addMonths(start, durationValue * 3), 'yyyy-MM-dd');
-    }
-    
-    if (type === 'yearly') {
-      return format(addYears(start, durationValue), 'yyyy-MM-dd');
-    }
-    
-    return format(addDays(start, 30), 'yyyy-MM-dd');
   };
 
   const handleInputChange = (field: keyof CreateGoalData, value: string | number | GoalType | GoalCategory) => {
@@ -89,9 +74,15 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
       if (field === 'target_value') {
         newFormData.target_value = undefined;
       }
+      if (field === 'starting_value') {
+        newFormData.starting_value = undefined;
+      }
+      if (field === 'current_value') {
+        newFormData.current_value = undefined;
+      }
       setFormData(newFormData);
     } else {
-      const numericValue = parseInt(value) || 1;
+      const numericValue = parseInt(value) || 0;
       handleInputChange(field, numericValue);
     }
   };
@@ -238,39 +229,80 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
             </div>
 
             {/* Cél érték és mértékegység */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Célérték
+                  Kiindulási érték (opcionális)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.starting_value || ''}
+                  onChange={(e) => handleNumberInputChange('starting_value', e.target.value)}
+                  onFocus={(e) => e.target.select()}
+                  placeholder="Start"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Honnan indulsz
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Jelenlegi érték
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.current_value || ''}
+                  onChange={(e) => handleNumberInputChange('current_value', e.target.value)}
+                  onFocus={(e) => e.target.select()}
+                  placeholder="Most"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Hol tartasz most
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Célérték *
                 </label>
                 <input
                   type="number"
                   min="0"
                   value={formData.target_value || ''}
                   onChange={(e) => handleNumberInputChange('target_value', e.target.value)}
-                  placeholder="Célérték"
+                  onFocus={(e) => e.target.select()}
+                  placeholder="Cél"
                   className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
                 />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Mit szeretnél elérni
+                </p>
               </div>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Mértékegység
-                </label>
-                <input
-                  type="text"
-                  value={formData.target_unit}
-                  onChange={(e) => handleInputChange('target_unit', e.target.value)}
-                  placeholder="pl. pohár, km, perc"
-                  list="unit-suggestions"
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <datalist id="unit-suggestions">
-                  {getUnitSuggestions(formData.category).map(unit => (
-                    <option key={unit} value={unit} />
-                  ))}
-                </datalist>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Mértékegység
+              </label>
+              <input
+                type="text"
+                value={formData.target_unit}
+                onChange={(e) => handleInputChange('target_unit', e.target.value)}
+                placeholder="pl. kg, pohár, km, perc"
+                list="unit-suggestions"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <datalist id="unit-suggestions">
+                {getUnitSuggestions(formData.category).map(unit => (
+                  <option key={unit} value={unit} />
+                ))}
+              </datalist>
             </div>
 
             {/* Időtartam */}

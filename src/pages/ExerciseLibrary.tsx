@@ -22,17 +22,21 @@ const CATEGORIES: ExerciseCategory[] = [
   'kettlebell',
   'mobility_flexibility',
   'hiit',
-  'recovery'
+  'recovery',
+  'fms',
+  'smr'
 ];
 
 // Human-readable category labels
 const CATEGORY_LABELS: Record<ExerciseCategory, string> = {
-  'strength_training': 'Strength Training',
+  'strength_training': 'Erősítő edzés',
   'cardio': 'Cardio',
   'kettlebell': 'Kettlebell',
-  'mobility_flexibility': 'Mobility & Flexibility',
+  'mobility_flexibility': 'Mobilitás és nyújtás',
   'hiit': 'HIIT',
-  'recovery': 'Recovery'
+  'recovery': 'Regeneráció',
+  'fms': 'FMS korrekció',
+  'smr': 'SMR (Henger)'
 };
 
 // Create a mapping of categories to their movement patterns
@@ -55,13 +59,26 @@ const MOVEMENT_PATTERNS: Record<ExerciseCategory, MovementPattern[]> = {
     'stability_anti_rotation',
     'stability_anti_flexion',
     'core_other',
-    'local_exercises',
-    'upper_body_mobility',
+    'local_exercises'
+  ],
+  'fms': [
     'aslr_correction_first',
     'aslr_correction_second',
     'sm_correction_first',
     'sm_correction_second',
     'stability_correction',
+    'upper_body_mobility',
+    'mobilization',
+    'stability_anti_extension',
+    'stability_anti_rotation',
+    'stability_anti_flexion',
+    'knee_dominant_bilateral',
+    'knee_dominant_unilateral',
+    'hip_dominant_bilateral',
+    'hip_dominant_unilateral',
+    'horizontal_push_bilateral'
+  ],
+  'smr': [
     'mobilization'
   ],
   'mobility_flexibility': [

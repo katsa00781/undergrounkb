@@ -71,7 +71,7 @@ const WorkoutPlanner = () => {
     exercises: [{ 
       id: '1',
       sets: 3,
-      reps: 10,
+      reps: 8,
       weight: undefined,
       notes: '',
       restPeriod: undefined
@@ -101,7 +101,7 @@ const WorkoutPlanner = () => {
         exercises: [{ 
           exerciseId: '',
           sets: 3, 
-          reps: 10,
+          reps: 8,
           weight: undefined, // Explicitly set as optional
           notes: '',
           restPeriod: undefined
@@ -224,7 +224,7 @@ const WorkoutPlanner = () => {
       exercises: [{ 
         id: '1',
         sets: 3,
-        reps: 10,
+        reps: 8,
         weight: undefined,
         notes: '',
         restPeriod: undefined
@@ -245,7 +245,7 @@ const WorkoutPlanner = () => {
     newSections[sectionIndex].exercises.push({ 
       id: Date.now().toString(),
       sets: 3,
-      reps: 10,
+      reps: 8,
       weight: undefined, // Explicitly undefined for optional weight
       notes: '',
       restPeriod: undefined
@@ -1015,6 +1015,7 @@ const WorkoutPlanner = () => {
                           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                           placeholder="3"
                           value={exercise.sets || ''}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) => {
                             const newSections = [...sections];
                             const value = e.target.value;
@@ -1032,8 +1033,9 @@ const WorkoutPlanner = () => {
                         <input
                           {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.reps`)}
                           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                          placeholder="10 or 8-12"
+                          placeholder="8"
                           value={exercise.reps || ''}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) => {
                             const newSections = [...sections];
                             newSections[sectionIndex].exercises[exerciseIndex].reps = e.target.value;
@@ -1057,6 +1059,7 @@ const WorkoutPlanner = () => {
                           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                           placeholder="Leave empty if bodyweight exercise"
                           value={exercise.weight || ''}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) => {
                             const newSections = [...sections];
                             const value = e.target.value;
@@ -1080,6 +1083,7 @@ const WorkoutPlanner = () => {
                           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                           placeholder="e.g. 60 (default if empty)"
                           value={exercise.restPeriod || ''}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) => {
                             const newSections = [...sections];
                             const value = e.target.value;

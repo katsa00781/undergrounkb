@@ -287,7 +287,7 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
-      exercise_category: 'strength_training' | 'cardio' | 'kettlebell' | 'mobility_flexibility' | 'hiit' | 'recovery'
+      exercise_category: 'strength_training' | 'cardio' | 'kettlebell' | 'mobility_flexibility' | 'hiit' | 'recovery' | 'fms' | 'smr'
       movement_pattern: 'gait_stability' | 'gait_crawling' | 'hip_dominant_bilateral' | 'hip_dominant_unilateral' | 'knee_dominant_bilateral' | 'knee_dominant_unilateral' | 'horizontal_push_bilateral' | 'horizontal_push_unilateral' | 'horizontal_pull_bilateral' | 'horizontal_pull_unilateral' | 'vertical_push_bilateral' | 'vertical_push_unilateral' | 'vertical_pull_bilateral' | 'stability_anti_extension' | 'stability_anti_rotation' | 'stability_anti_flexion' | 'core_other' | 'local_exercises' | 'upper_body_mobility' | 'aslr_correction_first' | 'aslr_correction_second' | 'sm_correction_first' | 'sm_correction_second' | 'stability_correction' | 'mobilization'
     }
   }

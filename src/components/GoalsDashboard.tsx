@@ -15,40 +15,60 @@ import {
   getGoals, 
   getGoalProgress, 
   completeGoal,
+  updateGoal,
   Goal, 
   GoalProgress
 } from '../lib/goals';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import GoalProgressScale from './GoalProgressScale';
 
 const GoalsDashboard: React.FC = () => {
+  const { user } = useAuth();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [goalProgress, setGoalProgress] = useState<Record<string, GoalProgress>>({});
   const [loading, setLoading] = useState(true);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [currentMonth] = useState(new Date());
   const [markingComplete, setMarkingComplete] = useState<string | null>(null);
+  const [editingCurrentValue, setEditingCurrentValue] = useState<string | null>(null);
+  const [tempCurrentValue, setTempCurrentValue] = useState<number>(0);
 
   useEffect(() => {
-    loadGoals();
-  }, []);
+    if (user?.id) {
+      loadGoals();
+    }
+  }, [user]);
 
   const loadGoals = async () => {
+    if (!user?.id) {
+      return;
+    }
     try {
       setLoading(true);
-      const data = await getGoals('active');
-      setGoals(data);
+      // Minden célt betöltünk, majd kliens oldalon szűrünk (mint a GoalsManagement-ben)
+      const allData = await getGoals();
+      console.log('Loaded all goals:', allData);
+      
+      // Kliens oldali szűrés: mutassuk az összes célt kivéve a cancelled
+      // (active, completed, paused, null státuszúak mind látszanak)
+      const visibleGoals = allData.filter(g => ((g as any).status !== 'cancelled'));
+      console.log('Visible goals (not cancelled):', visibleGoals);
+      console.log('Visible goals count:', visibleGoals.length);
+      setGoals(visibleGoals);
       
       // Progress adatok betöltése minden célhoz
       const progressData: Record<string, GoalProgress> = {};
-      for (const goal of data) {
+      for (const goal of visibleGoals) {
         try {
           progressData[goal.id] = await getGoalProgress(goal.id);
         } catch (error) {
           console.error(`Error loading progress for goal ${goal.id}:`, error);
         }
       }
+      console.log('Loaded progress for goals:', Object.keys(progressData).length);
       setGoalProgress(progressData);
     } catch (error) {
       console.error('Error loading goals:', error);
@@ -78,6 +98,24 @@ const GoalsDashboard: React.FC = () => {
     } finally {
       setMarkingComplete(null);
     }
+  };
+
+  const handleUpdateCurrentValue = async (goalId: string, newValue: number) => {
+    try {
+      console.log('Updating current_value:', goalId, newValue);
+      const updated = await updateGoal(goalId, { current_value: newValue });
+      console.log('Updated goal:', updated);
+      await loadGoals();
+      setEditingCurrentValue(null);
+    } catch (error) {
+      console.error('Error updating current value:', error);
+      alert('Nem sikerült frissíteni az aktuális értéket: ' + (error as Error).message);
+    }
+  };
+
+  const startEditingCurrentValue = (goal: Goal) => {
+    setEditingCurrentValue(goal.id);
+    setTempCurrentValue(goal.current_value);
   };
 
   // Ellenőrzi, hogy egy heti/havi cél ma már teljesítve lett-e
@@ -228,7 +266,7 @@ const GoalsDashboard: React.FC = () => {
     });
   };
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="animate-pulse">
@@ -251,7 +289,7 @@ const GoalsDashboard: React.FC = () => {
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Target className="h-6 w-6 text-blue-500" />
-              Aktív céljaim
+              Céljaim
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
               Kövesse nyomon céljait és jelölje be teljesítéseit
@@ -272,7 +310,7 @@ const GoalsDashboard: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
           <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            Nincs aktív célod
+            Még nincs célod
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             Hozz létre célokat a fejlődésed nyomon követéséhez
@@ -302,9 +340,21 @@ const GoalsDashboard: React.FC = () => {
                       {getGoalCategoryIcon(goal.category)}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
-                        {goal.title}
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                          {goal.title}
+                        </h3>
+                        {goal.status === 'completed' && (
+                          <span className="px-2 py-0.5 text-xs rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                            Teljesítve
+                          </span>
+                        )}
+                        {goal.status === 'paused' && (
+                          <span className="px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300">
+                            Szünetel
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
                         {getGoalTypeLabel(goal.type)} cél
                       </p>
@@ -334,7 +384,7 @@ const GoalsDashboard: React.FC = () => {
                       ) : (
                         <Plus className="h-4 w-4" />
                       )}
-                      {todayCompleted ? 'Ma teljesítve' : 'Teljesítés'}
+                      {todayCompleted ? 'Mai napi cél teljesítve' : 'Mai napi cél teljesítése'}
                     </button>
                   ) : (goal.type === 'weekly' || goal.type === 'monthly') ? (
                     (() => {
@@ -376,6 +426,65 @@ const GoalsDashboard: React.FC = () => {
                 {/* Progress */}
                 {progress && (
                   <div className="space-y-3">
+                    {/* GoalProgressScale vizualizáció */}
+                    <GoalProgressScale
+                      startingValue={goal.starting_value}
+                      currentValue={goal.current_value}
+                      targetValue={goal.target_value || 0}
+                      unit={goal.target_unit}
+                      startDate={goal.start_date}
+                      endDate={goal.end_date}
+                      isIncreasing={goal.category === 'fitness' || goal.type === 'daily'}
+                    />
+                    
+                    {/* Aktuális érték módosítása - mindig látható input */}
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Aktuális érték
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={editingCurrentValue === goal.id ? tempCurrentValue : goal.current_value}
+                          onChange={(e) => {
+                            setEditingCurrentValue(goal.id);
+                            setTempCurrentValue(parseFloat(e.target.value) || 0);
+                          }}
+                          onFocus={(e) => {
+                            e.target.select();
+                            setEditingCurrentValue(goal.id);
+                            setTempCurrentValue(goal.current_value);
+                          }}
+                          onBlur={() => {
+                            if (editingCurrentValue === goal.id) {
+                              handleUpdateCurrentValue(goal.id, tempCurrentValue);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleUpdateCurrentValue(goal.id, tempCurrentValue);
+                            } else if (e.key === 'Escape') {
+                              setEditingCurrentValue(null);
+                              setTempCurrentValue(goal.current_value);
+                            }
+                          }}
+                          className="flex-1 p-2 border border-blue-300 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                          placeholder="0"
+                        />
+                        <span className="text-sm text-gray-600 dark:text-gray-400 min-w-fit">
+                          {goal.target_unit || ''}
+                        </span>
+                        {editingCurrentValue === goal.id && (
+                          <button
+                            onClick={() => handleUpdateCurrentValue(goal.id, tempCurrentValue)}
+                            className="px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                          >
+                            ✓
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600 dark:text-gray-400">Teljesítés</span>
                       <span className="font-medium text-gray-900 dark:text-white">

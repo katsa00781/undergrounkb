@@ -42,16 +42,22 @@ const Dashboard = () => {
         getWeightMeasurements(user.id),
         getLatestFMSAssessment(user.id),
         getUserBookings(user.id),
-        getGoals('active'),
+        // Betöltünk minden célt, majd kliens oldalon szűrünk az aktívakra
+        getGoals(),
         getGoalStats()
       ]);
 
-      // Debug log
-      // Debug log
-      // Debug log
+      console.log('Dashboard loaded all goals:', goalsData);
+      console.log('Dashboard stats from server:', statsData);
+      
       setWeights(weightsData);
       setLatestFMS(fmsData);
-      setGoals(goalsData);
+      
+      // Kliens oldali szűrés: mutassuk az összes célt kivéve a cancelled
+      const visibleGoals = goalsData.filter(g => ((g as any).status !== 'cancelled'));
+      console.log('Dashboard visible goals:', visibleGoals);
+      
+      setGoals(visibleGoals);
       setGoalStats(statsData);
 
       // Csak a jövőbeli foglalásokat jelenítjük meg
@@ -187,7 +193,7 @@ const Dashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Aktív célok</p>
               <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                {goalStats ? goalStats.activeGoals : goals.length}
+                {goals.length > 0 ? goals.length : (goalStats?.activeGoals || 0)}
               </p>
               {goalStats && goalStats.todayCompletions > 0 && (
                 <p className="text-xs text-green-600 dark:text-green-400">

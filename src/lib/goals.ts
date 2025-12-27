@@ -11,6 +11,7 @@ export interface Goal {
   description?: string;
   category: GoalCategory;
   type: GoalType;
+  starting_value?: number; // Kiindulási/baseline érték
   target_value?: number;
   target_unit?: string; // 'kg', 'reps', 'minutes', 'days', etc.
   current_value: number;
@@ -36,6 +37,8 @@ export interface CreateGoalData {
   description?: string;
   category: GoalCategory;
   type: GoalType;
+  starting_value?: number; // Kiindulási érték
+  current_value?: number; // Jelenlegi érték
   target_value?: number;
   target_unit?: string;
   start_date: string;
@@ -201,16 +204,36 @@ export async function createGoal(goalData: CreateGoalData): Promise<Goal> {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) throw new Error('User not authenticated');
 
+  console.log('🎯 Creating new goal with data:', {
+    ...goalData,
+    user_id: user.user.id,
+    status: 'active',
+    current_value: goalData.current_value ?? 0
+  });
+
   const { data, error } = await supabase
     .from('goals')
     .insert({
       ...goalData,
-      user_id: user.user.id
+      user_id: user.user.id,
+      status: 'active', // Explicit status beállítás
+      current_value: goalData.current_value ?? 0 // Alapértelmezett current_value
     })
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('❌ Error creating goal:', error);
+    throw error;
+  }
+  
+  console.log('✅ Goal created successfully:', {
+    id: data.id,
+    title: data.title,
+    status: data.status,
+    end_date: data.end_date,
+    fullData: data
+  });
   return data as Goal;
 }
 
@@ -232,7 +255,12 @@ export async function getGoals(status?: GoalStatus): Promise<Goal[]> {
   }
 
   const { data, error } = await query;
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching goals:', error);
+    throw error;
+  }
+  
+  console.log(`Fetched ${data.length} goals with status: ${status || 'all'}`, data);
   return data as Goal[];
 }
 
@@ -240,6 +268,8 @@ export async function getGoals(status?: GoalStatus): Promise<Goal[]> {
  * Cél frissítése
  */
 export async function updateGoal(goalId: string, updates: Partial<Goal>): Promise<Goal> {
+  console.log('🔄 Updating goal:', goalId, 'with updates:', updates);
+  
   const { data, error } = await supabase
     .from('goals')
     .update(updates)
@@ -247,7 +277,19 @@ export async function updateGoal(goalId: string, updates: Partial<Goal>): Promis
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('❌ Error updating goal:', error);
+    throw error;
+  }
+  
+  console.log('✅ Goal updated:', {
+    id: data.id,
+    title: data.title,
+    status: data.status,
+    changes: updates,
+    fullData: data
+  });
+  
   return data as Goal;
 }
 
@@ -273,6 +315,12 @@ export async function completeGoal(completionData: CreateCompletionData): Promis
   // Handle value compatibility
   const valueAchieved = completionData.value || completionData.value_achieved || 1;
 
+  console.log('📝 Recording goal completion:', {
+    goal_id: completionData.goal_id,
+    value_achieved: valueAchieved,
+    completion_date: completionData.completion_date || new Date().toISOString().split('T')[0]
+  });
+
   const { data, error } = await supabase
     .from('goal_completions')
     .insert({
@@ -285,7 +333,14 @@ export async function completeGoal(completionData: CreateCompletionData): Promis
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('❌ Error recording completion:', error);
+    throw error;
+  }
+  
+  console.log('✅ Completion recorded:', data);
+  console.log('⚠️ Note: Trigger may update goal status automatically');
+  
   return data as GoalCompletion;
 }
 
@@ -350,28 +405,40 @@ export async function getGoalProgress(goalId: string): Promise<GoalProgress> {
   const elapsedDays = Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
   const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
 
-  // Completion rate számítása cél típus alapján
+  // Completion rate számítása
   let completionRate = 0;
   let expectedCompletions = 0;
 
-  switch (goal.type) {
-    case 'daily':
-      expectedCompletions = Math.min(elapsedDays, totalDays);
-      completionRate = expectedCompletions > 0 ? (completions.length / expectedCompletions) * 100 : 0;
-      break;
-    case 'weekly':
-      const weeksElapsed = Math.ceil(elapsedDays / 7);
-      expectedCompletions = Math.min(weeksElapsed, Math.ceil(totalDays / 7));
-      completionRate = expectedCompletions > 0 ? (completions.length / expectedCompletions) * 100 : 0;
-      break;
-    case 'monthly':
-      const monthsElapsed = Math.ceil(elapsedDays / 30);
-      expectedCompletions = Math.min(monthsElapsed, Math.ceil(totalDays / 30));
-      completionRate = expectedCompletions > 0 ? (completions.length / expectedCompletions) * 100 : 0;
-      break;
-    default:
-      // Yearly, quarterly - simple completion check
-      completionRate = completions.length > 0 ? 100 : 0;
+  // Ha van target_value, current_value és starting_value, akkor érték alapú haladást számolunk
+  if (goal.target_value && goal.current_value !== null && goal.current_value !== undefined) {
+    const baseValue = goal.starting_value ?? 0;
+    const totalChange = Math.abs(goal.target_value - baseValue);
+    const currentChange = Math.abs(goal.current_value - baseValue);
+    
+    if (totalChange > 0) {
+      completionRate = Math.min(100, Math.max(0, (currentChange / totalChange) * 100));
+    }
+  } else {
+    // Egyébként completion alapú számítás
+    switch (goal.type) {
+      case 'daily':
+        expectedCompletions = Math.min(elapsedDays, totalDays);
+        completionRate = expectedCompletions > 0 ? (completions.length / expectedCompletions) * 100 : 0;
+        break;
+      case 'weekly':
+        const weeksElapsed = Math.ceil(elapsedDays / 7);
+        expectedCompletions = Math.min(weeksElapsed, Math.ceil(totalDays / 7));
+        completionRate = expectedCompletions > 0 ? (completions.length / expectedCompletions) * 100 : 0;
+        break;
+      case 'monthly':
+        const monthsElapsed = Math.ceil(elapsedDays / 30);
+        expectedCompletions = Math.min(monthsElapsed, Math.ceil(totalDays / 30));
+        completionRate = expectedCompletions > 0 ? (completions.length / expectedCompletions) * 100 : 0;
+        break;
+      default:
+        // Yearly, quarterly - simple completion check
+        completionRate = completions.length > 0 ? 100 : 0;
+    }
   }
 
   // Streak számítása (consecutive days)
@@ -466,6 +533,13 @@ export async function createGoalFromTemplate(template: GoalTemplate): Promise<Go
   const startDate = new Date();
   const endDate = new Date();
   endDate.setDate(endDate.getDate() + template.duration_days);
+
+  console.log('📋 Creating goal from template:', template.title);
+  console.log('📅 Date range:', {
+    start: startDate.toISOString().split('T')[0],
+    end: endDate.toISOString().split('T')[0],
+    duration_days: template.duration_days
+  });
 
   return createGoal({
     title: template.title,

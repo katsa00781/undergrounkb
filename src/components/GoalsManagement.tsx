@@ -30,7 +30,8 @@ import {
   CreateGoalData,
   GOAL_TEMPLATES
 } from '../lib/goals';
-import EnhancedGoalForm from './EnhancedGoalForm';const GoalsManagement: React.FC = () => {
+import EnhancedGoalForm from './EnhancedGoalForm';
+import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React.FC = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [stats, setStats] = useState<GoalStats | null>(null);
   const [goalProgress, setGoalProgress] = useState<Record<string, GoalProgress>>({});
@@ -40,6 +41,8 @@ import EnhancedGoalForm from './EnhancedGoalForm';const GoalsManagement: React.F
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [editingCurrentValue, setEditingCurrentValue] = useState<string | null>(null);
+  const [tempCurrentValue, setTempCurrentValue] = useState<number>(0);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -47,6 +50,8 @@ import EnhancedGoalForm from './EnhancedGoalForm';const GoalsManagement: React.F
     description: '',
     category: 'fitness' as GoalCategory,
     type: 'daily' as GoalType,
+    starting_value: undefined as number | undefined,
+    current_value: 0,
     target_value: 1,
     target_unit: '',
     start_date: new Date().toISOString().split('T')[0],
@@ -61,6 +66,7 @@ import EnhancedGoalForm from './EnhancedGoalForm';const GoalsManagement: React.F
   const loadGoals = async () => {
     try {
       const data = await getGoals();
+      console.log('Loaded all goals:', data);
       setGoals(data);
       
       // Progress adatok betöltése minden célhoz
@@ -92,7 +98,12 @@ import EnhancedGoalForm from './EnhancedGoalForm';const GoalsManagement: React.F
 
   const handleCreateGoal = async (goalData: CreateGoalData) => {
     try {
+      console.log('===== GOALS MANAGEMENT: Creating new goal =====');
+      console.log('Form data:', goalData);
+      
       await createGoal(goalData);
+      
+      console.log('===== Reloading goals after creation =====');
       await loadGoals();
       await loadStats();
       setIsCreateDialogOpen(false);
@@ -154,6 +165,24 @@ import EnhancedGoalForm from './EnhancedGoalForm';const GoalsManagement: React.F
     }
   };
 
+  const handleUpdateCurrentValue = async (goalId: string, newValue: number) => {
+    try {
+      console.log('Updating current_value:', goalId, newValue);
+      const updated = await updateGoal(goalId, { current_value: newValue });
+      console.log('Updated goal:', updated);
+      await loadGoals();
+      setEditingCurrentValue(null);
+    } catch (error) {
+      console.error('Error updating current value:', error);
+      alert('Nem sikerült frissíteni az aktuális értéket: ' + (error as Error).message);
+    }
+  };
+
+  const startEditingCurrentValue = (goal: Goal) => {
+    setEditingCurrentValue(goal.id);
+    setTempCurrentValue(goal.current_value);
+  };
+
   const handleEditGoal = (goal: Goal) => {
     setEditingGoal(goal);
     setFormData({
@@ -161,6 +190,8 @@ import EnhancedGoalForm from './EnhancedGoalForm';const GoalsManagement: React.F
       description: goal.description || '',
       category: goal.category,
       type: goal.type,
+      starting_value: goal.starting_value,
+      current_value: goal.current_value || 0,
       target_value: goal.target_value || 1,
       target_unit: goal.target_unit || '',
       start_date: goal.start_date,
@@ -173,7 +204,13 @@ import EnhancedGoalForm from './EnhancedGoalForm';const GoalsManagement: React.F
     if (!editingGoal) return;
 
     try {
+      console.log('===== GOALS MANAGEMENT: Updating goal =====');
+      console.log('Goal ID:', editingGoal.id);
+      console.log('Updates:', formData);
+      
       await updateGoal(editingGoal.id, formData);
+      
+      console.log('===== Reloading after update =====');
       await loadGoals();
       await loadStats();
       setIsEditDialogOpen(false);
@@ -185,6 +222,8 @@ import EnhancedGoalForm from './EnhancedGoalForm';const GoalsManagement: React.F
         description: '',
         category: 'fitness',
         type: 'daily',
+        starting_value: undefined,
+        current_value: 0,
         target_value: 1,
         target_unit: '',
         start_date: new Date().toISOString().split('T')[0],
@@ -358,33 +397,66 @@ import EnhancedGoalForm from './EnhancedGoalForm';const GoalsManagement: React.F
               
               {/* Progress információk */}
               {progress && (
-                <div className="space-y-3 mb-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Teljesítés</span>
-                    <span>{Math.round(progress.completionRate)}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
-                      style={{ width: `${Math.min(100, progress.completionRate)}%` }}
-                    ></div>
-                  </div>
+                <div className="mb-4 space-y-3">
+                  <GoalProgressScale
+                    startingValue={goal.starting_value}
+                    currentValue={goal.current_value}
+                    targetValue={goal.target_value || 0}
+                    unit={goal.target_unit}
+                    startDate={goal.start_date}
+                    endDate={goal.end_date}
+                    isIncreasing={goal.category === 'fitness' || goal.type === 'daily'}
+                  />
                   
-                  <div className="grid grid-cols-3 gap-2 text-sm text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <Flame className="h-3 w-3" />
-                      <span>{progress.streak} nap</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>{progress.daysRemaining} nap hátra</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3" />
-                      <span className={progress.isOnTrack ? 'text-green-600' : 'text-red-600'}>
-                        {progress.isOnTrack ? 'Jó ütemben' : 'Lemaradás'}
+                  {/* Aktuális érték módosítása - mindig látható input */}
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Aktuális érték frissítése
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={editingCurrentValue === goal.id ? tempCurrentValue : goal.current_value}
+                        onChange={(e) => {
+                          setEditingCurrentValue(goal.id);
+                          setTempCurrentValue(parseFloat(e.target.value) || 0);
+                        }}
+                        onFocus={(e) => {
+                          e.target.select();
+                          setEditingCurrentValue(goal.id);
+                          setTempCurrentValue(goal.current_value);
+                        }}
+                        onBlur={() => {
+                          if (editingCurrentValue === goal.id) {
+                            handleUpdateCurrentValue(goal.id, tempCurrentValue);
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleUpdateCurrentValue(goal.id, tempCurrentValue);
+                          } else if (e.key === 'Escape') {
+                            setEditingCurrentValue(null);
+                            setTempCurrentValue(goal.current_value);
+                          }
+                        }}
+                        className="flex-1 p-2 border border-blue-300 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                        placeholder="0"
+                      />
+                      <span className="text-sm text-gray-600 dark:text-gray-400 min-w-fit">
+                        {goal.target_unit || ''}
                       </span>
+                      {editingCurrentValue === goal.id && (
+                        <button
+                          onClick={() => handleUpdateCurrentValue(goal.id, tempCurrentValue)}
+                          className="px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                        >
+                          Mentés
+                        </button>
+                      )}
                     </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Enter = mentés, Escape = mégse, vagy kattints ki az input mezőből
+                    </p>
                   </div>
                 </div>
               )}
@@ -400,13 +472,23 @@ import EnhancedGoalForm from './EnhancedGoalForm';const GoalsManagement: React.F
                 </div>
                 
                 <div className="flex flex-wrap gap-2">
-                  {goal.status === 'active' && (
+                  {goal.status === 'active' && goal.type === 'daily' && (
                     <button 
                       onClick={() => handleCompleteGoal(goal.id)}
                       className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
                     >
                       <CheckCircle2 className="h-4 w-4" />
-                      Teljesítve
+                      Mai napi cél teljesítve
+                    </button>
+                  )}
+                  
+                  {goal.status === 'active' && goal.type !== 'daily' && (
+                    <button 
+                      onClick={() => handleCompleteGoal(goal.id)}
+                      className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      Cél teljesítve
                     </button>
                   )}
                   

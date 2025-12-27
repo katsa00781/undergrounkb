@@ -373,7 +373,7 @@ function generateDay1Plan(
       {
         exerciseId: terdDominans?.id || '',
         name: terdDominans?.name || 'Guggolás kettlebell-lel',
-        sets: 4,
+        sets: 3,
         reps: '6-8',
         weight: null,
         restPeriod: 90,
@@ -402,7 +402,7 @@ function generateDay1Plan(
       {
         exerciseId: nyomoGyakorlat?.id || '',
         name: nyomoGyakorlat?.name || 'Fekvőtámasz vagy Vállból nyomás',
-        sets: 4,
+        sets: 3,
         reps: '8-10',
         weight: null,
         restPeriod: 90,
@@ -438,7 +438,7 @@ function generateDay1Plan(
       {
         exerciseId: huzasGyakorlat?.id || '',
         name: huzasGyakorlat?.name || 'Húzódzkodás vagy Evezés',
-        sets: 4,
+        sets: 3,
         reps: '6-8',
         weight: null,
         restPeriod: 90,
@@ -466,7 +466,7 @@ function generateDay1Plan(
       {
         exerciseId: csipoGyakorlat?.id || '',
         name: csipoGyakorlat?.name || 'Híd gyakorlat vagy Román felhúzás',
-        sets: 4,
+        sets: 3,
         reps: '8-10',
         weight: null,
         restPeriod: 90,
@@ -592,7 +592,7 @@ function generateDay2Plan(
       {
         exerciseId: terdDominans?.id || '',
         name: terdDominans?.name || 'Bolgár kitörés',
-        sets: 4,
+        sets: 3,
         reps: terdDominans?.movement_pattern?.includes('unilaterális') ? '6-8 oldalanként' : '6-8',
         weight: null,
         restPeriod: 90,
@@ -621,7 +621,7 @@ function generateDay2Plan(
       {
         exerciseId: nyomoGyakorlat?.id || '',
         name: nyomoGyakorlat?.name || 'Vállból nyomás',
-        sets: 4,
+        sets: 3,
         reps: '8-10',
         weight: null,
         restPeriod: 90,
@@ -657,7 +657,7 @@ function generateDay2Plan(
       {
         exerciseId: huzasGyakorlat?.id || '',
         name: huzasGyakorlat?.name || 'Fekvő evezés',
-        sets: 4,
+        sets: 3,
         reps: '8-10',
         weight: null,
         restPeriod: 90,
@@ -685,7 +685,7 @@ function generateDay2Plan(
       {
         exerciseId: csipoGyakorlat?.id || '',
         name: csipoGyakorlat?.name || 'Román felhúzás',
-        sets: 4,
+        sets: 3,
         reps: '8-10',
         weight: null,
         restPeriod: 90,

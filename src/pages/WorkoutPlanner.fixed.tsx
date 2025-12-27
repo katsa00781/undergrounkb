@@ -73,7 +73,7 @@ const WorkoutPlanner = () => {
   } = useForm<WorkoutFormData>({
     resolver: zodResolver(workoutSchema),
     defaultValues: {
-      sections: [{ name: 'Main Workout', exercises: [{ sets: 3, reps: 10 }] }],
+      sections: [{ name: 'Main Workout', exercises: [{ sets: 3, reps: 8 }] }],
     },
   });
 
@@ -163,7 +163,7 @@ const WorkoutPlanner = () => {
     newSections[sectionIndex].exercises.push({ 
       id: Date.now().toString(),
       sets: 3,
-      reps: 10
+      reps: 8
     });
     setSections(newSections);
   };
