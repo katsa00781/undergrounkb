@@ -36,11 +36,10 @@
 #### **3. DOKUMENTÁCIÓ & TESZTELÉS (✅ KÉSZ)**
 ```
 📁 ADMIN_USER_MANAGEMENT_FIX.md (ÚJ)
-📁 test-admin-user-management.sh (ÚJ)
 ```
 
 - Teljes technikai dokumentáció
-- Step-by-step tesztelési útmutató
+- Manuális tesztelési útmutató (User Management UI)
 - Hibaelhárítási guide
 - Code review és implementation notes
 

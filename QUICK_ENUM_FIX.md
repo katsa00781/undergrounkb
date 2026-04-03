@@ -34,7 +34,7 @@ npm run dev
 - **`step1-minimal-enum.sql`** - Minimális enum javítás
 - **`step2-admin-functions.sql`** - Admin funkciók  
 - **`apply-two-step-fix.sh`** - Automatikus telepítő
-- **`test-enum-fix.sh`** - Hibakeresés
+- **Manuális ellenőrzés** - Futtasd a `SELECT unnest(enum_range(NULL::user_role));` lekérdezést, hogy megjelenjen a `disabled` érték
 
 ## 🔍 ELLENŐRZÉS
 ```sql

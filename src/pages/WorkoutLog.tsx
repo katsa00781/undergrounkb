@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Calendar, Clock, Dumbbell, BarChart2, Trash2, Edit2, Filter } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { getWorkouts, deleteWorkout, Workout } from '../lib/workouts';
@@ -6,9 +6,11 @@ import { getExercises, Exercise } from '../lib/exercises';
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import WorkoutSectionHeader from '../components/workouts/WorkoutSectionHeader';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 const WorkoutLog = () => {
-  const { user } = useAuth();
+  const { user, initialized } = useAuth();
   const navigate = useNavigate();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [exercises, setExercises] = useState<{ [key: string]: Exercise }>({});
@@ -21,13 +23,7 @@ const WorkoutLog = () => {
     workoutTitle: '' 
   });
 
-  useEffect(() => {
-    if (user?.id) {
-      loadData();
-    }
-  }, [user]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -47,11 +43,27 @@ const WorkoutLog = () => {
       setExercises(exercisesMap);
     } catch (error) {
       console.error('Failed to load data:', error);
-      toast.error('Failed to load workouts');
+      toast.error('Nem sikerült betölteni az edzéseket');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (initialized && !user) {
+      setIsLoading(false);
+      return;
+    }
+
+    if (user?.id) {
+      void loadData();
+    }
+  }, [initialized, user?.id, loadData, user]);
+
+  useAutoRefresh(loadData, {
+    enabled: Boolean(user?.id),
+    scopes: ['workouts'],
+  });
 
   const handleDeleteWorkout = async (id: string) => {
     try {
@@ -59,10 +71,10 @@ const WorkoutLog = () => {
       setWorkouts(workouts.filter(workout => workout.id !== id));
       setSelectedWorkout(null);
       setDeleteConfirmation({ show: false, workoutId: '', workoutTitle: '' });
-      toast.success('Workout deleted successfully');
+      toast.success('Edzés sikeresen törölve');
     } catch (error) {
       console.error('Failed to delete workout:', error);
-      toast.error('Failed to delete workout');
+      toast.error('Nem sikerült törölni az edzést');
     }
   };
 
@@ -88,7 +100,7 @@ const WorkoutLog = () => {
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Loading workouts...</p>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">Edzések betöltése...</p>
         </div>
       </div>
     );
@@ -96,12 +108,11 @@ const WorkoutLog = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Workout Log</h1>
-          <p className="mt-1 text-gray-600 dark:text-gray-400">Track and analyze your training progress</p>
-        </div>
-        <div className="flex gap-2">
+      <WorkoutSectionHeader
+        title="Edzésnapló"
+        description="A mentett edzéseidet részletes listában látod, szűrheted dátum szerint, és innen is megnyithatod szerkesztésre."
+        actions={(
+          <div className="flex gap-2">
           <input
             type="date"
             value={dateFilter}
@@ -113,11 +124,12 @@ const WorkoutLog = () => {
               onClick={() => setDateFilter('')}
               className="btn btn-outline"
             >
-              Clear Filter
+              Szűrő törlése
             </button>
           )}
-        </div>
-      </div>
+          </div>
+        )}
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Workout List */}

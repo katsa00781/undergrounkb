@@ -23,19 +23,14 @@ This guide explains how to test the profile form functionality to ensure data is
 5. Verify that a success message appears
 6. Refresh the page and verify that the entered data is still there
 
-### Option 2: Using the Provided Test Script
-If you prefer testing via scripts, we've created a dedicated test script:
+### Option 2: Supabase CLI ellenőrzés
+Ha a háttérben szeretnéd validálni a mezőket:
 
 ```bash
-cd /path/to/project
-npx ts-node scripts/test-profile-update.ts
+supabase db push
 ```
 
-The script will:
-1. Find or create a test user
-2. Update the profile with test data
-3. Verify that the updates were successfully applied
-4. Report success or errors
+Ez lefuttatja a `supabase/migrations` alatt található migrációkat, így minden szükséges oszlop és policy létrejön.
 
 ### Option 3: Directly Running SQL
 To verify at the database level:
@@ -58,7 +53,7 @@ If the form doesn't save correctly, check:
 
 1. **Database Schema Issues**
    - Run `./check-profile-structure.sh` to verify table columns
-   - If columns are missing, run `./apply-profile-migration.sh` to add them
+   - If columns are missing, futtasd a `supabase db push` parancsot, vagy manuálisan alkalmazd a `supabase/migrations/20250614214500_add_profile_fields.sql` fájl tartalmát
 
 2. **Auth Context**
    - Make sure you're properly logged in

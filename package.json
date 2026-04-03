@@ -9,7 +9,6 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test:supabase": "node -r dotenv/config node_modules/.bin/tsx src/utils/testConnection.ts",
-    "test:db": "node -r dotenv/config node_modules/.bin/tsx scripts/test-migrations.ts",
     "validate:db": "node -r dotenv/config node_modules/.bin/tsx scripts/validate-database.ts",
     "diagnose:profile": "ts-node scripts/diagnose-profile-issue.ts",
     "fix:profile": "./fix-profile-columns.sh",

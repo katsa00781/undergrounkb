@@ -4,13 +4,14 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSam
 import { hu } from 'date-fns/locale';
 import { getWorkouts, Workout } from '../lib/workouts';
 import { useAuth } from '../hooks/useAuth';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 interface WorkoutCalendarProps {
   onDateSelect?: (date: Date, workouts: Workout[]) => void;
 }
 
 const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
-  const { user } = useAuth();
+  const { user, initialized } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,10 +32,20 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
   }, [user]);
 
   useEffect(() => {
+    if (initialized && !user?.id) {
+      setLoading(false);
+      return;
+    }
+
     if (user?.id) {
       loadWorkouts();
     }
-  }, [user, currentDate, loadWorkouts]);
+  }, [initialized, user, currentDate, loadWorkouts]);
+
+  useAutoRefresh(loadWorkouts, {
+    enabled: Boolean(user?.id),
+    scopes: ['workouts'],
+  });
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);

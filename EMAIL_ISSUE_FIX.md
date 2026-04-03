@@ -8,8 +8,7 @@ This happened because we were testing with fake email addresses during developme
 ### Immediate Actions Taken:
 
 1. **Modified AuthContext**: Disabled email redirects during development
-2. **Created safe test script**: `test-auth-no-email.cjs` that doesn't trigger emails
-3. **Documented safe testing practices** below
+2. **Documented safe testing practices** below
 
 ### Safe Testing Practices:
 
@@ -36,12 +35,7 @@ This happened because we were testing with fake email addresses during developme
 2. **Consider setting up custom SMTP** for production use
 3. **Use only valid emails** for future testing
 
-### Testing Commands:
-
-```bash
-# Safe database testing (no emails sent)
-node test-auth-no-email.cjs
-
-# Normal app testing with valid emails only
-npm run dev
-```
+### Testing Checklist:
+- Indítsd az alkalmazást (`npm run dev`) és használj valós, megerősített email címeket
+- A Supabase Auth beállításoknál ideiglenesen kapcsold ki az email megerősítést fejlesztéshez
+- Figyeld a Supabase Dashboard > Logs felületet, hogy nincs-e további visszapattanó levél

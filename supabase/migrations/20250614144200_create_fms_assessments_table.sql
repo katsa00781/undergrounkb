@@ -1,5 +1,4 @@
--- Create FMS assessments table
-CREATE TABLE public.fms_assessments (
+CREATE TABLE IF NOT EXISTS public.fms_assessments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   date DATE NOT NULL,
@@ -23,21 +22,25 @@ CREATE TABLE public.fms_assessments (
 ALTER TABLE public.fms_assessments ENABLE ROW LEVEL SECURITY;
 
 -- Policy for users to see only their own assessments
+DROP POLICY IF EXISTS "Users can view their own FMS assessments" ON public.fms_assessments;
 CREATE POLICY "Users can view their own FMS assessments" 
   ON public.fms_assessments FOR SELECT 
   USING (auth.uid() = user_id);
 
 -- Policy for users to insert their own assessments
+DROP POLICY IF EXISTS "Users can insert their own FMS assessments" ON public.fms_assessments;
 CREATE POLICY "Users can insert their own FMS assessments" 
   ON public.fms_assessments FOR INSERT 
   WITH CHECK (auth.uid() = user_id);
 
 -- Policy for users to update their own assessments
+DROP POLICY IF EXISTS "Users can update their own FMS assessments" ON public.fms_assessments;
 CREATE POLICY "Users can update their own FMS assessments" 
   ON public.fms_assessments FOR UPDATE 
   USING (auth.uid() = user_id);
 
 -- Policy for users to delete their own assessments
+DROP POLICY IF EXISTS "Users can delete their own FMS assessments" ON public.fms_assessments;
 CREATE POLICY "Users can delete their own FMS assessments" 
   ON public.fms_assessments FOR DELETE 
   USING (auth.uid() = user_id);

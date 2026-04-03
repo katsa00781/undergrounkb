@@ -19,6 +19,12 @@ CREATE TABLE IF NOT EXISTS public.fms_assessments (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );
 
+ALTER TABLE public.fms_assessments
+  ADD COLUMN IF NOT EXISTS date DATE DEFAULT CURRENT_DATE;
+
+ALTER TABLE public.fms_assessments
+  ALTER COLUMN date SET NOT NULL;
+
 -- Create an index on user_id for faster queries
 CREATE INDEX IF NOT EXISTS fms_assessments_user_id_idx ON public.fms_assessments (user_id);
 
@@ -30,30 +36,35 @@ ALTER TABLE public.fms_assessments ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for row-level security
 -- Allow users to view their own assessments
+DROP POLICY IF EXISTS "Users can view their own assessments" ON public.fms_assessments;
 CREATE POLICY "Users can view their own assessments" 
   ON public.fms_assessments 
   FOR SELECT 
   USING (auth.uid() = user_id);
 
 -- Allow users to insert their own assessments
+DROP POLICY IF EXISTS "Users can insert their own assessments" ON public.fms_assessments;
 CREATE POLICY "Users can insert their own assessments" 
   ON public.fms_assessments 
   FOR INSERT 
   WITH CHECK (auth.uid() = user_id);
 
 -- Allow users to update their own assessments
+DROP POLICY IF EXISTS "Users can update their own assessments" ON public.fms_assessments;
 CREATE POLICY "Users can update their own assessments" 
   ON public.fms_assessments 
   FOR UPDATE 
   USING (auth.uid() = user_id);
 
 -- Allow users to delete their own assessments
+DROP POLICY IF EXISTS "Users can delete their own assessments" ON public.fms_assessments;
 CREATE POLICY "Users can delete their own assessments" 
   ON public.fms_assessments 
   FOR DELETE 
   USING (auth.uid() = user_id);
 
 -- Allow service role admin access
+DROP POLICY IF EXISTS "Service role has full access" ON public.fms_assessments;
 CREATE POLICY "Service role has full access" 
   ON public.fms_assessments 
   FOR ALL 

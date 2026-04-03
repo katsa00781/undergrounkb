@@ -3,13 +3,14 @@ import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, Save, Trash2, GripVertical, Sparkles, RotateCw, Share2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Copy, Plus, Save, Search, Trash2, Sparkles, RotateCw, Share2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Exercise, getExercises } from '../lib/exercises';
 import { createWorkout, updateWorkout, Workout } from '../lib/workouts';
-import { getMovementPatterns } from '../lib/exerciseService';
+import { getExerciseCategories, getExerciseCategoryLabel, getExerciseFMSFocuses, getFMSFocusLabel, getFMSFocusOptions, getMovementPatternLabel, getMovementPatterns } from '../lib/exerciseService';
 import { WorkoutDay, generateWorkoutPlanV2, ProgramType } from '../lib/workoutGenerator.fixed';
 import WorkoutSharingDialog from '../components/WorkoutSharingDialog';
+import WorkoutSectionHeader from '../components/workouts/WorkoutSectionHeader';
 import toast from 'react-hot-toast';
 
 const workoutSchema = z.object({
@@ -36,89 +37,281 @@ const workoutSchema = z.object({
 
 type WorkoutFormData = z.infer<typeof workoutSchema>;
 
+type SectionExercise = {
+  id: string;
+  exerciseId?: string;
+  name?: string;
+  exerciseName?: string;
+  sets?: number;
+  reps?: number | string;
+  weight?: number;
+  notes?: string;
+  restPeriod?: number;
+};
+
+type Section = {
+  id: string;
+  name: string;
+  exercises: SectionExercise[];
+};
+
+const createDefaultExercise = (id: string): SectionExercise => ({
+  id,
+  sets: 3,
+  reps: 8,
+  weight: undefined,
+  notes: '',
+  restPeriod: undefined,
+});
+
+const createDefaultSection = (id: string, name = ''): Section => ({
+  id,
+  name,
+  exercises: [createDefaultExercise(`${id}-1`)],
+});
+
+const getDifficultyLabel = (difficulty?: number) => {
+  if (!difficulty) return 'Nincs megadva';
+
+  if (difficulty <= 2) return 'Könnyű';
+  if (difficulty === 3) return 'Közepes';
+  return 'Haladó';
+};
+
+const getPlaceholderExerciseMeta = (placeholderId?: string) => {
+  if (!placeholderId?.startsWith('placeholder-')) {
+    return null;
+  }
+
+  if (placeholderId.includes('terddom-bi')) {
+    return {
+      title: 'Térd domináns bilaterális gyakorlat',
+      description: 'Keress egy kétoldali, térd domináns fő gyakorlatot ehhez a blokkhoz.',
+      movementPatternId: 'knee_dominant_bilateral',
+      movementPatternLabel: 'Térd domináns – bilaterális',
+    };
+  }
+
+  if (placeholderId.includes('terddom-uni')) {
+    return {
+      title: 'Térd domináns unilaterális gyakorlat',
+      description: 'Keress egy egyoldali, térd domináns gyakorlatot oldalankénti munkához.',
+      movementPatternId: 'knee_dominant_unilateral',
+      movementPatternLabel: 'Térd domináns – unilaterális',
+    };
+  }
+
+  if (placeholderId.includes('csipo-bi')) {
+    return {
+      title: 'Csípő domináns bilaterális gyakorlat',
+      description: 'Keress egy kétoldali csípő domináns fő emelést vagy hinget.',
+      movementPatternId: 'hip_dominant_bilateral',
+      movementPatternLabel: 'Csípő domináns – bilaterális',
+    };
+  }
+
+  if (placeholderId.includes('csipo-uni')) {
+    return {
+      title: 'Csípő domináns unilaterális gyakorlat',
+      description: 'Keress egy egyoldali csípő domináns gyakorlatot stabilitási fókuszhoz.',
+      movementPatternId: 'hip_dominant_unilateral',
+      movementPatternLabel: 'Csípő domináns – unilaterális',
+    };
+  }
+
+  if (placeholderId.includes('csipo-hajlitott')) {
+    return {
+      title: 'Csípő domináns hajlított lábas gyakorlat',
+      description: 'Keress egy hajlított lábas hinge variációt vagy csípődomináns gyakorlatot.',
+      movementPatternId: 'hip_dominant_bilateral',
+      movementPatternLabel: 'Csípő domináns – bilaterális',
+    };
+  }
+
+  if (placeholderId.includes('csipo-nyujtott')) {
+    return {
+      title: 'Csípő domináns nyújtott lábas gyakorlat',
+      description: 'Keress egy nyújtott lábas hinge vagy posterior chain fókuszú gyakorlatot.',
+      movementPatternId: 'hip_dominant_bilateral',
+      movementPatternLabel: 'Csípő domináns – bilaterális',
+    };
+  }
+
+  if (placeholderId.includes('horiz-nyomas-bi')) {
+    return {
+      title: 'Horizontális nyomás bilaterális gyakorlat',
+      description: 'Keress egy kétoldali horizontális nyomó gyakorlatot a fő blokkhoz.',
+      movementPatternId: 'horizontal_push_bilateral',
+      movementPatternLabel: 'Horizontális nyomás – bilaterális',
+    };
+  }
+
+  if (placeholderId.includes('horiz-nyomas-uni')) {
+    return {
+      title: 'Horizontális nyomás unilaterális gyakorlat',
+      description: 'Keress egy egyoldali horizontális nyomó gyakorlatot stabilitási terheléssel.',
+      movementPatternId: 'horizontal_push_unilateral',
+      movementPatternLabel: 'Horizontális nyomás – unilaterális',
+    };
+  }
+
+  if (placeholderId.includes('horiz-huzas-bi')) {
+    return {
+      title: 'Horizontális húzás bilaterális gyakorlat',
+      description: 'Keress egy kétoldali horizontális húzó gyakorlatot a blokk egyensúlyához.',
+      movementPatternId: 'horizontal_pull_bilateral',
+      movementPatternLabel: 'Horizontális húzás – bilaterális',
+    };
+  }
+
+  if (placeholderId.includes('horiz-huzas-uni')) {
+    return {
+      title: 'Horizontális húzás unilaterális gyakorlat',
+      description: 'Keress egy egyoldali horizontális húzó gyakorlatot törzsstabilitási terheléssel.',
+      movementPatternId: 'horizontal_pull_unilateral',
+      movementPatternLabel: 'Horizontális húzás – unilaterális',
+    };
+  }
+
+  if (placeholderId.includes('vert-nyomas-bi')) {
+    return {
+      title: 'Vertikális nyomás bilaterális gyakorlat',
+      description: 'Keress egy kétoldali fej fölé nyomó gyakorlatot.',
+      movementPatternId: 'vertical_push_bilateral',
+      movementPatternLabel: 'Vertikális nyomás – bilaterális',
+    };
+  }
+
+  if (placeholderId.includes('vert-nyomas-uni')) {
+    return {
+      title: 'Vertikális nyomás unilaterális gyakorlat',
+      description: 'Keress egy egyoldali fej fölé nyomó gyakorlatot kontrollált kivitelezéssel.',
+      movementPatternId: 'vertical_push_unilateral',
+      movementPatternLabel: 'Vertikális nyomás – unilaterális',
+    };
+  }
+
+  if (placeholderId.includes('vert-huzas')) {
+    return {
+      title: 'Vertikális húzás gyakorlat',
+      description: 'Keress egy vertikális húzó gyakorlatot, ami illik a blokk terheléséhez.',
+      movementPatternId: 'vertical_pull_bilateral',
+      movementPatternLabel: 'Vertikális húzás – bilaterális',
+    };
+  }
+
+  if (placeholderId.includes('fms')) {
+    return {
+      title: 'FMS korrekciós gyakorlat',
+      description: 'Keress egy mobilizációs vagy korrekciós gyakorlatot az FMS ajánláshoz igazítva.',
+      movementPatternId: 'mobilization',
+      movementPatternLabel: 'Mobilizálás',
+    };
+  }
+
+  if (placeholderId.includes('gait')) {
+    return {
+      title: 'Gait vagy törzsstabilitási gyakorlat',
+      description: 'Keress egy törzsstabilitást fejlesztő gait jellegű gyakorlatot.',
+      movementPatternId: 'gait_stability',
+      movementPatternLabel: 'Gait – törzs stabilitás',
+    };
+  }
+
+  if (placeholderId.includes('rotacios')) {
+    return {
+      title: 'Rotációs vagy anti-rotációs gyakorlat',
+      description: 'Keress egy törzs rotációs kontrollját fejlesztő gyakorlatot.',
+      movementPatternId: 'stability_anti_rotation',
+      movementPatternLabel: 'Stabilitás – anti-rotáció',
+    };
+  }
+
+  if (placeholderId.includes('rehab')) {
+    return {
+      title: 'Regenerációs vagy rehabilitációs gyakorlat',
+      description: 'Keress egy alacsony terhelésű, mobilizáló vagy korrekciós gyakorlatot.',
+      movementPatternId: 'mobilization',
+      movementPatternLabel: 'Mobilizálás',
+    };
+  }
+
+  return {
+    title: 'Generált helykitöltő gyakorlat',
+    description: 'Válassz egy valós gyakorlatot a blokk céljának megfelelően.',
+    movementPatternId: undefined,
+    movementPatternLabel: undefined,
+  };
+};
+
 const WorkoutPlanner = () => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Check if we're editing an existing workout
   const editWorkout = location.state?.editWorkout as Workout | undefined;
+  const copyWorkout = location.state?.copyWorkout as Workout | undefined;
+  const sourceWorkout = editWorkout ?? copyWorkout;
   const isEditMode = !!editWorkout;
+  const isCopyMode = !editWorkout && !!copyWorkout;
   
   const [exercises, setExercises] = useState<Exercise[]>([]);
-  
-  type SectionExercise = { 
-    id: string; 
-    exerciseId?: string; 
-    name?: string;
-    exerciseName?: string; // For storing placeholder names
-    sets?: number;
-    reps?: number | string;
-    weight?: number;
-    notes?: string;
-    restPeriod?: number;
-  };
-  
-  type Section = {
-    id: string;
-    name: string;
-    exercises: SectionExercise[];
-  };
-  
-  const [sections, setSections] = useState<Section[]>([{ 
-    id: '1', 
-    name: 'Main Workout', 
-    exercises: [{ 
-      id: '1',
-      sets: 3,
-      reps: 8,
-      weight: undefined,
-      notes: '',
-      restPeriod: undefined
-    }] 
-  }]);
+  const [sections, setSections] = useState<Section[]>([createDefaultSection('1', 'Main Workout')]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   // Change filters to be per exercise instead of per section
   const [categoryFilters, setCategoryFilters] = useState<{ [exerciseKey: string]: string }>({});
   const [movementPatternFilters, setMovementPatternFilters] = useState<{ [exerciseKey: string]: string }>({});
+  const [fmsFocusFilters, setFmsFocusFilters] = useState<{ [exerciseKey: string]: string }>({});
+  const [exerciseSearchQueries, setExerciseSearchQueries] = useState<{ [exerciseKey: string]: string }>({});
   const [selectedWorkoutDay, setSelectedWorkoutDay] = useState<WorkoutDay>(1);
   const [selectedProgramType, setSelectedProgramType] = useState<ProgramType>('4napos');
   const [showGenerateForm, setShowGenerateForm] = useState(false);
   const [showSharingDialog, setShowSharingDialog] = useState(false);
   const [lastCreatedWorkoutId, setLastCreatedWorkoutId] = useState<string | null>(null);
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const [isGeneratedPlan, setIsGeneratedPlan] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
   } = useForm<WorkoutFormData>({
     resolver: zodResolver(workoutSchema),
     defaultValues: {
-      sections: [{ 
-        name: 'Main Workout', 
-        exercises: [{ 
+      sections: [{
+        name: 'Main Workout',
+        exercises: [{
           exerciseId: '',
-          sets: 3, 
+          sets: 3,
           reps: 8,
-          weight: undefined, // Explicitly set as optional
+          weight: undefined,
           notes: '',
-          restPeriod: undefined
-        }] 
+          restPeriod: undefined,
+        }],
       }],
     },
   });
+
+  const watchedTitle = watch('title');
+  const watchedDate = watch('date');
+  const watchedDuration = watch('duration');
+  const movementPatterns = getMovementPatterns();
+  const exerciseCategories = getExerciseCategories();
+  const fmsFocusOptions = getFMSFocusOptions();
+
+  const isExerciseFMSCandidate = (exercise: Exercise) => exercise.category === 'fms' || getExerciseFMSFocuses(exercise).length > 0;
 
   useEffect(() => {
     loadExercises();
   }, []);
 
-  // Initialize form with edit data when in edit mode
+  // Initialize form with workout data when editing or copying
   useEffect(() => {
-    if (isEditMode && editWorkout) {
-      // Convert workout data to form format
-      const formSections = editWorkout.sections.map((section) => ({
+    if (sourceWorkout) {
+      const formSections = sourceWorkout.sections.map((section) => ({
         name: section.name,
         exercises: section.exercises.map((exercise) => ({
           exerciseId: exercise.exerciseId,
@@ -140,16 +333,20 @@ const WorkoutPlanner = () => {
       }));
 
       setSections(sectionsWithIds);
+      setCollapsedSections({});
+      setIsGeneratedPlan(Boolean(sourceWorkout.notes?.includes('Generált edzésterv')));
 
       reset({
-        title: editWorkout.title,
-        date: editWorkout.date,
-        duration: editWorkout.duration,
-        notes: editWorkout.notes || '',
+        title: isCopyMode ? `${sourceWorkout.title} másolat` : sourceWorkout.title,
+        date: isCopyMode ? new Date().toISOString().split('T')[0] : sourceWorkout.date,
+        duration: sourceWorkout.duration,
+        notes: sourceWorkout.notes || '',
         sections: formSections,
       });
+
+      setLastCreatedWorkoutId(null);
     }
-  }, [isEditMode, editWorkout, reset]);
+  }, [sourceWorkout, isCopyMode, reset]);
 
   const loadExercises = async () => {
     try {
@@ -157,7 +354,7 @@ const WorkoutPlanner = () => {
       setExercises(data);
     } catch (error) {
       console.error('Failed to load exercises:', error);
-      toast.error('Failed to load exercises');
+      toast.error('Nem sikerült betölteni a gyakorlatokat');
     }
   };
 
@@ -196,20 +393,36 @@ const WorkoutPlanner = () => {
         }
       }
       
-      const createdWorkout = await createWorkout({
-        ...data,
-        user_id: user.id,
-      });
+      if (isEditMode && editWorkout) {
+        const updatedWorkout = await updateWorkout(editWorkout.id, {
+          ...data,
+          user_id: user.id,
+        });
 
-      setLastCreatedWorkoutId(createdWorkout.id);
-      toast.success('Workout saved successfully');
-      reset();
-      setSections([{ id: '1', name: 'Main Workout', exercises: [{ id: '1' }] }]);
-      setCategoryFilters({});
-      setMovementPatternFilters({});
+        setLastCreatedWorkoutId(updatedWorkout.id);
+        toast.success('Edzésterv sikeresen frissítve');
+        navigate('/log');
+      } else {
+        const createdWorkout = await createWorkout({
+          ...data,
+          user_id: user.id,
+        });
+
+        setLastCreatedWorkoutId(createdWorkout.id);
+        toast.success(isCopyMode ? 'Edzés sikeresen lemásolva' : 'Edzés sikeresen mentve');
+        reset();
+        setSections([createDefaultSection('1', 'Main Workout')]);
+        setCategoryFilters({});
+        setMovementPatternFilters({});
+        setFmsFocusFilters({});
+        setExerciseSearchQueries({});
+        setCollapsedSections({});
+        setIsGeneratedPlan(false);
+        navigate('/workout-planner', { replace: true });
+      }
     } catch (error) {
       console.error('Error saving workout:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to save workout';
+      const errorMessage = error instanceof Error ? error.message : 'Nem sikerült menteni az edzést';
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -218,48 +431,102 @@ const WorkoutPlanner = () => {
 
   const addSection = () => {
     const newSectionId = Date.now().toString();
-    setSections([...sections, { 
-      id: newSectionId, 
-      name: '', 
-      exercises: [{ 
-        id: '1',
-        sets: 3,
-        reps: 8,
-        weight: undefined,
-        notes: '',
-        restPeriod: undefined
-      }] 
-    }]);
+    setSections([...sections, createDefaultSection(newSectionId)]);
+    setCollapsedSections(prev => ({ ...prev, [newSectionId]: false }));
   };
 
   const removeSection = (sectionIndex: number) => {
     setSections(sections.filter((_, i) => i !== sectionIndex));
-    const newCategoryFilters = { ...categoryFilters };
-    delete newCategoryFilters[sections[sectionIndex].id];
-    setCategoryFilters(newCategoryFilters);
+    const sectionId = sections[sectionIndex].id;
+    setCategoryFilters(prev => Object.fromEntries(Object.entries(prev).filter(([key]) => !key.startsWith(`${sectionId}-`))));
+    setMovementPatternFilters(prev => Object.fromEntries(Object.entries(prev).filter(([key]) => !key.startsWith(`${sectionId}-`))));
+    setFmsFocusFilters(prev => Object.fromEntries(Object.entries(prev).filter(([key]) => !key.startsWith(`${sectionId}-`))));
+    setExerciseSearchQueries(prev => Object.fromEntries(Object.entries(prev).filter(([key]) => !key.startsWith(`${sectionId}-`))));
+    setCollapsedSections(prev => {
+      const next = { ...prev };
+      delete next[sectionId];
+      return next;
+    });
   };
 
   const addExercise = (sectionIndex: number) => {
     const newSections = [...sections];
-    // Add a new exercise with proper default values
-    newSections[sectionIndex].exercises.push({ 
-      id: Date.now().toString(),
-      sets: 3,
-      reps: 8,
-      weight: undefined, // Explicitly undefined for optional weight
-      notes: '',
-      restPeriod: undefined
-    });
+    newSections[sectionIndex].exercises.push(createDefaultExercise(Date.now().toString()));
     setSections(newSections);
   };
 
   const removeExercise = (sectionIndex: number, exerciseIndex: number) => {
     const newSections = [...sections];
+    const sectionId = newSections[sectionIndex].id;
+    const exerciseId = newSections[sectionIndex].exercises[exerciseIndex].id;
     newSections[sectionIndex].exercises = newSections[sectionIndex].exercises.filter((_, i) => i !== exerciseIndex);
+    setSections(newSections);
+    const exerciseKey = getExerciseKey(sectionId, exerciseId);
+    setCategoryFilters(prev => {
+      const next = { ...prev };
+      delete next[exerciseKey];
+      return next;
+    });
+    setMovementPatternFilters(prev => {
+      const next = { ...prev };
+      delete next[exerciseKey];
+      return next;
+    });
+    setFmsFocusFilters(prev => {
+      const next = { ...prev };
+      delete next[exerciseKey];
+      return next;
+    });
+    setExerciseSearchQueries(prev => {
+      const next = { ...prev };
+      delete next[exerciseKey];
+      return next;
+    });
+  };
+
+  const duplicateSection = (sectionIndex: number) => {
+    const section = sections[sectionIndex];
+    const duplicatedSectionId = `${Date.now()}-${sectionIndex}`;
+    const duplicatedSection: Section = {
+      id: duplicatedSectionId,
+      name: section.name ? `${section.name} másolat` : 'Új szekció másolat',
+      exercises: section.exercises.map((exercise, exerciseIndex) => ({
+        ...exercise,
+        id: `${duplicatedSectionId}-${exerciseIndex + 1}`,
+      })),
+    };
+
+    const newSections = [...sections];
+    newSections.splice(sectionIndex + 1, 0, duplicatedSection);
+    setSections(newSections);
+    setCollapsedSections(prev => ({ ...prev, [duplicatedSectionId]: false }));
+  };
+
+  const duplicateExercise = (sectionIndex: number, exerciseIndex: number) => {
+    const newSections = [...sections];
+    const duplicatedExercise = {
+      ...newSections[sectionIndex].exercises[exerciseIndex],
+      id: `${Date.now()}-${exerciseIndex}`,
+    };
+
+    newSections[sectionIndex].exercises.splice(exerciseIndex + 1, 0, duplicatedExercise);
     setSections(newSections);
   };
 
+  const toggleSectionCollapse = (sectionId: string) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [sectionId]: !prev[sectionId],
+    }));
+  };
+
   const categories = Array.from(new Set(exercises.map(ex => ex.category)));
+  const categoryOptions = [
+    ...exerciseCategories,
+    ...categories
+      .filter(category => !exerciseCategories.some(option => option.id === category))
+      .map(category => ({ id: category as typeof exerciseCategories[number]['id'], label: getExerciseCategoryLabel(category) })),
+  ];
 
   // Helper function to create exercise key
   const getExerciseKey = (sectionId: string, exerciseId: string) => `${sectionId}-${exerciseId}`;
@@ -268,16 +535,52 @@ const WorkoutPlanner = () => {
     const exerciseKey = getExerciseKey(sectionId, exerciseId);
     const selectedCategory = categoryFilters[exerciseKey];
     const selectedMovementPattern = movementPatternFilters[exerciseKey];
+    const selectedFMSFocus = fmsFocusFilters[exerciseKey];
+    const searchQuery = exerciseSearchQueries[exerciseKey]?.trim().toLowerCase() || '';
     
     return exercises.filter(ex => {
-      // Apply category filter - exact match (categories come from database, should match exactly)
-      const matchesCategory = !selectedCategory || ex.category === selectedCategory;
+      // FMS category is treated as an intelligent correction bucket because legacy DB rows may still use mobility/recovery categories.
+      const matchesCategory = !selectedCategory || (selectedCategory === 'fms'
+        ? isExerciseFMSCandidate(ex)
+        : ex.category === selectedCategory);
       
       // Apply movement pattern filter - exact match
       const matchesMovementPattern = !selectedMovementPattern || ex.movement_pattern === selectedMovementPattern;
+
+      const matchesFMSFocus = !selectedFMSFocus || getExerciseFMSFocuses(ex).includes(selectedFMSFocus as ReturnType<typeof getFMSFocusOptions>[number]['id']);
+
+      const matchesSearch = !searchQuery ||
+        ex.name.toLowerCase().includes(searchQuery) ||
+        ex.description?.toLowerCase().includes(searchQuery) ||
+        ex.instructions?.toLowerCase().includes(searchQuery);
       
-      return matchesCategory && matchesMovementPattern;
+      return matchesCategory && matchesMovementPattern && matchesFMSFocus && matchesSearch;
     });
+  };
+
+  const getAvailableMovementPatterns = (sectionId: string, exerciseId: string) => {
+    const exerciseKey = getExerciseKey(sectionId, exerciseId);
+    const selectedCategory = categoryFilters[exerciseKey];
+    const availablePatternIds = new Set(
+      exercises
+        .filter(ex => !selectedCategory || (selectedCategory === 'fms' ? isExerciseFMSCandidate(ex) : ex.category === selectedCategory))
+        .map(ex => ex.movement_pattern),
+    );
+
+    return movementPatterns.filter(pattern => availablePatternIds.has(pattern.id));
+  };
+
+  const getExerciseOptionLabel = (exercise: Exercise, categoryFilter?: string) => {
+    if (categoryFilter === 'fms') {
+      const primaryFocus = getExerciseFMSFocuses(exercise)[0];
+      const focusLabel = getFMSFocusLabel(primaryFocus);
+
+      if (focusLabel) {
+        return `${focusLabel} • ${exercise.name}`;
+      }
+    }
+
+    return exercise.name;
   };
 
   const updateCategoryFilter = (sectionId: string, exerciseId: string, category: string) => {
@@ -297,6 +600,11 @@ const WorkoutPlanner = () => {
       ...prev,
       [exerciseKey]: '', 
     }));
+
+    setFmsFocusFilters(prev => ({
+      ...prev,
+      [exerciseKey]: '',
+    }));
   };
   
   const updateMovementPatternFilter = (sectionId: string, exerciseId: string, movementPattern: string) => {
@@ -308,71 +616,18 @@ const WorkoutPlanner = () => {
     }));
   };
 
-  // Automatikusan beállítja a mozgásminta szűrőt a placeholder gyakorlat alapján
+  const updateFMSFocusFilter = (sectionId: string, exerciseId: string, fmsFocus: string) => {
+    const exerciseKey = getExerciseKey(sectionId, exerciseId);
+
+    setFmsFocusFilters(prev => ({
+      ...prev,
+      [exerciseKey]: fmsFocus === prev[exerciseKey] ? '' : fmsFocus,
+    }));
+  };
+
   const setMovementPatternForPlaceholder = (sectionId: string, exerciseId: string, placeholderId: string) => {
-    let movementPattern = '';
-    
-    // Térddominás gyakorlatok
-    if (placeholderId.includes('terddom-bi')) {
-      movementPattern = 'knee_dominant_bilateral';
-    } else if (placeholderId.includes('terddom-uni')) {
-      movementPattern = 'knee_dominant_unilateral';
-    } 
-    // Csípődominás gyakorlatok
-    else if (placeholderId.includes('csipo-bi')) {
-      movementPattern = 'hip_dominant_bilateral';
-    } else if (placeholderId.includes('csipo-uni')) {
-      movementPattern = 'hip_dominant_unilateral';
-    } else if (placeholderId.includes('csipo-hajlitott')) {
-      movementPattern = 'hip_dominant_bent_leg';
-    } else if (placeholderId.includes('csipo-nyujtott')) {
-      movementPattern = 'hip_dominant_straight_leg';
-    }
-    // Horizontális nyomás
-    else if (placeholderId.includes('horiz-nyomas-bi')) {
-      movementPattern = 'horizontal_push_bilateral';
-    } else if (placeholderId.includes('horiz-nyomas-uni')) {
-      movementPattern = 'horizontal_push_unilateral';
-    } 
-    // Horizontális húzás
-    else if (placeholderId.includes('horiz-huzas-bi')) {
-      movementPattern = 'horizontal_pull_bilateral';
-    } else if (placeholderId.includes('horiz-huzas-uni')) {
-      movementPattern = 'horizontal_pull_unilateral';
-    } 
-    // Vertikális nyomás
-    else if (placeholderId.includes('vert-nyomas-bi')) {
-      movementPattern = 'vertical_push_bilateral';
-    } else if (placeholderId.includes('vert-nyomas-uni')) {
-      movementPattern = 'vertical_push_unilateral';
-    } else if (placeholderId.includes('vert-nyomas')) {
-      movementPattern = 'vertical_push_bilateral';
-    }
-    // Vertikális húzás
-    else if (placeholderId.includes('vert-huzas-bi')) {
-      movementPattern = 'vertical_pull_bilateral';
-    } else if (placeholderId.includes('vert-huzas-uni')) {
-      movementPattern = 'vertical_pull_unilateral';
-    } else if (placeholderId.includes('vert-huzas')) {
-      movementPattern = 'vertical_pull_bilateral';
-    }
-    // FMS korrekciók
-    else if (placeholderId.includes('fms')) {
-      movementPattern = 'mobilization';
-    }
-    // Gait és core gyakorlatok
-    else if (placeholderId.includes('gait')) {
-      movementPattern = 'mobilization';
-    }
-    // Rehabilitációs gyakorlatok
-    else if (placeholderId.includes('rehab')) {
-      movementPattern = 'mobilization';
-    }
-    // Rotációs gyakorlatok
-    else if (placeholderId.includes('rotacios')) {
-      movementPattern = 'rotation';
-    }
-    
+    const movementPattern = getPlaceholderExerciseMeta(placeholderId)?.movementPatternId;
+
     if (movementPattern) {
       const exerciseKey = getExerciseKey(sectionId, exerciseId);
       setMovementPatternFilters(prev => ({
@@ -384,7 +639,7 @@ const WorkoutPlanner = () => {
 
   const handleGenerateWorkout = async () => {
     if (!user?.id) {
-      toast.error('You must be logged in to generate a workout plan');
+      toast.error('Az edzésterv generálásához be kell jelentkezned');
       return;
     }
     
@@ -465,6 +720,8 @@ const WorkoutPlanner = () => {
       // Clear existing filters before setting new ones
       setCategoryFilters({});
       setMovementPatternFilters({});
+      setFmsFocusFilters({});
+      setExerciseSearchQueries({});
       
       // Set movement pattern filters for placeholders immediately after state update
       // This needs to happen after setSections completes, so we use a timeout
@@ -491,10 +748,11 @@ const WorkoutPlanner = () => {
         });
       }, 100);
       
-      toast.success('Workout plan generated successfully');
+      toast.success('Az edzésterv sikeresen legenerálva');
+      setIsGeneratedPlan(true);
     } catch (error) {
       console.error('Failed to generate workout plan:', error);
-      toast.error('Failed to generate workout plan');
+      toast.error('Nem sikerült legenerálni az edzéstervet');
     } finally {
       setIsGenerating(false);
     }
@@ -504,35 +762,78 @@ const WorkoutPlanner = () => {
     setShowGenerateForm(!showGenerateForm);
   };
 
+  const totalExerciseCount = sections.reduce((total, section) => total + section.exercises.length, 0);
+  const totalSetCount = sections.reduce(
+    (total, section) => total + section.exercises.reduce((sectionTotal, exercise) => sectionTotal + (exercise.sets || 0), 0),
+    0,
+  );
+
+  const getSectionSummary = (section: Section) => {
+    const setCount = section.exercises.reduce((total, exercise) => total + (exercise.sets || 0), 0);
+    return `${section.exercises.length} gyakorlat • ${setCount} sorozat`;
+  };
+
+  const getExerciseSummary = (exercise: SectionExercise) => {
+    const prescription = `${exercise.sets || '-'} × ${exercise.reps || '-'}`;
+    return exercise.weight ? `${prescription} • ${exercise.weight} kg` : prescription;
+  };
+
   return (
     <div className="container py-8">
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Workout Planner</h1>
-        
-        <div className="mt-4 flex space-x-2 sm:mt-0">
+      <WorkoutSectionHeader
+        title="Edzéstervező"
+        description="Új edzést állíthatsz össze, meglévőt szerkeszthetsz, vagy egy korábbi tervből gyorsan új másolatot készíthetsz."
+        actions={(
           <button
             type="button"
             onClick={toggleGenerateForm}
             className="btn btn-primary flex items-center gap-2"
           >
             <Sparkles size={16} />
-            Generate Workout
+            Edzés generálása
           </button>
+        )}
+      />
+
+      <div className="mb-6 grid gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 md:grid-cols-4">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Workout</p>
+          <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+            {watchedTitle?.trim() || 'Még nincs cím megadva'}
+          </p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {isEditMode ? 'Szerkesztés alatt' : isCopyMode ? 'Másolat készítése' : isGeneratedPlan ? 'Generált terv' : 'Kézi terv'}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Szekciók</p>
+          <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">{sections.length}</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Aktív blokk</p>
+        </div>
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Gyakorlatok</p>
+          <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">{totalExerciseCount}</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Összesen {totalSetCount} sorozat</p>
+        </div>
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Tervezett idő</p>
+          <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">{watchedDuration || 0} perc</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{watchedDate || 'Dátum nélkül'}</p>
         </div>
       </div>
 
       {/* Generate Workout Form */}
       {showGenerateForm && (
         <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
-          <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Generate Workout Plan</h2>
+          <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Generált edzésterv</h2>
           <p className="mb-4 text-gray-600 dark:text-gray-400">
-            Choose a workout program type and day to generate a structured training plan. Your workout will include exercises based on our program and any available FMS assessments.
+            Válassz programtípust és napot, majd generálj egy előre strukturált edzéstervet. A rendszer a programlogika és az elérhető FMS információk alapján tölti ki az alapblokkot.
           </p>
           
           {/* Program Type Selection */}
           <div className="mb-6">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Select Program Type
+              Programtípus
             </label>
             <div className="flex flex-wrap gap-2">
               <button
@@ -586,7 +887,7 @@ const WorkoutPlanner = () => {
           {/* Workout Day Selection */}
           <div className="mb-4">
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Select Workout Day
+              Edzésnap
             </label>
             <div className="flex flex-wrap gap-2">
               {/* Show only relevant days based on program type */}
@@ -771,8 +1072,17 @@ const WorkoutPlanner = () => {
 
           {sections.map((section, sectionIndex) => (
             <div key={section.id} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex-1">
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div className="flex flex-1 items-start gap-3">
+                  <button
+                    type="button"
+                    onClick={() => toggleSectionCollapse(section.id)}
+                    className="mt-2 rounded-md border border-gray-200 p-2 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                    aria-label={collapsedSections[section.id] ? 'Szekció kinyitása' : 'Szekció összecsukása'}
+                  >
+                    {collapsedSections[section.id] ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                  </button>
+                  <div className="flex-1">
                   <input
                     {...register(`sections.${sectionIndex}.name`)}
                     type="text"
@@ -790,19 +1100,33 @@ const WorkoutPlanner = () => {
                       {errors.sections[sectionIndex]?.name?.message}
                     </p>
                   )}
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{getSectionSummary(section)}</p>
+                  </div>
                 </div>
-                {sections.length > 1 && (
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => removeSection(sectionIndex)}
-                    className="ml-4 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                    onClick={() => duplicateSection(sectionIndex)}
+                    className="rounded-md border border-gray-200 p-2 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                    title="Szekció duplikálása"
                   >
-                    <Trash2 size={20} />
+                    <Copy size={16} />
                   </button>
-                )}
+                  {sections.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeSection(sectionIndex)}
+                      className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                      title="Szekció törlése"
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Exercises */}
+              {!collapsedSections[section.id] && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-md font-medium text-gray-900 dark:text-white">Exercises</h3>
@@ -818,22 +1142,53 @@ const WorkoutPlanner = () => {
 
                 {section.exercises.map((exercise, exerciseIndex) => (
                   <div key={exercise.id} className="rounded-md border border-gray-100 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700">
+                    {(() => {
+                      const exerciseKey = getExerciseKey(section.id, exercise.id);
+                      const selectedExercise = exercise.exerciseId && !exercise.exerciseId.startsWith('placeholder-')
+                        ? exercises.find(ex => ex.id === exercise.exerciseId)
+                        : null;
+                      const placeholderMeta = getPlaceholderExerciseMeta(exercise.exerciseId);
+                      const selectedFMSFocus = fmsFocusFilters[exerciseKey];
+                      const selectedExerciseFMSFocuses = selectedExercise ? getExerciseFMSFocuses(selectedExercise) : [];
+                      const activeFilterCount = [
+                        categoryFilters[exerciseKey],
+                        movementPatternFilters[exerciseKey],
+                        fmsFocusFilters[exerciseKey],
+                        exerciseSearchQueries[exerciseKey],
+                      ].filter(Boolean).length;
+                      const selectedMovementPatternLabel = selectedExercise
+                        ? getMovementPatternLabel(selectedExercise.movement_pattern)
+                        : placeholderMeta?.movementPatternLabel;
+
+                      return (
+                        <>
                     <div className="mb-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <GripVertical size={16} className="text-gray-400" />
+                      <div>
                         <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                           Exercise {exerciseIndex + 1}
                         </span>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{getExerciseSummary(exercise)}</p>
                       </div>
-                      {section.exercises.length > 1 && (
+                      <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => removeExercise(sectionIndex, exerciseIndex)}
-                          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                          onClick={() => duplicateExercise(sectionIndex, exerciseIndex)}
+                          className="rounded-md border border-gray-200 p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                          title="Gyakorlat duplikálása"
                         >
-                          <Trash2 size={16} />
+                          <Copy size={14} />
                         </button>
-                      )}
+                        {section.exercises.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeExercise(sectionIndex, exerciseIndex)}
+                            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                            title="Gyakorlat törlése"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -843,73 +1198,93 @@ const WorkoutPlanner = () => {
                           Exercise
                         </label>
                         
-                        {/* Exercise-specific filters */}
-                        <div className="mt-2 mb-3">
-                          {/* Only show filters if exercises are loaded */}
+                        <div className="mb-3 mt-2 space-y-2">
                           {exercises.length > 0 && (
                             <>
-                              <div className="mb-2">
-                                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Category Filter:</span>
-                                <div className="mt-1 flex flex-wrap gap-1">
-                                  {categories.map((category) => {
-                                    const exerciseKey = getExerciseKey(section.id, exercise.id);
-                                    return (
-                                      <button
-                                        key={category}
-                                        type="button"
-                                        onClick={() => updateCategoryFilter(section.id, exercise.id, category)}
-                                        className={`rounded px-2 py-1 text-xs ${
-                                          categoryFilters[exerciseKey] === category
-                                            ? 'bg-primary-500 text-white'
-                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                                        }`}
-                                      >
-                                        {category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
+                              <div className="relative">
+                                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input
+                                  type="text"
+                                  value={exerciseSearchQueries[exerciseKey] || ''}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    setExerciseSearchQueries(prev => ({
+                                      ...prev,
+                                      [exerciseKey]: value,
+                                    }));
+                                  }}
+                                  className="block w-full rounded-md border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                                  placeholder="Keresés név, leírás vagy instrukció alapján"
+                                />
                               </div>
-                              
-                              <div className="mb-2">
-                                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Movement Pattern:</span>
-                                <div className="mt-1 flex flex-wrap gap-1">
-                                  {getMovementPatterns().map((pattern) => {
-                                    const exerciseKey = getExerciseKey(section.id, exercise.id);
-                                    return (
-                                      <button
-                                        key={pattern.id}
-                                        type="button"
-                                        onClick={() => updateMovementPatternFilter(section.id, exercise.id, pattern.id)}
-                                        className={`rounded px-2 py-1 text-xs ${
-                                          movementPatternFilters[exerciseKey] === pattern.id
-                                            ? 'bg-primary-500 text-white'
-                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                                        }`}
-                                      >
-                                        {pattern.label}
-                                      </button>
-                                    );
-                                  })}
-                                  {/* Clear filter button */}
-                                  {movementPatternFilters[getExerciseKey(section.id, exercise.id)] && (
-                                    <button
-                                      type="button"
-                                      onClick={() => updateMovementPatternFilter(section.id, exercise.id, '')}
-                                      className="rounded px-2 py-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800"
+                              <details className="rounded-md border border-gray-200 bg-white/70 px-3 py-2 dark:border-gray-600 dark:bg-gray-800/60">
+                                <summary className="cursor-pointer list-none text-xs font-medium text-gray-600 dark:text-gray-300">
+                                  Speciális szűrők{activeFilterCount > 0 ? ` • ${activeFilterCount} aktív` : ''}
+                                </summary>
+                                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">
+                                      Kategória
+                                    </label>
+                                    <select
+                                      value={categoryFilters[exerciseKey] || ''}
+                                      onChange={(e) => updateCategoryFilter(section.id, exercise.id, e.target.value)}
+                                      className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                                     >
-                                      Clear
-                                    </button>
+                                      <option value="">Összes kategória</option>
+                                      {categoryOptions.map((category) => (
+                                        <option key={category.id} value={category.id}>
+                                          {category.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+
+                                  {categoryFilters[exerciseKey] === 'fms' && (
+                                    <div className="sm:col-span-2">
+                                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">
+                                        FMS fókusz
+                                      </label>
+                                      <select
+                                        value={selectedFMSFocus || ''}
+                                        onChange={(e) => updateFMSFocusFilter(section.id, exercise.id, e.target.value)}
+                                        className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                                      >
+                                        <option value="">Mind a 7 FMS minta</option>
+                                        {fmsFocusOptions.map((focus) => (
+                                          <option key={focus.id} value={focus.id}>
+                                            {focus.label}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
                                   )}
+
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">
+                                      Mozgásminta
+                                    </label>
+                                    <select
+                                      value={movementPatternFilters[exerciseKey] || ''}
+                                      onChange={(e) => updateMovementPatternFilter(section.id, exercise.id, e.target.value)}
+                                      className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                                    >
+                                      <option value="">Összes mozgásminta</option>
+                                      {getAvailableMovementPatterns(section.id, exercise.id).map((pattern) => (
+                                        <option key={pattern.id} value={pattern.id}>
+                                          {pattern.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
                                 </div>
-                              </div>
+                              </details>
                             </>
                           )}
                           
-                          {/* Show loading state if exercises are not loaded yet */}
                           {exercises.length === 0 && (
                             <div className="mb-2">
-                              <span className="text-xs text-gray-500 dark:text-gray-400">Loading filters...</span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">Szűrők betöltése...</span>
                             </div>
                           )}
                         </div>
@@ -929,10 +1304,10 @@ const WorkoutPlanner = () => {
                             setSections(newSections);
                           }}
                         >
-                          <option value="">Select an exercise</option>
+                          <option value="">Válassz gyakorlatot</option>
                           {getFilteredExercises(section.id, exercise.id).map((ex) => (
                             <option key={ex.id} value={ex.id}>
-                              {ex.name}
+                              {getExerciseOptionLabel(ex, categoryFilters[exerciseKey])}
                             </option>
                           ))}
                         </select>
@@ -940,63 +1315,57 @@ const WorkoutPlanner = () => {
                         {/* Show filter info */}
                         {exercises.length > 0 && (
                           <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            Showing {getFilteredExercises(section.id, exercise.id).length} of {exercises.length} exercises
-                            {(categoryFilters[getExerciseKey(section.id, exercise.id)] || movementPatternFilters[getExerciseKey(section.id, exercise.id)]) && (
+                            {getFilteredExercises(section.id, exercise.id).length} / {exercises.length} gyakorlat látható
+                            {(categoryFilters[getExerciseKey(section.id, exercise.id)] || movementPatternFilters[getExerciseKey(section.id, exercise.id)] || fmsFocusFilters[getExerciseKey(section.id, exercise.id)] || exerciseSearchQueries[getExerciseKey(section.id, exercise.id)]) && (
                               <button
                                 type="button"
                                 onClick={() => {
                                   const exerciseKey = getExerciseKey(section.id, exercise.id);
                                   setCategoryFilters(prev => ({ ...prev, [exerciseKey]: '' }));
                                   setMovementPatternFilters(prev => ({ ...prev, [exerciseKey]: '' }));
+                                  setFmsFocusFilters(prev => ({ ...prev, [exerciseKey]: '' }));
+                                  setExerciseSearchQueries(prev => ({ ...prev, [exerciseKey]: '' }));
                                 }}
                                 className="ml-2 text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300"
                               >
-                                Clear all filters
+                                Összes szűrő törlése
                               </button>
                             )}
                           </div>
                         )}
                         
-                        {/* Show placeholder exercise name and movement pattern below select */}
-                        {exercise.exerciseId?.startsWith('placeholder-') && exercise.name && (
-                          <div className="mt-2 rounded-md bg-yellow-50 border border-yellow-200 p-2 dark:bg-yellow-900/20 dark:border-yellow-700">
-                            <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">
-                              Generált gyakorlat: {exercise.name}
+                        {selectedExercise && (
+                          <div className="mt-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-950/30">
+                            <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">{selectedExercise.name}</p>
+                            <div className="mt-2 flex flex-wrap gap-2 text-xs text-emerald-800 dark:text-emerald-200">
+                              <span className="rounded-full bg-white/80 px-2 py-1 dark:bg-emerald-900/60">{getExerciseCategoryLabel(selectedExercise.category)}</span>
+                              {selectedMovementPatternLabel && (
+                                <span className="rounded-full bg-white/80 px-2 py-1 dark:bg-emerald-900/60">{selectedMovementPatternLabel}</span>
+                              )}
+                              {selectedExerciseFMSFocuses.map((focusId) => (
+                                <span key={focusId} className="rounded-full bg-white/80 px-2 py-1 dark:bg-emerald-900/60">
+                                  FMS: {getFMSFocusLabel(focusId)}
+                                </span>
+                              ))}
+                              <span className="rounded-full bg-white/80 px-2 py-1 dark:bg-emerald-900/60">Nehézség: {getDifficultyLabel(selectedExercise.difficulty)}</span>
+                            </div>
+                            {selectedExercise.description && (
+                              <p className="mt-2 text-xs text-emerald-800 dark:text-emerald-200">{selectedExercise.description}</p>
+                            )}
+                          </div>
+                        )}
+
+                        {placeholderMeta && (
+                          <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
+                            <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                              Generált helykitöltő: {placeholderMeta.title}
                             </p>
-                            {/* Show movement pattern info with clickable filter info */}
-                            {exercise.exerciseId.includes('terddom') && (
-                              <p className="text-xs text-yellow-600 dark:text-yellow-300">
-                                Mozgásminta: Térddomináns ({exercise.exerciseId.includes('bi') ? 'Kétoldali' : 'Egyoldali'})
-                                <br />
-                                <span className="italic">Szűrő automatikusan beállítva: "Knee Dominant {exercise.exerciseId.includes('bi') ? 'Bilateral' : 'Unilateral'}"</span>
-                              </p>
-                            )}
-                            {exercise.exerciseId.includes('csipo') && (
-                              <p className="text-xs text-yellow-600 dark:text-yellow-300">
-                                Mozgásminta: Csípődomináns ({exercise.exerciseId.includes('bi') ? 'Kétoldali' : 'Egyoldali'})
-                                <br />
-                                <span className="italic">Szűrő automatikusan beállítva: "Hip Dominant {exercise.exerciseId.includes('bi') ? 'Bilateral' : 'Unilateral'}"</span>
-                              </p>
-                            )}
-                            {exercise.exerciseId.includes('nyomas') && (
-                              <p className="text-xs text-yellow-600 dark:text-yellow-300">
-                                Mozgásminta: {exercise.exerciseId.includes('horiz') ? 'Horizontális' : 'Vertikális'} nyomás
-                                <br />
-                                <span className="italic">Szűrő automatikusan beállítva: "{exercise.exerciseId.includes('horiz') ? 'Horizontal' : 'Vertical'} Push"</span>
-                              </p>
-                            )}
-                            {exercise.exerciseId.includes('huzas') && (
-                              <p className="text-xs text-yellow-600 dark:text-yellow-300">
-                                Mozgásminta: {exercise.exerciseId.includes('horiz') ? 'Horizontális' : 'Vertikális'} húzás
-                                <br />
-                                <span className="italic">Szűrő automatikusan beállítva: "{exercise.exerciseId.includes('horiz') ? 'Horizontal' : 'Vertical'} Pull"</span>
-                              </p>
-                            )}
-                            {exercise.exerciseId.includes('fms') && (
-                              <p className="text-xs text-yellow-600 dark:text-yellow-300">
-                                Típus: FMS korrekciós gyakorlat
-                                <br />
-                                <span className="italic">Szűrő automatikusan beállítva: "Mobilization"</span>
+                            <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">
+                              {placeholderMeta.description}
+                            </p>
+                            {placeholderMeta.movementPatternLabel && (
+                              <p className="mt-2 text-xs font-medium text-amber-900 dark:text-amber-100">
+                                Ajánlott mozgásminta: {placeholderMeta.movementPatternLabel}
                               </p>
                             )}
                           </div>
@@ -1112,15 +1481,19 @@ const WorkoutPlanner = () => {
                         />
                       </div>
                     </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 ))}
               </div>
+              )}
             </div>
           ))}
         </div>
 
         {/* Submit Button */}
-        <div className="flex justify-end gap-4">
+        <div className="sticky bottom-4 z-10 flex justify-end gap-4 rounded-xl border border-gray-200 bg-white/95 p-4 shadow-lg backdrop-blur dark:border-gray-700 dark:bg-gray-900/95">
           <button
             type="submit"
             disabled={isLoading}
@@ -1129,12 +1502,12 @@ const WorkoutPlanner = () => {
             {isLoading ? (
               <>
                 <RotateCw size={16} className="animate-spin" />
-                Saving...
+                Mentés...
               </>
             ) : (
               <>
                 <Save size={16} />
-                Save Workout
+                {isEditMode ? 'Módosítások mentése' : isCopyMode ? 'Másolat mentése' : 'Edzés mentése'}
               </>
             )}
           </button>
@@ -1146,7 +1519,7 @@ const WorkoutPlanner = () => {
               className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 flex items-center gap-2"
             >
               <Share2 size={16} />
-              Share Workout
+              Edzés megosztása
             </button>
           )}
         </div>

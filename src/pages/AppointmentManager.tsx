@@ -31,11 +31,11 @@ interface BookingDetails {
 }
 
 interface AppointmentWithBookings extends Appointment {
-  appointments_participants: BookingDetails[];
+  appointment_bookings: BookingDetails[];
 }
 
 const AppointmentManager = () => {
-  const { user } = useAuth();
+  const { user, initialized } = useAuth();
   const [appointments, setAppointments] = useState<AppointmentWithBookings[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,10 +69,15 @@ const AppointmentManager = () => {
   }, [user]);
 
   useEffect(() => {
+    if (initialized && !user) {
+      setIsLoading(false);
+      return;
+    }
+
     if (user) {
       loadAppointments();
     }
-  }, [user, loadAppointments]);
+  }, [initialized, user, loadAppointments]);
 
   const onSubmit = async (data: AppointmentFormData) => {
     try {
@@ -286,7 +291,7 @@ const AppointmentManager = () => {
           </div>
 
           <div className="space-y-4">
-            {selectedAppointment.appointments_participants.map((booking: BookingDetails) => (
+            {selectedAppointment.appointment_bookings.map((booking: BookingDetails) => (
               <div
                 key={`${booking.appointment_id}-${booking.user_id}`}
                 className="flex items-center justify-between rounded-lg border border-gray-200 p-4 dark:border-gray-700"
@@ -307,7 +312,7 @@ const AppointmentManager = () => {
               </div>
             ))}
 
-            {selectedAppointment.appointments_participants.length === 0 && (
+            {selectedAppointment.appointment_bookings.length === 0 && (
               <p className="text-center text-gray-600 dark:text-gray-400">
                 No bookings yet
               </p>

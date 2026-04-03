@@ -3,7 +3,6 @@ import { Calendar, Clock, Users, Check, X, Dumbbell } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useAuth } from '../hooks/useAuth';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { supabase } from '../config/supabase';
 import {
   Appointment,
   AppointmentBooking,
@@ -13,9 +12,10 @@ import {
   cancelBooking
 } from '../lib/appointments';
 import toast from 'react-hot-toast';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 const AppointmentBookingPage = () => {
-  const { user } = useAuth();
+  const { user, initialized } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [availableAppointments, setAvailableAppointments] = useState<Appointment[]>([]);
@@ -23,6 +23,7 @@ const AppointmentBookingPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [accessError, setAccessError] = useState<string | null>(null);
+  const [bookingWarning, setBookingWarning] = useState<string | null>(null);
   const [bookingEnabled, setBookingEnabled] = useState(true); // Enable booking by default
 
   // Define loadData using useCallback
@@ -44,6 +45,7 @@ const AppointmentBookingPage = () => {
 
       setAvailableAppointments(appointments);
       setUserBookings(bookings);
+      setAccessError(null);
     } catch (error) {
       console.error('Failed to load appointments:', error);
       console.error('Error details:', JSON.stringify(error));
@@ -55,48 +57,27 @@ const AppointmentBookingPage = () => {
   }, [user]);
 
   useEffect(() => {
+    if (initialized && !user) {
+      setIsLoading(false);
+      setAccessError('Authentication required');
+      return;
+    }
+    if (!user) {
+      setAccessError('Authentication required');
+      navigate('/login', { state: { from: location } });
+      return;
+    }
 
-    const checkAccess = async () => {
-      try {
-        if (!user) {
+    setBookingEnabled(true);
+    setBookingWarning(null);
+    setAccessError(null);
+    loadData();
+  }, [initialized, user, navigate, location, loadData]);
 
-          setAccessError('Authentication required');
-          navigate('/login', { state: { from: location } });
-          return false;
-        }
-
-        // Check if the appointments_participants table exists 
-        const { error } = await supabase
-          .from('appointments_participants')
-          .select('count')
-          .limit(1);
-
-        if (error) {
-          console.error('Error accessing appointments_participants table:', error);
-          if (error.code === '42P01') {
-            // Table doesn't exist, but we can still show available appointments
-            setBookingEnabled(false);
-            setAccessError('Booking is temporarily disabled. You can view available appointments but cannot book them yet.');
-            // Return true to continue loading the page with disabled booking
-            return true;
-          }
-        }
-
-        // Allow access for authenticated users
-        return true;
-      } catch (err) {
-        console.error('Access check error:', err);
-        setAccessError('Error checking access');
-        return false;
-      }
-    };
-
-    checkAccess().then(hasAccess => {
-      if (hasAccess && user) {
-        loadData();
-      }
-    });
-  }, [user, navigate, location, loadData]);
+  useAutoRefresh(loadData, {
+    enabled: Boolean(user?.id),
+    scopes: ['appointments', 'workouts'],
+  });
 
   const handleBook = async (appointmentId: string) => {
     if (!bookingEnabled) {
@@ -171,17 +152,6 @@ const AppointmentBookingPage = () => {
     : availableAppointments;
 
   // Show loading state
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Loading appointments...</p>
-        </div>
-      </div>
-    );
-  }
-
   // Show access error if any
   if (accessError) {
     return (
@@ -203,12 +173,29 @@ const AppointmentBookingPage = () => {
     );
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">Loading appointments...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Book an Appointment</h1>
         <p className="mt-1 text-gray-600 dark:text-gray-400">View and book available time slots</p>
       </div>
+
+      {bookingWarning && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-200">
+          {bookingWarning}
+        </div>
+      )}
 
       <div className="flex gap-4">
         <input

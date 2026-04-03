@@ -23,8 +23,13 @@ CREATE POLICY "allow_individual_delete" ON public.profiles
 FOR DELETE TO authenticated
 USING (auth.uid() = id);
 
--- Define admin role separately without using profiles table in policy definition
-CREATE ROLE admin_role;
+DO $$
+BEGIN
+	IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
+		CREATE ROLE admin_role;
+	END IF;
+END
+$$;
 GRANT admin_role TO authenticator;
 
 -- Re-enable RLS

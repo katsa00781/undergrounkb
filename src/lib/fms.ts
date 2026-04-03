@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase';
+import { notifyDataChanged } from '../utils/dataRefresh';
 
 export interface FMSAssessment {
   id: string;
@@ -34,6 +35,7 @@ export async function createFMSAssessment(assessment: Omit<FMSAssessment, 'id' |
       throw error;
     }
 
+    notifyDataChanged('fms');
     return data as FMSAssessment;
   } catch (error) {
     console.error('Exception in createFMSAssessment:', error);

@@ -42,7 +42,6 @@ echo ""
 echo "📁 MÓDOSÍTOTT FÁJLOK:"
 echo "   ✅ src/pages/ProgressTracking.tsx"
 echo "   ✅ PROGRESS_TRACKING_VALIDATION_FIX.md"
-echo "   ✅ test-progress-validation.sh"
 echo ""
 
 echo "🎯 KÖVETKEZŐ LÉPÉS:"

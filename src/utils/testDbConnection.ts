@@ -60,7 +60,7 @@ export async function testDatabaseConnection() {
 }
 
 export async function validateDatabaseSchema() {
-    const tables = ['profiles', 'appointments', 'appointments_participants', 'exercises', 'workouts'];
+    const tables = ['profiles', 'appointments', 'appointment_bookings', 'exercises', 'workouts'];
     const results: Record<string, boolean> = {};
 
     for (const table of tables) {

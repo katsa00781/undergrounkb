@@ -33,10 +33,10 @@ This document outlines the implementation of the Functional Movement Screen (FMS
 1. **Apply Database Migration**
    ```bash
    # From project root
-   ./apply-fms-migration.sh
+   supabase db push
    ```
    
-   This will apply the migration script that creates the `fms_assessments` table with proper constraints and RLS policies.
+   Ez lefuttatja az összes aktuális migrációt (többek között a `fms_assessments` táblát létrehozó SQL-t) a Supabase projektedben.
 
 2. **Verify Table Creation**
    ```bash
@@ -47,12 +47,9 @@ This document outlines the implementation of the Functional Movement Screen (FMS
    This will verify that the table was created successfully.
 
 3. **Test Functionality**
-   ```bash
-   # From project root
-   npx ts-node scripts/test-fms-functionality.ts
-   ```
-   
-   This will attempt to create a test assessment and retrieve it to verify the functionality.
+   - Indítsd el az alkalmazást (`npm run dev`)
+   - Navigálj az FMS Assessment oldalra és töltsd ki egy teszt felmérést
+   - Ellenőrizd a Supabase táblában, hogy létrejött az új rekord (`SELECT * FROM fms_assessments ORDER BY created_at DESC LIMIT 1;`)
 
 ## Table Structure
 

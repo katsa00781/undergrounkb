@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Play, Edit, Trash2, Info } from 'lucide-react';
 import type { Exercise } from '../../lib/exerciseService';
+import { getExerciseCategoryLabel, getExerciseFMSFocuses, getFMSFocusLabel, getMovementPatternLabel } from '../../lib/exerciseService';
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -10,15 +11,16 @@ interface ExerciseCardProps {
 }
 
 const difficultyLabels: Record<number, string> = {
-  1: 'Very Easy',
-  2: 'Easy',
-  3: 'Moderate',
-  4: 'Hard',
-  5: 'Very Hard'
+  1: 'Nagyon könnyű',
+  2: 'Könnyű',
+  3: 'Közepes',
+  4: 'Nehéz',
+  5: 'Nagyon nehéz'
 };
 
 export const ExerciseCard = ({ exercise, onEdit, onDelete, isAdmin = false }: ExerciseCardProps) => {
   const [showDetails, setShowDetails] = useState(false);
+  const exerciseFMSFocuses = getExerciseFMSFocuses(exercise);
 
   const getDifficultyColor = (difficulty: number) => {
     switch (difficulty) {
@@ -38,13 +40,18 @@ export const ExerciseCard = ({ exercise, onEdit, onDelete, isAdmin = false }: Ex
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{exercise.name}</h3>
           <div className="mt-1 flex flex-wrap gap-2">
             <span className="inline-flex items-center rounded-md bg-primary-100 px-2 py-1 text-xs font-medium text-primary-800 dark:bg-primary-900 dark:text-primary-300">
-              {exercise.category}
+              {getExerciseCategoryLabel(exercise.category)}
             </span>
             <span className="inline-flex items-center rounded-md bg-secondary-100 px-2 py-1 text-xs font-medium text-secondary-800 dark:bg-secondary-900 dark:text-secondary-300">
-              {exercise.movement_pattern}
+              {getMovementPatternLabel(exercise.movement_pattern)}
             </span>
+            {exerciseFMSFocuses.map(focusId => (
+              <span key={focusId} className="inline-flex items-center rounded-md bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                FMS: {getFMSFocusLabel(focusId)}
+              </span>
+            ))}
             <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${getDifficultyColor(exercise.difficulty)}`}>
-              {difficultyLabels[exercise.difficulty] || `Level ${exercise.difficulty}`}
+              {difficultyLabels[exercise.difficulty] || `${exercise.difficulty}. szint`}
             </span>
           </div>
         </div>
@@ -93,21 +100,21 @@ export const ExerciseCard = ({ exercise, onEdit, onDelete, isAdmin = false }: Ex
         <div className="mt-4 space-y-3 border-t border-gray-100 pt-3 dark:border-gray-700">
           {exercise.description && (
             <div>
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</h4>
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Leírás</h4>
               <p className="text-sm text-gray-600 dark:text-gray-400">{exercise.description}</p>
             </div>
           )}
           
           {exercise.instructions && (
             <div>
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Instructions</h4>
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Instrukció</h4>
               <p className="text-sm text-gray-600 dark:text-gray-400">{exercise.instructions}</p>
             </div>
           )}
 
           {exercise.image_url && (
             <div>
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Image</h4>
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Kép</h4>
               <div className="mt-1 h-48 w-full overflow-hidden rounded-md">
                 <img 
                   src={exercise.image_url} 

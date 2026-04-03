@@ -18,6 +18,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import toast from 'react-hot-toast';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 ChartJS.register(
   CategoryScale,
@@ -89,7 +90,7 @@ const weightSchema = z.object({
 type WeightFormData = z.infer<typeof weightSchema>;
 
 const ProgressTracking = () => {
-  const { user } = useAuth();
+  const { user, initialized } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [weights, setWeights] = useState<WeightMeasurement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -125,10 +126,20 @@ const ProgressTracking = () => {
   }, [user?.id]);
 
   useEffect(() => {
+    if (initialized && !user?.id) {
+      setIsLoading(false);
+      return;
+    }
+
     if (user?.id) {
       loadWeights();
     }
-  }, [user?.id, loadWeights]);
+  }, [initialized, user?.id, loadWeights]);
+
+  useAutoRefresh(loadWeights, {
+    enabled: Boolean(user?.id),
+    scopes: ['weights'],
+  });
 
   const onSubmit = async (data: WeightFormData) => {
     if (!user?.id) return;

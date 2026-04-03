@@ -154,11 +154,11 @@ FROM profiles
 WHERE id = auth.uid();
 ```
 
-## 📝 További scriptek
+## 📝 További eszközök
 
-- **`test-profile-form-fix.sh`** - Teljes tesztelési workflow
 - **`debug-fitness-goals.sh`** - Fitness Goals debug információk
 - **`fix-full-name-only.sql`** - Csak a full_name function javítás
+- **Manuális tesztelés** - Kövesd a [docs/testing_profile.md](docs/testing_profile.md) lépéseit a profil űrlap ellenőrzéséhez
 
 ---
 

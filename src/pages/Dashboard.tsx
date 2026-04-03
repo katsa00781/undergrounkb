@@ -11,9 +11,10 @@ import { hu } from 'date-fns/locale';
 import ConnectionTest from '../components/ui/ConnectionTest';
 import GoalsDashboard from '../components/GoalsDashboard';
 import { connectionManager } from '../config/supabase';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, initialized } = useAuth();
   const [greeting, setGreeting] = useState('');
   const [weights, setWeights] = useState<WeightMeasurement[]>([]);
   const [latestFMS, setLatestFMS] = useState<FMSAssessment | null>(null);
@@ -79,6 +80,11 @@ const Dashboard = () => {
   }, [user]);
 
   useEffect(() => {
+    if (initialized && !user) {
+      setIsLoading(false);
+      return;
+    }
+
     if (user?.id) {
       loadDashboardData();
     }
@@ -89,7 +95,12 @@ const Dashboard = () => {
     };
 
     checkConnection();
-  }, [user, loadDashboardData]);
+  }, [initialized, user, loadDashboardData]);
+
+  useAutoRefresh(loadDashboardData, {
+    enabled: Boolean(user?.id),
+    scopes: ['workouts', 'appointments', 'weights', 'fms'],
+  });
 
   // Calculate weight progress
   const latestWeight = weights.length > 0 ? weights[weights.length - 1].weight : null;

@@ -87,10 +87,9 @@ A `placeholder-vert-huzas` és `placeholder-vert-nyomas` cseréje specifikusra:
 ### 4. TECHNIKAI VALIDÁCIÓ
 
 #### A) Placeholder mapping teszt
-```bash
-node test-4day-placeholder-mapping.cjs
-```
-**Eredmény:** ✅ All tests passed! 4-day program placeholders are properly mapped.
+- Generáld le a 4 napos program mind a négy napját
+- Ellenőrizd, hogy minden placeholder mellett megjelenik a helyes felirat
+- Válassz gyakorlatot a szűrt listából, hogy megerősítsd a filter logikát
 
 #### B) Build teszt
 ```bash

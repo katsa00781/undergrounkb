@@ -21,4 +21,5 @@ read -p "Press Enter after applying the fix: " dummy
 
 # Test the connection again
 echo "Testing connection after fix..."
-node test-auth-db.cjs
+echo "- Indítsd újra az alkalmazást (npm run dev)"
+echo "- Jelentkezz be admin fiókkal és ellenőrizd a problémás műveletet"

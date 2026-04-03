@@ -50,7 +50,7 @@ Most már minden programtípus (2, 3, 4 napos) egységesen működik:
 
 ## Változtatott Fájlok
 - `/src/lib/workoutGenerator.fixed.ts` - Minden 4 napos generátor függvény
-- Teszt scriptek: `test-4day-placeholder-mapping.cjs`
+- Manuális ellenőrzés: generáld le mind a 4 napos programot és vizsgáld meg a placeholder szűrőket a felületen
 
 ## Következő Lépések
 1. ✅ Build sikeres (TypeScript hibák elhárítva)

@@ -94,7 +94,7 @@ async function checkProfileColumns() {
       missingColumns.forEach(col => {
         console.log(`${RED}- ${col.name}${RESET}`);
       });
-      console.log(`${YELLOW}Please run the apply-profile-migration.sh script to add these columns${RESET}`);
+      console.log(`${YELLOW}Run \`supabase db push\` or manually apply supabase/migrations/20250614214500_add_profile_fields.sql to add these columns${RESET}`);
     }
     
     console.log(`${BLUE}Profile columns check completed${RESET}`);

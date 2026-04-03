@@ -3,11 +3,17 @@ import { testSupabaseConnection } from './supabaseUtils';
 import { ensureUserProfile as ensureUserProfileAuth, clearSessionTimeout } from './auth';
 import toast from 'react-hot-toast';
 
+let isSupabaseInitialized = false;
+
 /**
  * Initialize Supabase connection and set up listeners
  * This function should be called once at app startup
  */
 export async function initializeSupabase(): Promise<boolean> {
+  if (isSupabaseInitialized) {
+    return true;
+  }
+
   try {
     // Test the connection
     const isConnected = await connectionManager.checkConnection();
@@ -37,6 +43,7 @@ export async function initializeSupabase(): Promise<boolean> {
       return false;
     }
 
+    isSupabaseInitialized = true;
     return true;
   } catch (error) {
     console.error('Error initializing Supabase:', error);

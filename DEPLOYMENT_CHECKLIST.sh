@@ -13,7 +13,7 @@ echo "- Added soft delete functionality (code ready)"
 echo "- Enhanced User Management UI"
 echo "- Added disabled user management"
 echo "- Created database migration script"
-echo "- Added comprehensive test scripts"
+echo "- Részletes manuális tesztelési útmutató"
 echo
 
 echo "⏳ PENDING TASKS:"
@@ -41,8 +41,8 @@ echo "   - Verify only admin can access /users"
 echo "   - Test that disabled users can't login"
 echo
 
-echo "🧪 TESTING COMMANDS:"
-echo "export \$(grep -v '^#' .env | xargs) && node test-existing-users.cjs"
+echo "🧪 TESTING TIP:"
+echo "- Kövesd a fenti manuális lépéseket admin fiókkal, és ellenőrizd a Supabase logokat"
 echo
 echo "📚 DOCUMENTATION:"
 echo "- USER_MANAGEMENT_SECURITY_UPDATE.md"

@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Calendar, 
   Clock, 
+  Copy,
+  Edit2,
   User, 
   CheckCircle2, 
   TrendingUp,
@@ -12,6 +14,9 @@ import { Workout, getWorkoutProgressTrend } from '../lib/workouts';
 import { supabase } from '../config/supabase';
 import { useAuth } from '../hooks/useAuth';
 import PersonalWorkoutTracker from '../components/PersonalWorkoutTracker';
+import WorkoutSectionHeader from '../components/workouts/WorkoutSectionHeader';
+import { useNavigate } from 'react-router-dom';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 interface WorkoutProgressData {
   date: string;
@@ -21,7 +26,8 @@ interface WorkoutProgressData {
 }
 
 const MyWorkouts: React.FC = () => {
-  const { user } = useAuth();
+  const { user, initialized } = useAuth();
+  const navigate = useNavigate();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [progressData, setProgressData] = useState<WorkoutProgressData[]>([]);
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
@@ -29,14 +35,7 @@ const MyWorkouts: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (user) {
-      loadWorkouts();
-      loadProgressData();
-    }
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const loadWorkouts = async () => {
+  const loadWorkouts = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -56,9 +55,9 @@ const MyWorkouts: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const loadProgressData = async () => {
+  const loadProgressData = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -74,7 +73,27 @@ const MyWorkouts: React.FC = () => {
     } catch (error) {
       console.error('Error loading progress data:', error);
     }
-  };
+  }, [user]);
+
+  const refreshPageData = useCallback(async () => {
+    await Promise.all([loadWorkouts(), loadProgressData()]);
+  }, [loadProgressData, loadWorkouts]);
+
+  useEffect(() => {
+    if (initialized && !user) {
+      setLoading(false);
+      return;
+    }
+
+    if (user) {
+      void refreshPageData();
+    }
+  }, [initialized, user, refreshPageData]);
+
+  useAutoRefresh(refreshPageData, {
+    enabled: Boolean(user?.id),
+    scopes: ['workouts'],
+  });
 
   const handleWorkoutUpdate = (updatedWorkout: Workout) => {
     setWorkouts(prev => 
@@ -84,6 +103,14 @@ const MyWorkouts: React.FC = () => {
     
     // Reload progress data after update
     loadProgressData();
+  };
+
+  const handleEditWorkout = (workout: Workout) => {
+    navigate('/workout-planner', { state: { editWorkout: workout } });
+  };
+
+  const handleCopyWorkout = (workout: Workout) => {
+    navigate('/workout-planner', { state: { copyWorkout: workout } });
   };
 
   const getFilteredWorkouts = () => {
@@ -163,24 +190,19 @@ const MyWorkouts: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Edzéseim
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Személyes és megosztott edzések követése
-          </p>
-        </div>
-        
-        <button
-          onClick={loadWorkouts}
-          className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-        >
-          <RefreshCw className="h-5 w-5" />
-        </button>
-      </div>
+      <WorkoutSectionHeader
+        title="Edzéseim"
+        description="Itt látod a saját és megosztott edzéseidet, valamint innen közvetlenül tovább tudsz menni szerkesztésre vagy másolásra."
+        actions={(
+          <button
+            onClick={loadWorkouts}
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Frissítés
+          </button>
+        )}
+      />
 
       {error && (
         <div className="p-4 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg">
@@ -344,7 +366,31 @@ const MyWorkouts: React.FC = () => {
                         {workout.sections.reduce((total, section) => total + section.exercises.length, 0)} gyakorlat
                       </div>
                       
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleEditWorkout(workout);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                            Szerkesztés
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleCopyWorkout(workout);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                            Másolás
+                          </button>
+                        </div>
                         <span className="text-sm font-medium text-gray-900 dark:text-white">
                           {completionRate.toFixed(0)}%
                         </span>

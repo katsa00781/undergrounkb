@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase';
+import { notifyDataChanged } from '../utils/dataRefresh';
 
 export interface WeightMeasurement {
   id: string;
@@ -66,6 +67,7 @@ export const createWeightMeasurement = async (measurement: Omit<WeightMeasuremen
     throw error;
   }
 
+  notifyDataChanged('weights');
   return data as WeightMeasurement;
 };
 
@@ -79,5 +81,6 @@ export const deleteWeightMeasurement = async (id: string) => {
     throw error;
   }
 
+  notifyDataChanged('weights');
   return true;
 };

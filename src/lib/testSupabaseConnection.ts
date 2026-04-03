@@ -49,7 +49,7 @@ export async function runSupabaseConnectionTest(): Promise<{
 
     // Test database access
 
-    const tablesToTest = ['profiles', 'users', 'exercises', 'workouts', 'appointments', 'appointments_participants', 'fms_assessments', 'weight_measurements'];
+    const tablesToTest = ['profiles', 'users', 'exercises', 'workouts', 'appointments', 'appointment_bookings', 'fms_assessments', 'weight_measurements'];
     let accessibleTables = 0;
 
     for (const table of tablesToTest) {

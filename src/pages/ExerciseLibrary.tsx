@@ -7,6 +7,12 @@ import {
   Exercise, 
   ExerciseCategory, 
   MovementPattern, 
+  getExerciseCategories,
+  getExerciseCategoryLabel,
+  getExerciseFMSFocuses,
+  getFMSFocusOptions,
+  getMovementPatternLabel,
+  getMovementPatterns,
   getExercises, 
   deleteExercise
 } from '../lib/exerciseService';
@@ -38,6 +44,9 @@ const CATEGORY_LABELS: Record<ExerciseCategory, string> = {
   'fms': 'FMS korrekció',
   'smr': 'SMR (Henger)'
 };
+
+const ALL_MOVEMENT_PATTERNS = getMovementPatterns();
+const FMS_FOCUS_OPTIONS = getFMSFocusOptions();
 
 // Create a mapping of categories to their movement patterns
 const MOVEMENT_PATTERNS: Record<ExerciseCategory, MovementPattern[]> = {
@@ -157,6 +166,7 @@ const ExerciseLibrary = () => {
     searchQuery: '',
     selectedCategory: null as string | null,
     selectedMovementPattern: null as string | null,
+    selectedFMSFocus: null as string | null,
     selectedDifficulty: null as number | null,
     showInactive: false
   });
@@ -214,6 +224,7 @@ const ExerciseLibrary = () => {
     searchQuery: string;
     selectedCategory: string | null;
     selectedMovementPattern: string | null;
+    selectedFMSFocus: string | null;
     selectedDifficulty: number | null;
     showInactive: boolean;
   }) => {
@@ -230,12 +241,18 @@ const ExerciseLibrary = () => {
     
     // Filter by category
     const matchesCategory = filters.selectedCategory 
-      ? exercise.category === filters.selectedCategory
+      ? filters.selectedCategory === 'fms'
+        ? exercise.category === 'fms' || getExerciseFMSFocuses(exercise).length > 0
+        : exercise.category === filters.selectedCategory
       : true;
     
     // Filter by movement pattern
     const matchesMovementPattern = filters.selectedMovementPattern
       ? exercise.movement_pattern === filters.selectedMovementPattern
+      : true;
+
+    const matchesFMSFocus = filters.selectedFMSFocus
+      ? getExerciseFMSFocuses(exercise).includes(filters.selectedFMSFocus as ReturnType<typeof getFMSFocusOptions>[number]['id'])
       : true;
     
     // Filter by difficulty
@@ -248,7 +265,7 @@ const ExerciseLibrary = () => {
       ? exercise.is_active
       : true;
     
-    return matchesSearch && matchesCategory && matchesMovementPattern && matchesDifficulty && matchesActiveState;
+    return matchesSearch && matchesCategory && matchesMovementPattern && matchesFMSFocus && matchesDifficulty && matchesActiveState;
   });
 
   if (isLoading) {
@@ -263,14 +280,19 @@ const ExerciseLibrary = () => {
   }
 
   // Convert the categories and movement patterns to the format expected by the components
-  const formattedCategories = CATEGORIES.map(cat => CATEGORY_LABELS[cat]);
+  const formattedCategories = getExerciseCategories().map(category => ({
+    value: category.id,
+    label: CATEGORY_LABELS[category.id] || getExerciseCategoryLabel(category.id),
+  }));
   const formattedMovementPatterns = Object.entries(MOVEMENT_PATTERNS).reduce(
     (acc, [category, patterns]) => {
-      const categoryLabel = CATEGORY_LABELS[category as ExerciseCategory];
-      acc[categoryLabel] = patterns.map(pattern => MOVEMENT_PATTERN_LABELS[pattern]);
+      acc[category] = patterns.map(pattern => ({
+        value: pattern,
+        label: MOVEMENT_PATTERN_LABELS[pattern] || getMovementPatternLabel(pattern) || pattern,
+      }));
       return acc;
     },
-    {} as Record<string, string[]>
+    {} as Record<string, Array<{ value: string; label: string }>>
   );
 
   const isAdmin = profile?.role === 'admin';
@@ -340,6 +362,7 @@ const ExerciseLibrary = () => {
           <ExerciseFilter
             categories={formattedCategories}
             movementPatterns={formattedMovementPatterns}
+            fmsFocuses={FMS_FOCUS_OPTIONS.map(focus => ({ value: focus.id, label: focus.label }))}
             onFilterChange={handleFilterChange}
             showInactiveToggle={isAdmin}
           />

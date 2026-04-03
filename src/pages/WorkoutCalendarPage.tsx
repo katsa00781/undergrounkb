@@ -3,9 +3,12 @@ import WorkoutCalendar from '../components/WorkoutCalendar';
 import { Workout } from '../lib/workouts';
 import { format } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { Calendar, Dumbbell, Clock } from 'lucide-react';
+import { Calendar, Clock, Copy, Dumbbell, Edit2 } from 'lucide-react';
+import WorkoutSectionHeader from '../components/workouts/WorkoutSectionHeader';
+import { useNavigate } from 'react-router-dom';
 
 const WorkoutCalendarPage: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedWorkouts, setSelectedWorkouts] = useState<Workout[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
@@ -14,21 +17,21 @@ const WorkoutCalendarPage: React.FC = () => {
     setSelectedWorkouts(workouts);
   };
 
+  const handleEditWorkout = (workout: Workout) => {
+    navigate('/workout-planner', { state: { editWorkout: workout } });
+  };
+
+  const handleCopyWorkout = (workout: Workout) => {
+    navigate('/workout-planner', { state: { copyWorkout: workout } });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Calendar className="h-8 w-8 text-blue-500" />
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Edzésnaptár
-            </h1>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400">
-            Tekintsd át az edzéseidet naptár nézetben és követd nyomon a haladásodat
-          </p>
-        </div>
+        <WorkoutSectionHeader
+          title="Edzésnaptár"
+          description="Napi bontásban nézheted át az edzéseidet, és azonnal tovább tudsz menni szerkesztésre vagy új napra másolásra."
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Calendar Component */}
@@ -57,6 +60,25 @@ const WorkoutCalendarPage: React.FC = () => {
                             {workout.title}
                           </h4>
                           <Dumbbell className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                        </div>
+
+                        <div className="mb-3 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleEditWorkout(workout)}
+                            className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-500 dark:text-gray-200 dark:hover:bg-gray-600"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                            Szerkesztés
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyWorkout(workout)}
+                            className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-500 dark:text-gray-200 dark:hover:bg-gray-600"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                            Másolás új napra
+                          </button>
                         </div>
 
                         <div className="space-y-2 text-sm">

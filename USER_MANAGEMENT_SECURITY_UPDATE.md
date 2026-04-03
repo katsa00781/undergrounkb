@@ -41,7 +41,7 @@
    - Törlés megerősítés javítva
 
 #### Tesztelés:
-- `test-user-management.cjs`: Rendszer struktúra ellenőrzése
+- Manuális ellenőrzés a User Management oldalon (admin bejelentkezéssel)
 - Profiles tábla hozzáférés ✅
 - Role-based hozzáférés ✅
 
@@ -69,13 +69,10 @@
 - [ ] Audit log felhasználói műveletekhez
 
 ## Tesztelés
-```bash
-# Felhasználókezelés tesztelése
-node test-user-management.cjs
-
-# Alkalmazás indítása
-npm run dev
-```
+- Indítsd az alkalmazást: `npm run dev`
+- Jelentkezz be admin fiókkal, és navigálj a User Management oldalra
+- Hozz létre egy teszt felhasználót, majd töröld és állítsd vissza a workflow ellenőrzéséhez
+- Figyeld a böngésző konzolt és a Supabase logokat esetleges hibákért
 
 ## Eredmény
 - 🔒 **Biztonság**: Regisztráció le van tiltva

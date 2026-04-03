@@ -44,18 +44,25 @@ Majd futtasd a generált SQL-t a Supabase adatbázisban.
 
 ### 2. Szerepkörök ellenőrzése
 
-A `test-admin-access.sh` szkript segítségével ellenőrizheted egy felhasználó admin szerepkörét:
+Futtasd a `check-user-roles.sh` szkriptet vagy egy egyszerű SQL lekérdezést a Supabase konzolon:
 
 ```bash
-./test-admin-access.sh your-email@example.com
+./check-user-roles.sh your-email@example.com
 ```
 
-Ez a szkript megvizsgálja:
+SQL példa:
+
+```sql
+SELECT id, email, role
+FROM profiles
+WHERE email = 'your-email@example.com';
+```
+
+Ezzel ellenőrizheted:
 
 - Létezik-e a felhasználó a `profiles` táblában
 - A felhasználónak 'admin' szerepköre van-e
 - Van-e inkonzisztencia a `profiles` és `users` táblák között
-- Léteznek-e a szükséges RPC függvények
 
 ### 3. Hiányzó RPC függvények létrehozása
 
@@ -87,7 +94,7 @@ Ha a fenti megoldások nem működnek, ideiglenes megoldásként módosítható 
 
 ## Ajánlott menete a javításnak
 
-1. Futtasd a `test-admin-access.sh` szkriptet
+1. Futtasd a `check-user-roles.sh` szkriptet vagy a fenti SQL lekérdezést
 2. A problémáktól függően futtasd a `set-admin-role.sh` vagy a `fix-role-functions.sh` szkriptet
 3. Jelentkezz ki és jelentkezz be újra
 4. Ellenőrizd, hogy most már eléred-e az `/appointments/manage` oldalt

@@ -86,7 +86,7 @@ export async function getAppointmentWithParticipants(id: string): Promise<Appoin
     }
 
     const { data: participants, error: participantsError } = await supabase
-      .from('appointments_participants')
+      .from('appointment_bookings')
       .select('*')
       .eq('appointment_id', id);
 
@@ -246,9 +246,9 @@ export async function getUserAppointments(): Promise<Appointment[]> {
       .from('appointments')
       .select(`
         *,
-        appointments_participants!inner(user_id)
+        appointment_bookings!inner(user_id)
       `)
-      .eq('appointments_participants.user_id', userId)
+      .eq('appointment_bookings.user_id', userId)
       .order('start_time', { ascending: true });
 
     if (participatingError) {

@@ -3,6 +3,29 @@ import { Exercise } from './exercises';
 import { FMSAssessment } from './fms';
 import { getExercises } from './exercises';
 
+const FMS_MOVEMENT_PATTERNS = new Set([
+  'aslr_correction_first',
+  'aslr_correction_second',
+  'sm_correction_first',
+  'sm_correction_second',
+  'stability_correction',
+]);
+
+const WARMUP_CATEGORIES = new Set(['mobility_flexibility', 'recovery', 'fms', 'smr']);
+const STRETCH_MOVEMENT_PATTERNS = new Set(['mobilization', 'upper_body_mobility']);
+const CORE_MOVEMENT_PATTERNS = new Set([
+  'stability_anti_extension',
+  'stability_anti_rotation',
+  'stability_anti_flexion',
+  'core_other',
+]);
+
+function pushUnique(target: Exercise[], exercise: Exercise) {
+  if (!target.some(item => item.id === exercise.id)) {
+    target.push(exercise);
+  }
+}
+
 // A generált edzéstípusok
 export type WorkoutDay = 1 | 2 | 3 | 4;
 export type ProgramType = '2napos' | '3napos' | '4napos';
@@ -129,131 +152,125 @@ function categorizeExercises(exercises: Exercise[]): Record<string, Exercise[]> 
     'gait': []
   };
 
-  // Kategorizáljuk a gyakorlatokat a movement_pattern és kategória alapján
   exercises.forEach(exercise => {
-    // Bemelegítés
-    if (exercise.category.toLowerCase().includes('bemelegítés') || 
-        exercise.category.toLowerCase().includes('mobility') ||
-        exercise.category.toLowerCase().includes('warmup')) {
-      categories['bemelegítés'].push(exercise);
-      return;
+    const movementPattern = exercise.movement_pattern;
+    const combinedText = [exercise.name, exercise.description ?? '', exercise.instructions ?? '']
+      .join(' ')
+      .toLowerCase();
+
+    if (WARMUP_CATEGORIES.has(exercise.category) || STRETCH_MOVEMENT_PATTERNS.has(movementPattern)) {
+      pushUnique(categories['bemelegítés'], exercise);
     }
 
-    // Core gyakorlatok
-    if (exercise.category.toLowerCase().includes('core') || 
-        exercise.movement_pattern.includes('Core') || 
-        exercise.movement_pattern.includes('Stabilitás')) {
-      categories['core'].push(exercise);
-      return;
+    if (
+      CORE_MOVEMENT_PATTERNS.has(movementPattern) ||
+      exercise.category === 'fms' ||
+      combinedText.includes('core') ||
+      combinedText.includes('plank')
+    ) {
+      pushUnique(categories['core'], exercise);
     }
 
-    // Nyújtás
-    if (exercise.category.toLowerCase().includes('nyújtás') || 
-        exercise.category.toLowerCase().includes('stretching') ||
-        exercise.movement_pattern.includes('nyújtás') ||
-        exercise.description?.toLowerCase().includes('nyújtás')) {
-      categories['nyújtás'].push(exercise);
-      return;
+    if (
+      STRETCH_MOVEMENT_PATTERNS.has(movementPattern) ||
+      exercise.category === 'smr' ||
+      combinedText.includes('nyújt') ||
+      combinedText.includes('stretch')
+    ) {
+      pushUnique(categories['nyújtás'], exercise);
     }
 
-    // Pilometrikus
-    if (exercise.category.toLowerCase().includes('pilometrikus') || 
-        exercise.description?.toLowerCase().includes('pilometrikus') ||
-        exercise.category.toLowerCase().includes('plyometric')) {
-      categories['pilometrikus'].push(exercise);
-      return;
+    if (
+      exercise.category === 'hiit' ||
+      combinedText.includes('pilometr') ||
+      combinedText.includes('plyo') ||
+      combinedText.includes('jump') ||
+      combinedText.includes('ugrás')
+    ) {
+      pushUnique(categories['pilometrikus'], exercise);
     }
 
-    // Térd domináns
-    if (exercise.movement_pattern.includes('Térd domináns')) {
-      if (exercise.movement_pattern.includes('bilaterális')) {
-        categories['térddomináns_bi'].push(exercise);
+    if (movementPattern === 'knee_dominant_bilateral') {
+      pushUnique(categories['térddomináns_bi'], exercise);
+    }
+
+    if (movementPattern === 'knee_dominant_unilateral') {
+      pushUnique(categories['térddomináns_uni'], exercise);
+    }
+
+    if (movementPattern === 'hip_dominant_bilateral' || movementPattern === 'hip_dominant_unilateral') {
+      if (
+        combinedText.includes('hajlított') ||
+        combinedText.includes('híd') ||
+        combinedText.includes('bridge') ||
+        combinedText.includes('thrust') ||
+        combinedText.includes('glute') ||
+        combinedText.includes('good morning')
+      ) {
+        pushUnique(categories['csípődomináns_hajlított'], exercise);
       } else {
-        categories['térddomináns_uni'].push(exercise);
+        pushUnique(categories['csípődomináns_nyújtott'], exercise);
       }
-      return;
     }
 
-    // Csípő domináns
-    if (exercise.movement_pattern.includes('Csípő domináns')) {
-      // Hajlított vs nyújtott láb alapján kategorizáljuk
-      if (exercise.description?.toLowerCase().includes('hajlított') || 
-          exercise.name.toLowerCase().includes('híd') ||
-          exercise.name.toLowerCase().includes('good morning')) {
-        categories['csípődomináns_hajlított'].push(exercise);
-      } else {
-        categories['csípődomináns_nyújtott'].push(exercise);
-      }
-      return;
+    if (movementPattern === 'horizontal_push_bilateral') {
+      pushUnique(categories['horizontális_nyomás_bi'], exercise);
     }
 
-    // Horizontális nyomás
-    if (exercise.movement_pattern.includes('Horizontális nyomás')) {
-      if (exercise.movement_pattern.includes('bilaterális')) {
-        categories['horizontális_nyomás_bi'].push(exercise);
-      } else {
-        categories['horizontális_nyomás_uni'].push(exercise);
-      }
-      return;
+    if (movementPattern === 'horizontal_push_unilateral') {
+      pushUnique(categories['horizontális_nyomás_uni'], exercise);
     }
 
-    // Horizontális húzás
-    if (exercise.movement_pattern.includes('Horizontális húzás')) {
-      if (exercise.movement_pattern.includes('bilaterális')) {
-        categories['horizontális_húzás_bi'].push(exercise);
-      } else {
-        categories['horizontális_húzás_uni'].push(exercise);
-      }
-      return;
+    if (movementPattern === 'horizontal_pull_bilateral') {
+      pushUnique(categories['horizontális_húzás_bi'], exercise);
     }
 
-    // Vertikális nyomás
-    if (exercise.movement_pattern.includes('Vertikális nyomás')) {
-      if (exercise.movement_pattern.includes('bilaterális')) {
-        categories['vertikális_nyomás_bi'].push(exercise);
-      } else {
-        categories['vertikális_nyomás_uni'].push(exercise);
-      }
-      return;
+    if (movementPattern === 'horizontal_pull_unilateral') {
+      pushUnique(categories['horizontális_húzás_uni'], exercise);
     }
 
-    // Vertikális húzás
-    if (exercise.movement_pattern.includes('Vertikális húzás')) {
-      if (exercise.movement_pattern.includes('bilaterális')) {
-        categories['vertikális_húzás_bi'].push(exercise);
-      } else {
-        categories['vertikális_húzás_uni'].push(exercise);
-      }
-      return;
+    if (movementPattern === 'vertical_push_bilateral') {
+      pushUnique(categories['vertikális_nyomás_bi'], exercise);
     }
 
-    // Rotációs
-    if (exercise.movement_pattern.includes('anti-rotáció') || 
-        exercise.description?.toLowerCase().includes('rotáció')) {
-      categories['rotációs'].push(exercise);
-      return;
+    if (movementPattern === 'vertical_push_unilateral') {
+      pushUnique(categories['vertikális_nyomás_uni'], exercise);
     }
 
-    // Gait
-    if (exercise.movement_pattern.includes('Gait')) {
-      categories['gait'].push(exercise);
-      return;
+    if (movementPattern === 'vertical_pull_bilateral') {
+      pushUnique(categories['vertikális_húzás_bi'], exercise);
+      pushUnique(categories['vertikális_húzás_uni'], exercise);
     }
 
-    // FMS korrekció
-    if (exercise.movement_pattern.includes('korrekció') || 
-        exercise.description?.toLowerCase().includes('fms') ||
-        exercise.description?.toLowerCase().includes('korrekció')) {
-      categories['fms_korrekció'].push(exercise);
-      return;
+    if (movementPattern === 'stability_anti_rotation' || combinedText.includes('rotáció')) {
+      pushUnique(categories['rotációs'], exercise);
     }
 
-    // Rehab
-    if (exercise.description?.toLowerCase().includes('rehab') || 
-        exercise.category.toLowerCase().includes('rehab') ||
-        exercise.category.toLowerCase().includes('recovery')) {
-      categories['rehab'].push(exercise);
-      return;
+    if (movementPattern === 'gait_stability' || movementPattern === 'gait_crawling') {
+      pushUnique(categories['gait'], exercise);
+    }
+
+    if (
+      exercise.category === 'fms' ||
+      FMS_MOVEMENT_PATTERNS.has(movementPattern) ||
+      combinedText.includes('fms') ||
+      combinedText.includes('korrekció') ||
+      combinedText.includes('correction')
+    ) {
+      pushUnique(categories['fms_korrekció'], exercise);
+    }
+
+    if (
+      exercise.category === 'recovery' ||
+      exercise.category === 'smr' ||
+      movementPattern === 'mobilization' ||
+      movementPattern === 'local_exercises' ||
+      combinedText.includes('rehab') ||
+      combinedText.includes('recovery') ||
+      combinedText.includes('smr') ||
+      combinedText.includes('henger')
+    ) {
+      pushUnique(categories['rehab'], exercise);
     }
   });
 

@@ -39,7 +39,7 @@ interface User {
 
 const FMSAssessment = () => {
   // We still need useAuth for authentication context, but we're not using the user object directly
-  useAuth();
+  const { initialized } = useAuth();
   const [showInstructions, setShowInstructions] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,8 +68,10 @@ const FMSAssessment = () => {
   });
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    if (initialized) {
+      loadUsers();
+    }
+  }, [initialized]);
 
   const loadUsers = async () => {
     try {

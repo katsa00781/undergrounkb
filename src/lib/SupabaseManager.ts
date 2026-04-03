@@ -16,6 +16,8 @@ type RealtimePayload = {
   [key: string]: unknown;
 };
 
+type RealtimeSubscriptionStatus = 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR';
+
 /**
  * Unified Supabase Manager class that handles connection monitoring,
  * realtime subscriptions, and data synchronization
@@ -70,7 +72,7 @@ export class SupabaseManager {
    */
   async checkConnection(): Promise<boolean> {
     try {
-      const tables = ['profiles', 'exercises', 'fms_assessments', 'appointments', 'appointments_participants'];
+      const tables = ['profiles', 'exercises', 'fms_assessments', 'appointments', 'appointment_bookings'];
       const checks = await Promise.all(
         tables.map(table => 
           this.client.from(table).select('count').limit(1)
@@ -171,6 +173,19 @@ export class SupabaseManager {
     return this.connectionStatus;
   }
 
+  private getSubscriptionKey(channel: string, event: string): string {
+    return `${channel}:${event}`;
+  }
+
+  private parseRealtimeChannel(channel: string): { schema: string; table: string } {
+    const [schema, table] = channel.split(':');
+    if (schema && table) {
+      return { schema, table };
+    }
+
+    return { schema: 'public', table: channel };
+  }
+
   /**
    * Subscribe to a realtime channel
    */
@@ -180,31 +195,35 @@ export class SupabaseManager {
     callback: (payload: RealtimePayload) => void
   ): Promise<void> {
     try {
-      // Create a channel with a specific name
-      const channelName = `${channel}:${event}`;
+      const subscriptionKey = this.getSubscriptionKey(channel, event);
+      const { schema, table } = this.parseRealtimeChannel(channel);
+      const realtimeChannelName = `realtime:${schema}:${table}:${event.toLowerCase()}`;
+
+      // Remove any stale subscription before creating a new one.
+      this.unsubscribe(subscriptionKey);
 
       // Create a subscription handler that can handle async operations
-      const handleStatus = async (status: string) => {
+      const handleStatus = async (status: RealtimeSubscriptionStatus) => {
         if (status === 'SUBSCRIBED') {
 
-          this.reconnectAttempts.set(channelName, 0);
+          this.reconnectAttempts.set(subscriptionKey, 0);
 
           // We don't need to set up listeners here as they're already set up below
         } else if (status === 'CLOSED') {
-          await this.handleSubscriptionDisconnect(channelName, event, callback);
+          await this.handleSubscriptionDisconnect(channel, event, callback);
         } else if (status === 'CHANNEL_ERROR') {
-          console.error(`Channel error for ${channelName}`);
-          await this.handleSubscriptionDisconnect(channelName, event, callback);
+          console.error(`Channel error for ${subscriptionKey}`);
+          await this.handleSubscriptionDisconnect(channel, event, callback);
         }
       };
 
       // Create the channel
-      const subscription = this.client.channel(channelName);
+      const subscription = this.client.channel(realtimeChannelName);
 
       // Set up the table change listener
       subscription.on(
-        'broadcast',
-        { event },
+        'postgres_changes',
+        { event: event as '*' | 'INSERT' | 'UPDATE' | 'DELETE', schema, table },
         (payload: Record<string, unknown>) => {
           callback(payload as RealtimePayload);
         }
@@ -213,7 +232,7 @@ export class SupabaseManager {
       // Subscribe to the channel with our async handler
       await subscription.subscribe(handleStatus);
 
-      this.subscriptions.set(channel, subscription);
+      this.subscriptions.set(subscriptionKey, subscription);
     } catch (error) {
       console.error('Subscription error:', error);
     }
@@ -227,15 +246,16 @@ export class SupabaseManager {
     event: string,
     callback: (payload: RealtimePayload) => void
   ): Promise<void> {
-    const attempts = this.reconnectAttempts.get(channel) || 0;
+    const subscriptionKey = this.getSubscriptionKey(channel, event);
+    const attempts = this.reconnectAttempts.get(subscriptionKey) || 0;
 
     if (attempts < this.maxReconnectAttempts) {
-      this.reconnectAttempts.set(channel, attempts + 1);
+      this.reconnectAttempts.set(subscriptionKey, attempts + 1);
       await new Promise(resolve => setTimeout(resolve, this.reconnectDelay * (attempts + 1)));
       await this.resubscribe(channel, event, callback);
     } else {
-      toast.error(`Failed to reconnect to ${channel} after ${this.maxReconnectAttempts} attempts`);
-      this.unsubscribe(channel);
+      toast.error(`Failed to reconnect to ${subscriptionKey} after ${this.maxReconnectAttempts} attempts`);
+      this.unsubscribe(subscriptionKey);
     }
   }
 
@@ -247,19 +267,19 @@ export class SupabaseManager {
     event: string,
     callback: (payload: RealtimePayload) => void
   ): Promise<void> {
-    this.unsubscribe(channel);
+    this.unsubscribe(this.getSubscriptionKey(channel, event));
     await this.subscribe(channel, event, callback);
   }
 
   /**
    * Unsubscribe from a channel
    */
-  public unsubscribe(channel: string): void {
-    const subscription = this.subscriptions.get(channel);
+  public unsubscribe(subscriptionKey: string): void {
+    const subscription = this.subscriptions.get(subscriptionKey);
     if (subscription) {
       subscription.unsubscribe();
-      this.subscriptions.delete(channel);
-      this.reconnectAttempts.delete(channel);
+      this.subscriptions.delete(subscriptionKey);
+      this.reconnectAttempts.delete(subscriptionKey);
     }
   }
 

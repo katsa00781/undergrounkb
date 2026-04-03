@@ -97,7 +97,7 @@ const { data: userId, error: rpcError } = await supabase
   - `restoreUser()` ← RPC `restore_admin_user`
 
 ### **Test/Dokumentáció:**
-- `test-admin-user-management.sh` - Tesztelési útmutató
+- Manuális admin workflow ellenőrzés (User Management oldal)
 
 ## 🎯 HASZNÁLAT
 

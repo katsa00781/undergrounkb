@@ -58,12 +58,11 @@ else if (placeholderId.includes('rehab')) {
 - `placeholder-gait-core` → `mobilization`
 - `placeholder-rehab` → `mobilization`
 
-## Test Scripts
+## Manuális ellenőrzés
 
-### `test-placeholder-mapping.cjs`
-- Teszteli a placeholder ID-k és mozgásminták közötti mapping-et
-- Ellenőrzi, hogy minden mozgásmintához van-e elérhető gyakorlat az adatbázisban
-- Demonstrálja a szűrő logikát
+1. Generáld le mindhárom programtípust (2, 3, 4 napos) és ellenőrizd, hogy a select mezők üresek maradnak
+2. Figyeld meg, hogy a placeholder címkék megjelennek és a szűrők automatikusan aktiválódnak
+3. Válassz gyakorlatot minden mozgásmintához, hogy megerősítsd a szűrt lista működését
 
 ### `fix-workout-generator.cjs`  
 - Automatikus script az összes `getRandomExercise().id` cseréjére

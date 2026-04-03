@@ -2,6 +2,10 @@
 
 # ANSI color codes
 GREEN='\033[0;32m'
+#!/bin/bash
+
+# ANSI color codes
+GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 BLUE='\033[0;34m'
@@ -9,40 +13,46 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}Checking profile table for FMS fixes...${NC}"
 
-# SQL query to check if specific columns exist
-SQL_CHECK="
-  SELECT column_name 
-  FROM information_schema.columns 
-  WHERE table_schema = 'public' 
-    AND table_name = 'profiles'
-    AND column_name IN ('first_name', 'last_name', 'height', 'weight', 'birthdate', 'gender', 'fitness_goals', 'experience_level')
-  ORDER BY column_name;
-"
+# Columns we expect on the profiles table
+COLUMNS=(
+  first_name
+  last_name
+  height
+  weight
+  birthdate
+  gender
+  fitness_goals
+  experience_level
+)
 
-# Format results with nice colors
-FORMAT_RESULTS() {
-  while read -r COLUMN; do
-    echo -e "${GREEN}✓ $COLUMN${NC}"
-  done
-}
+check_column() {
+  local column=$1
+  local response
 
-# Export SQL via curl
-EXECUTE_QUERY() {
-  curl -s -X POST \
-    "$SUPABASE_URL/rest/v1/rpc/execute_sql" \
+  response=$(curl -s -X POST \
+    "$SUPABASE_URL/rest/v1/rpc/check_column_exists" \
     -H "apikey: $SUPABASE_KEY" \
     -H "Authorization: Bearer $SUPABASE_KEY" \
     -H "Content-Type: application/json" \
-    -d "{\"sql\":\"$SQL_CHECK\"}" | grep -o '"[^"]*"' | tr -d '"' | grep -v "column_name" | FORMAT_RESULTS
+    -d "{\"p_table_name\":\"profiles\",\"p_column_name\":\"$column\"}")
+
+  if echo "$response" | grep -qi "true"; then
+    echo -e "${GREEN}✓ $column${NC}"
+  else
+    echo -e "${RED}✗ $column missing${NC}"
+  fi
 }
 
-# Load environment variables from .env file if it exists
+# Load environment variables from .env if available
 if [ -f .env ]; then
   echo -e "${YELLOW}Loading environment from .env file${NC}"
-  export $(grep -v '^#' .env | xargs)
+  set -a
+  # shellcheck disable=SC1091
+  source .env
+  set +a
 fi
 
-# Set variables from environment or from Next.js variables
+# Pull credentials from available environment variables
 SUPABASE_URL=${VITE_SUPABASE_URL:-$NEXT_PUBLIC_SUPABASE_URL}
 SUPABASE_KEY=${VITE_SUPABASE_ANON_KEY:-$NEXT_PUBLIC_SUPABASE_ANON_KEY}
 
@@ -54,8 +64,9 @@ fi
 echo -e "${BLUE}Checking profile table structure...${NC}"
 echo -e "${YELLOW}Looking for required columns:${NC}"
 
-# Execute the query
-EXECUTE_QUERY
+for column in "${COLUMNS[@]}"; do
+  check_column "$column"
+done
 
 echo -e "${BLUE}Check completed.${NC}"
 echo -e "${YELLOW}If you don't see some columns, you'll need to run migrations to add them.${NC}"

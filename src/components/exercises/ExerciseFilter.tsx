@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { Search, Filter, X } from 'lucide-react';
 
 interface ExerciseFilterProps {
-  categories: string[];
-  movementPatterns: Record<string, string[]>;
+  categories: Array<{ value: string; label: string }>;
+  movementPatterns: Record<string, Array<{ value: string; label: string }>>;
+  fmsFocuses?: Array<{ value: string; label: string }>;
   onFilterChange: (filters: {
     searchQuery: string;
     selectedCategory: string | null;
     selectedMovementPattern: string | null;
+    selectedFMSFocus: string | null;
     selectedDifficulty: number | null; // Using numeric difficulty (1-5)
     showInactive: boolean;
   }) => void;
@@ -24,13 +26,14 @@ export const ExerciseFilter = ({
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedMovementPattern, setSelectedMovementPattern] = useState<string | null>(null);
+  const [selectedFMSFocus, setSelectedFMSFocus] = useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<number | null>(null);
   const [showInactive, setShowInactive] = useState(false);
-  const [availableMovementPatterns, setAvailableMovementPatterns] = useState<string[]>([]);
+  const [availableMovementPatterns, setAvailableMovementPatterns] = useState<Array<{ value: string; label: string }>>([]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
-    applyFilters(e.target.value, selectedCategory, selectedMovementPattern, selectedDifficulty, showInactive);
+    applyFilters(e.target.value, selectedCategory, selectedMovementPattern, selectedFMSFocus, selectedDifficulty, showInactive);
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -47,30 +50,38 @@ export const ExerciseFilter = ({
       setAvailableMovementPatterns([]);
     }
     
-    applyFilters(searchQuery, category, null, selectedDifficulty, showInactive);
+    setSelectedFMSFocus(null);
+    applyFilters(searchQuery, category, null, null, selectedDifficulty, showInactive);
   };
 
   const handleMovementPatternChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const pattern = e.target.value === '' ? null : e.target.value;
     setSelectedMovementPattern(pattern);
-    applyFilters(searchQuery, selectedCategory, pattern, selectedDifficulty, showInactive);
+    applyFilters(searchQuery, selectedCategory, pattern, selectedFMSFocus, selectedDifficulty, showInactive);
+  };
+
+  const handleFMSFocusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const focus = e.target.value === '' ? null : e.target.value;
+    setSelectedFMSFocus(focus);
+    applyFilters(searchQuery, selectedCategory, selectedMovementPattern, focus, selectedDifficulty, showInactive);
   };
 
   const handleDifficultyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const difficulty = e.target.value === '' ? null : parseInt(e.target.value);
     setSelectedDifficulty(difficulty);
-    applyFilters(searchQuery, selectedCategory, selectedMovementPattern, difficulty, showInactive);
+    applyFilters(searchQuery, selectedCategory, selectedMovementPattern, selectedFMSFocus, difficulty, showInactive);
   };
 
   const handleShowInactiveChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setShowInactive(e.target.checked);
-    applyFilters(searchQuery, selectedCategory, selectedMovementPattern, selectedDifficulty, e.target.checked);
+    applyFilters(searchQuery, selectedCategory, selectedMovementPattern, selectedFMSFocus, selectedDifficulty, e.target.checked);
   };
 
   const applyFilters = (
     search: string,
     category: string | null,
     movementPattern: string | null,
+    fmsFocus: string | null,
     difficulty: number | null,
     inactive: boolean
   ) => {
@@ -78,6 +89,7 @@ export const ExerciseFilter = ({
       searchQuery: search,
       selectedCategory: category,
       selectedMovementPattern: movementPattern,
+      selectedFMSFocus: fmsFocus,
       selectedDifficulty: difficulty,
       showInactive: inactive
     });
@@ -87,6 +99,7 @@ export const ExerciseFilter = ({
     setSearchQuery('');
     setSelectedCategory(null);
     setSelectedMovementPattern(null);
+    setSelectedFMSFocus(null);
     setSelectedDifficulty(null);
     setShowInactive(false);
     setAvailableMovementPatterns([]);
@@ -95,6 +108,7 @@ export const ExerciseFilter = ({
       searchQuery: '',
       selectedCategory: null,
       selectedMovementPattern: null,
+      selectedFMSFocus: null,
       selectedDifficulty: null,
       showInactive: false
     });
@@ -127,6 +141,7 @@ export const ExerciseFilter = ({
               {[
                 selectedCategory ? 1 : 0,
                 selectedMovementPattern ? 1 : 0,
+                selectedFMSFocus ? 1 : 0,
                 selectedDifficulty ? 1 : 0,
                 showInactive ? 1 : 0
               ].reduce((a, b) => a + b, 0)}
@@ -137,20 +152,20 @@ export const ExerciseFilter = ({
       
       {showFilters && (
         <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Category
+                Kategória
               </label>
               <select
                 value={selectedCategory || ''}
                 onChange={handleCategoryChange}
                 className="input mt-1 w-full"
               >
-                <option value="">All Categories</option>
+                <option value="">Összes kategória</option>
                 {categories.map(category => (
-                  <option key={category} value={category}>
-                    {category}
+                  <option key={category.value} value={category.value}>
+                    {category.label}
                   </option>
                 ))}
               </select>
@@ -158,7 +173,7 @@ export const ExerciseFilter = ({
             
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Movement Pattern
+                Mozgásminta
               </label>
               <select
                 value={selectedMovementPattern || ''}
@@ -166,28 +181,48 @@ export const ExerciseFilter = ({
                 className="input mt-1 w-full"
                 disabled={!selectedCategory}
               >
-                <option value="">All Patterns</option>
+                <option value="">Összes minta</option>
                 {availableMovementPatterns.map(pattern => (
-                  <option key={pattern} value={pattern}>
-                    {pattern}
+                  <option key={pattern.value} value={pattern.value}>
+                    {pattern.label}
                   </option>
                 ))}
               </select>
             </div>
+
+            {selectedCategory === 'fms' && fmsFocuses && fmsFocuses.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  FMS fókusz
+                </label>
+                <select
+                  value={selectedFMSFocus || ''}
+                  onChange={handleFMSFocusChange}
+                  className="input mt-1 w-full"
+                >
+                  <option value="">Mind a 7 minta</option>
+                  {fmsFocuses.map(focus => (
+                    <option key={focus.value} value={focus.value}>
+                      {focus.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Difficulty
+                Nehézség
               </label>
               <select
                 value={selectedDifficulty?.toString() || ''}
                 onChange={handleDifficultyChange}
                 className="input mt-1 w-full"
               >
-                <option value="">All Levels</option>
+                <option value="">Összes szint</option>
                 {[1, 2, 3, 4, 5].map((level) => (
                   <option key={level} value={level}>
-                    Level {level} - {level === 1 ? 'Very Easy' : level === 2 ? 'Easy' : level === 3 ? 'Moderate' : level === 4 ? 'Hard' : 'Very Hard'}
+                    {level}. szint - {level === 1 ? 'Nagyon könnyű' : level === 2 ? 'Könnyű' : level === 3 ? 'Közepes' : level === 4 ? 'Nehéz' : 'Nagyon nehéz'}
                   </option>
                 ))}
               </select>
@@ -202,7 +237,7 @@ export const ExerciseFilter = ({
                     onChange={handleShowInactiveChange}
                     className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Show Inactive</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Inaktívak mutatása</span>
                 </label>
               </div>
             )}
@@ -214,7 +249,7 @@ export const ExerciseFilter = ({
               className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
             >
               <X size={16} className="mr-1" />
-              Reset Filters
+              Szűrők törlése
             </button>
           </div>
         </div>

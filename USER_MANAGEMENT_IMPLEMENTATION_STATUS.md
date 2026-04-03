@@ -55,11 +55,11 @@ If you have the Supabase service role key, you can run:
 
 ### 2. Test the Implementation
 
-After applying the migration, run the test script to verify everything works:
+After applying the migration, ellenőrizd a funkciókat az admin felületen:
 
-```bash
-export $(grep -v '^#' .env | xargs) && node test-existing-users.cjs
-```
+- Indítsd az alkalmazást (`npm run dev`) és jelentkezz be admin fiókkal
+- Hozz létre egy teszt felhasználót, majd soft delete-eld és állítsd vissza
+- Ellenőrizd a Supabase Console > Logs felületet, hogy minden RPC sikeresen lefutott-e
 
 ## Current Behavior
 
@@ -86,7 +86,7 @@ export $(grep -v '^#' .env | xargs) && node test-existing-users.cjs
 ## Next Steps
 
 1. Apply the database migration using the Supabase dashboard
-2. Test the functionality using the provided test scripts
+2. Teszteld manuálisan az admin felületet (create → disable → restore)
 3. Train administrators on the new user management interface
 4. Document the new workflow for user onboarding
 
@@ -98,10 +98,9 @@ export $(grep -v '^#' .env | xargs) && node test-existing-users.cjs
 - `/src/lib/users.ts` - Implemented soft delete functions
 - `/add-disabled-role.sql` - Database migration for enum update
 - `/apply-disabled-role-migration.sh` - Migration script
-- `/test-existing-users.cjs` - Test script for validation
 
-## Testing Scripts
+## Manual Verification
 
-- `test-existing-users.cjs` - Tests soft delete on existing users
-- `test-soft-delete-complete.cjs` - Comprehensive soft delete testing
-- `test-enum-values.cjs` - Checks enum values and availability
+1. **Soft delete**: Töröld egy teszt felhasználó szerepkörét (User Management oldal → Disable)
+2. **Restore**: Állítsd vissza ugyanazt a felhasználót `admin` vagy `user` szerepkörre
+3. **Enum ellenőrzés**: Futtasd a `SELECT unnest(enum_range(NULL::user_role));` lekérdezést, hogy megjelenjen a `disabled` érték

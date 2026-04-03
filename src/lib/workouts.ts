@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase';
 import type { Database } from '../types/supabase';
+import { notifyDataChanged } from '../utils/dataRefresh';
 
 export interface WorkoutSection {
   name: string;
@@ -83,12 +84,14 @@ export async function createWorkout(workout: Omit<Workout, 'id' | 'created_at' |
           throw newError;
         }
 
+        notifyDataChanged('workouts');
         return newData as Workout;
       }
 
       throw error;
     }
 
+    notifyDataChanged('workouts');
     return data as Workout;
   } catch (error) {
     console.error('Exception in createWorkout:', error);
@@ -139,6 +142,7 @@ export async function updateWorkout(id: string, workout: Partial<Workout>) {
     .single();
 
   if (error) throw error;
+  notifyDataChanged('workouts');
   return data as Workout;
 }
 
@@ -149,6 +153,7 @@ export async function deleteWorkout(id: string) {
     .eq('id', id);
 
   if (error) throw error;
+  notifyDataChanged('workouts');
 }
 
 /**
@@ -213,6 +218,7 @@ export async function copyWorkoutToUser(appointmentDate: string, adminId: string
       return null;
     }
 
+    notifyDataChanged('workouts');
     return newWorkout as Workout;
   } catch (error) {
     console.error('Exception in copyWorkoutToUser:', error);
@@ -221,7 +227,7 @@ export async function copyWorkoutToUser(appointmentDate: string, adminId: string
 }
 
 // Share workout with appointment participants
-export async function shareWorkoutWithParticipants(workoutId: string, appointmentId: string) {
+export async function shareWorkoutWithParticipants(workoutId: string, appointmentId: string, participantUserIds?: string[]) {
   try {
     // Get the original workout
     const { data: originalWorkout, error: workoutError } = await supabase
@@ -235,14 +241,24 @@ export async function shareWorkoutWithParticipants(workoutId: string, appointmen
     }
 
     // Get appointment participants
-    const { data: bookings, error: bookingsError } = await supabase
+    let bookingsQuery = supabase
       .from('appointment_bookings')
       .select('user_id, profiles!inner(id, first_name, last_name)')
       .eq('appointment_id', appointmentId)
       .eq('status', 'confirmed');
 
+    if (participantUserIds && participantUserIds.length > 0) {
+      bookingsQuery = bookingsQuery.in('user_id', participantUserIds);
+    }
+
+    const { data: bookings, error: bookingsError } = await bookingsQuery;
+
     if (bookingsError) {
       throw new Error('Error fetching participants');
+    }
+
+    if (!bookings || bookings.length === 0) {
+      throw new Error('No confirmed participants selected for sharing');
     }
 
     // Parse sections if needed
@@ -279,6 +295,7 @@ export async function shareWorkoutWithParticipants(workoutId: string, appointmen
       }
     }
 
+    notifyDataChanged('workouts');
     return personalWorkouts;
   } catch (error) {
     console.error('Error sharing workout with participants:', error);
@@ -337,6 +354,7 @@ export async function updatePersonalWorkoutPerformance(
       throw updateError;
     }
 
+    notifyDataChanged('workouts');
     return updatedWorkout;
   } catch (error) {
     console.error('Error updating workout performance:', error);
