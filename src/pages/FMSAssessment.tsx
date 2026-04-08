@@ -13,10 +13,12 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { createFMSAssessment, getAllUsers } from '../lib/fms';
+import { listManualGuests, ManualGuest, updateManualGuest } from '../lib/manualGuests';
 import toast from 'react-hot-toast';
 
 const movementSchema = z.object({
-  user_id: z.string().min(1, 'Kérlek válassz egy felhasználót'),
+  manualGuestId: z.string().min(1, 'Kérlek válassz egy vendéget'),
+  linkedUserId: z.string().min(1, 'Kérlek válassz adatbázisos FMS alanyt'),
   deepSquat: z.number().min(0).max(3),
   hurdleStep: z.number().min(0).max(3),
   inlineLunge: z.number().min(0).max(3),
@@ -38,13 +40,13 @@ interface User {
 }
 
 const FMSAssessment = () => {
-  // We still need useAuth for authentication context, but we're not using the user object directly
-  const { initialized } = useAuth();
+  const { initialized, user } = useAuth();
   const [showInstructions, setShowInstructions] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
+  const [manualGuests, setManualGuests] = useState<ManualGuest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const {
@@ -57,6 +59,8 @@ const FMSAssessment = () => {
   } = useForm<MovementScores>({
     resolver: zodResolver(movementSchema),
     defaultValues: {
+      manualGuestId: '',
+      linkedUserId: '',
       deepSquat: 0,
       hurdleStep: 0,
       inlineLunge: 0,
@@ -67,16 +71,44 @@ const FMSAssessment = () => {
     },
   });
 
+  const selectedManualGuestId = watch('manualGuestId');
+  const selectedManualGuest = manualGuests.find((guest) => guest.id === selectedManualGuestId);
+
   useEffect(() => {
-    if (initialized) {
-      loadUsers();
+    if (initialized && user?.id) {
+      void loadInitialData();
+      return;
     }
-  }, [initialized]);
+
+    if (initialized) {
+      setIsLoading(false);
+    }
+  }, [initialized, user?.id]);
+
+  useEffect(() => {
+    if (!selectedManualGuest) {
+      setValue('linkedUserId', '', { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+      return;
+    }
+
+    setValue('linkedUserId', selectedManualGuest.linkedFmsUserId || '', {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+  }, [selectedManualGuest, setValue]);
+
+  const loadInitialData = async () => {
+    try {
+      setIsLoading(true);
+      await Promise.all([loadUsers(), loadManualGuests()]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const loadUsers = async () => {
     try {
-      setIsLoading(true);
-
       const data = await getAllUsers();
 
       if (data.length === 0) {
@@ -97,21 +129,32 @@ const FMSAssessment = () => {
     } catch (error) {
       console.error('Failed to load users:', error);
 
-      // Provide more helpful error message
-      let errorMessage = 'Felhasználók betöltése sikertelen';
+      let errorMessage = 'FMS adatbázis-alanyok betöltése sikertelen';
       if (error instanceof Error) {
         errorMessage += `: ${error.message}`;
-        console.error('Error details:', error);
       }
 
       toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
+    }
+  };
+
+  const loadManualGuests = async () => {
+    if (!user?.id) {
+      setManualGuests([]);
+      return;
+    }
+
+    try {
+      const guests = await listManualGuests(user.id);
+      setManualGuests(guests);
+    } catch (error) {
+      console.error('Failed to load manual guests:', error);
+      toast.error('A manuális vendéglista betöltése sikertelen');
     }
   };
 
   // Define movement keys as a type to ensure type safety
-  type MovementKey = keyof Omit<MovementScores, 'user_id' | 'notes'>;
+  type MovementKey = keyof Omit<MovementScores, 'manualGuestId' | 'linkedUserId' | 'notes'>;
 
   const movements = [
     {
@@ -197,8 +240,22 @@ const FMSAssessment = () => {
     try {
       setIsSubmitting(true);
 
+      if (!user?.id) {
+        throw new Error('A mentéshez be kell jelentkezned');
+      }
+
+      const selectedGuest = manualGuests.find((guest) => guest.id === data.manualGuestId);
+      if (!selectedGuest) {
+        throw new Error('A kiválasztott vendég nem található');
+      }
+
+      if (selectedGuest.linkedFmsUserId !== data.linkedUserId) {
+        await updateManualGuest(user.id, selectedGuest.id, { linkedFmsUserId: data.linkedUserId });
+        await loadManualGuests();
+      }
+
       const assessment = {
-        user_id: data.user_id,
+        user_id: data.linkedUserId,
         deep_squat: data.deepSquat,
         hurdle_step: data.hurdleStep,
         inline_lunge: data.inlineLunge,
@@ -209,10 +266,21 @@ const FMSAssessment = () => {
         notes: data.notes || '',
       };
 
-      const result = await createFMSAssessment(assessment);
+      await createFMSAssessment(assessment);
 
       toast.success('Értékelés sikeresen mentve');
-      reset();
+      reset({
+        manualGuestId: '',
+        linkedUserId: '',
+        deepSquat: 0,
+        hurdleStep: 0,
+        inlineLunge: 0,
+        shoulderMobility: 0,
+        activeStraightLegRaise: 0,
+        trunkStabilityPushup: 0,
+        rotaryStability: 0,
+        notes: '',
+      });
       setCurrentStep(0);
       setShowConfirmDialog(false);
     } catch (error) {
@@ -390,7 +458,7 @@ const FMSAssessment = () => {
           <div className="mb-6 space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Select User
+                Válassz vendéget
               </label>
               <div className="relative mt-1">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -398,31 +466,28 @@ const FMSAssessment = () => {
                 </div>
                 <div className="flex gap-2">
                   <select
-                    {...register('user_id')}
+                    {...register('manualGuestId')}
                     className="input pl-10 flex-grow"
-                    disabled={users.length === 0}
+                    disabled={manualGuests.length === 0}
                   >
                     <option value="">
-                      {users.length === 0 
-                        ? 'No users available - Please add users first' 
-                        : 'Select a user'}
+                      {manualGuests.length === 0
+                        ? 'Nincs manuális vendég - előbb hozz létre a plannerben'
+                        : 'Válassz vendéget'}
                     </option>
-                    {users.map((user) => {
-                      // Create a display string that shows whatever information is available
-                      const displayName = user.full_name || user.email || `User ${user.id.slice(0, 8)}`;
-
+                    {manualGuests.map((guest) => {
                       return (
-                        <option key={user.id} value={user.id}>
-                          {displayName}
+                        <option key={guest.id} value={guest.id}>
+                          {guest.name}
                         </option>
                       );
                     })}
                   </select>
                   <button 
                     type="button"
-                    onClick={() => loadUsers()}
+                    onClick={() => { void loadInitialData(); }}
                     className="btn btn-outline btn-sm"
-                    title="Refresh user list"
+                    title="Lista frissítése"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-refresh-cw">
                       <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
@@ -433,9 +498,52 @@ const FMSAssessment = () => {
                   </button>
                 </div>
               </div>
-              {errors.user_id && (
+              {errors.manualGuestId && (
                 <p className="mt-1 text-sm text-error-600 dark:text-error-400">
-                  {errors.user_id.message}
+                  {errors.manualGuestId.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Kapcsolt adatbázisos FMS alany
+              </label>
+              <div className="mt-1 flex gap-2">
+                <select
+                  {...register('linkedUserId')}
+                  className="input flex-grow"
+                  disabled={users.length === 0 || !selectedManualGuest}
+                >
+                  <option value="">
+                    {!selectedManualGuest
+                      ? 'Előbb válassz vendéget'
+                      : users.length === 0
+                        ? 'Nincs elérhető adatbázisos alany'
+                        : 'Válassz adatbázisos alanyt'}
+                  </option>
+                  {users.map((dbUser) => {
+                    const displayName = dbUser.full_name || dbUser.email || `User ${dbUser.id.slice(0, 8)}`;
+
+                    return (
+                      <option key={dbUser.id} value={dbUser.id}>
+                        {displayName}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                A felmérés a kiválasztott vendég nevéhez tartozik, de fizikailag ehhez az adatbázisos alanyhoz mentődik az FMS táblába.
+              </p>
+              {selectedManualGuest && (
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Aktív vendég: {selectedManualGuest.name}
+                </p>
+              )}
+              {errors.linkedUserId && (
+                <p className="mt-1 text-sm text-error-600 dark:text-error-400">
+                  {errors.linkedUserId.message}
                 </p>
               )}
             </div>

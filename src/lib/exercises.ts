@@ -1,20 +1,14 @@
-import { supabase } from '../config/supabase';
+import {
+  createExercise as createExerciseFromService,
+  deleteExercise as deleteExerciseFromService,
+  ExerciseWithTaxonomy,
+  ExerciseWriteInput,
+  ExerciseWriteUpdate,
+  getExercises as getExercisesFromService,
+  updateExercise as updateExerciseFromService,
+} from './exerciseService';
 
-export interface Exercise {
-  id: string;
-  name: string;
-  category: string;
-  movement_pattern: string;
-  difficulty: number; // Changed to match database schema (1-5)
-  description?: string;
-  instructions?: string | null;
-  image_url?: string | null;
-  video_url?: string | null;
-  created_at?: string;
-  updated_at?: string;
-  created_by?: string | null;
-  is_active: boolean;
-}
+export type Exercise = ExerciseWithTaxonomy;
 
 export const CATEGORIES = [
   'Strength Training',
@@ -122,43 +116,22 @@ export function hasMovementPattern(label: string): boolean {
 }
 
 export async function getExercises() {
-  const { data, error } = await supabase
-    .from('exercises')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data as Exercise[];
+  return getExercisesFromService({
+    orderBy: {
+      column: 'created_at',
+      ascending: false,
+    },
+  });
 }
 
-export async function createExercise(exercise: Omit<Exercise, 'id' | 'created_at' | 'updated_at'>) {
-  const { data, error } = await supabase
-    .from('exercises')
-    .insert(exercise)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data as Exercise;
+export async function createExercise(exercise: ExerciseWriteInput) {
+  return createExerciseFromService(exercise);
 }
 
-export async function updateExercise(id: string, exercise: Partial<Exercise>) {
-  const { data, error } = await supabase
-    .from('exercises')
-    .update(exercise)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data as Exercise;
+export async function updateExercise(id: string, exercise: ExerciseWriteUpdate) {
+  return updateExerciseFromService(id, exercise);
 }
 
 export async function deleteExercise(id: string) {
-  const { error } = await supabase
-    .from('exercises')
-    .delete()
-    .eq('id', id);
-
-  if (error) throw error;
+  return deleteExerciseFromService(id);
 }

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Clock, Dumbbell, BarChart2, Trash2, Edit2, Filter } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { Calendar, Clock, Dumbbell, BarChart2, Trash2, Edit2, Filter, Copy } from 'lucide-react';
 import { getWorkouts, deleteWorkout, Workout } from '../lib/workouts';
 import { getExercises, Exercise } from '../lib/exercises';
 import { useAuth } from '../hooks/useAuth';
@@ -8,6 +7,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import WorkoutSectionHeader from '../components/workouts/WorkoutSectionHeader';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
+import { formatWorkoutDate, formatWorkoutDuration } from '../lib/workoutDisplay';
 
 const WorkoutLog = () => {
   const { user, initialized } = useAuth();
@@ -15,7 +15,6 @@ const WorkoutLog = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [exercises, setExercises] = useState<{ [key: string]: Exercise }>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
   const [dateFilter, setDateFilter] = useState<string>('');
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ show: boolean; workoutId: string; workoutTitle: string }>({ 
     show: false, 
@@ -69,7 +68,6 @@ const WorkoutLog = () => {
     try {
       await deleteWorkout(id);
       setWorkouts(workouts.filter(workout => workout.id !== id));
-      setSelectedWorkout(null);
       setDeleteConfirmation({ show: false, workoutId: '', workoutTitle: '' });
       toast.success('Edzés sikeresen törölve');
     } catch (error) {
@@ -81,6 +79,10 @@ const WorkoutLog = () => {
   const handleEditWorkout = (workout: Workout) => {
     // Navigate to workout planner with prefilled data
     navigate('/workout-planner', { state: { editWorkout: workout } });
+  };
+
+  const handleCopyWorkout = (workout: Workout) => {
+    navigate('/workout-planner', { state: { copyWorkout: workout } });
   };
 
   const showDeleteConfirmation = (workout: Workout) => {
@@ -110,7 +112,7 @@ const WorkoutLog = () => {
     <div className="space-y-6">
       <WorkoutSectionHeader
         title="Edzésnapló"
-        description="A mentett edzéseidet részletes listában látod, szűrheted dátum szerint, és innen is megnyithatod szerkesztésre."
+        description="A mentett edzéseidet részletes listában látod, szűrheted dátum szerint, és innen is továbbmehetsz szerkesztésre vagy új napra másolásra."
         actions={(
           <div className="flex gap-2">
           <input
@@ -138,8 +140,7 @@ const WorkoutLog = () => {
             filteredWorkouts.map((workout) => (
               <div
                 key={workout.id}
-                className="card cursor-pointer transition-all hover:scale-[1.02]"
-                onClick={() => setSelectedWorkout(workout)}
+                className="card transition-all hover:scale-[1.02]"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
@@ -151,11 +152,11 @@ const WorkoutLog = () => {
                       <div className="mt-1 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                         <span className="flex items-center gap-1">
                           <Calendar size={16} />
-                          {format(parseISO(workout.date), 'MMM d, yyyy')}
+                          {formatWorkoutDate(workout.date)}
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock size={16} />
-                          {workout.duration} min
+                          {formatWorkoutDuration(workout.duration)}
                         </span>
                       </div>
                     </div>
@@ -170,6 +171,16 @@ const WorkoutLog = () => {
                       title="Edzésterv szerkesztése"
                     >
                       <Edit2 size={18} />
+                    </button>
+                    <button
+                      className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-400"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyWorkout(workout);
+                      }}
+                      title="Edzésterv másolása új napra"
+                    >
+                      <Copy size={18} />
                     </button>
                     <button
                       className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-error-500 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-error-400"
@@ -194,7 +205,7 @@ const WorkoutLog = () => {
                           return (
                             <div key={exerciseIndex} className="flex items-center justify-between text-sm">
                               <span className="font-medium text-gray-900 dark:text-white">
-                                {exerciseDetails?.name || 'Unknown Exercise'}
+                                {exerciseDetails?.name || 'Ismeretlen gyakorlat'}
                               </span>
                               <span className="text-gray-500 dark:text-gray-400">
                                 {exercise.sets} × {exercise.reps} {exercise.weight && `@ ${exercise.weight}kg`}
@@ -217,9 +228,9 @@ const WorkoutLog = () => {
           ) : (
             <div className="flex flex-col items-center justify-center rounded-lg border border-gray-200 bg-white py-12 dark:border-gray-700 dark:bg-gray-800">
               <Filter className="h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No workouts found</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Nem található edzés</h3>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {dateFilter ? 'Try selecting a different date' : 'Start by adding your first workout'}
+                {dateFilter ? 'Próbálj másik dátumot választani' : 'Kezdd az első edzésed hozzáadásával'}
               </p>
             </div>
           )}
@@ -230,17 +241,17 @@ const WorkoutLog = () => {
           <div className="card">
             <h3 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
               <BarChart2 size={20} className="text-primary-600 dark:text-primary-400" />
-              Weekly Summary
+              Heti összegzés
             </h3>
             <div className="mt-4 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Workouts</span>
+                <span className="text-gray-600 dark:text-gray-400">Edzések</span>
                 <span className="font-semibold text-gray-900 dark:text-white">{workouts.length}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Total Time</span>
+                <span className="text-gray-600 dark:text-gray-400">Összes idő</span>
                 <span className="font-semibold text-gray-900 dark:text-white">
-                  {workouts.reduce((sum, workout) => sum + workout.duration, 0)} min
+                  {formatWorkoutDuration(workouts.reduce((sum, workout) => sum + workout.duration, 0))}
                 </span>
               </div>
             </div>
@@ -249,7 +260,7 @@ const WorkoutLog = () => {
           <div className="card">
             <h3 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
               <Dumbbell size={20} className="text-primary-600 dark:text-primary-400" />
-              Most Used Exercises
+              Leggyakrabban használt gyakorlatok
             </h3>
             <div className="mt-4 space-y-2">
               {Object.entries(
@@ -264,10 +275,10 @@ const WorkoutLog = () => {
                 .map(([exerciseId, count]) => (
                   <div key={exerciseId} className="flex items-center justify-between">
                     <span className="text-gray-600 dark:text-gray-400">
-                      {exercises[exerciseId]?.name || 'Unknown Exercise'}
+                      {exercises[exerciseId]?.name || 'Ismeretlen gyakorlat'}
                     </span>
                     <span className="font-semibold text-gray-900 dark:text-white">
-                      {count} sets
+                      {count} alkalom
                     </span>
                   </div>
                 ))}

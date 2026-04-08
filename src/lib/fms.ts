@@ -18,6 +18,16 @@ export interface FMSAssessment {
   updated_at?: string;
 }
 
+export interface FMSAssessmentSubject {
+  userId: string;
+  displayName: string;
+  fullName: string | null;
+  email: string | null;
+  latestAssessmentDate: string | null;
+  latestAssessmentCreatedAt: string | null;
+  latestTotalScore: number | null;
+}
+
 export async function createFMSAssessment(assessment: Omit<FMSAssessment, 'id' | 'created_at' | 'updated_at' | 'total_score'>) {
 
   try {
@@ -127,6 +137,76 @@ export async function getAllUsers() {
     return formattedData;
   } catch (error) {
     console.error('Exception in getAllUsers:', error);
+    throw error;
+  }
+}
+
+export async function listFMSAssessmentSubjects(): Promise<FMSAssessmentSubject[]> {
+  try {
+    const { data: assessments, error: assessmentsError } = await supabase
+      .from('fms_assessments')
+      .select('user_id, date, created_at, total_score')
+      .order('created_at', { ascending: false });
+
+    if (assessmentsError) {
+      console.error('Error fetching FMS assessment subjects:', assessmentsError);
+      throw assessmentsError;
+    }
+
+    const latestByUserId = new Map<string, {
+      date: string | null;
+      created_at: string | null;
+      total_score: number | null;
+    }>();
+
+    for (const assessment of assessments || []) {
+      if (!assessment.user_id || latestByUserId.has(assessment.user_id)) {
+        continue;
+      }
+
+      latestByUserId.set(assessment.user_id, {
+        date: assessment.date ?? null,
+        created_at: assessment.created_at ?? null,
+        total_score: assessment.total_score ?? null,
+      });
+    }
+
+    const userIds = Array.from(latestByUserId.keys());
+    if (userIds.length === 0) {
+      return [];
+    }
+
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .in('id', userIds);
+
+    if (profilesError) {
+      console.error('Error fetching FMS subject profiles:', profilesError);
+      throw profilesError;
+    }
+
+    const profileMap = new Map((profiles || []).map((profile) => [profile.id, profile]));
+
+    return userIds
+      .map((userId) => {
+        const profile = profileMap.get(userId);
+        const latestAssessment = latestByUserId.get(userId);
+        const displayName = profile?.full_name || profile?.email || `FMS alany ${userId.slice(0, 8)}`;
+
+        return {
+          userId,
+          displayName,
+          fullName: profile?.full_name || null,
+          email: profile?.email || null,
+          latestAssessmentDate: latestAssessment?.date || null,
+          latestAssessmentCreatedAt: latestAssessment?.created_at || null,
+          latestTotalScore: latestAssessment?.total_score || null,
+        } satisfies FMSAssessmentSubject;
+      })
+      .sort((left, right) => left.displayName.localeCompare(right.displayName, 'hu'));
+  } catch (error) {
+    console.error('Exception in listFMSAssessmentSubjects:', error);
     throw error;
   }
 }

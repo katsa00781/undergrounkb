@@ -64,6 +64,79 @@ export interface Database {
           }
         ]
       }
+      exercise_taxonomy_assignments: {
+        Row: {
+          exercise_id: string
+          exercise_taxonomy_tag_id: string
+          source: Database['public']['Enums']['exercise_taxonomy_assignment_source']
+          is_primary: boolean
+          created_at: string
+        }
+        Insert: {
+          exercise_id: string
+          exercise_taxonomy_tag_id: string
+          source?: Database['public']['Enums']['exercise_taxonomy_assignment_source']
+          is_primary?: boolean
+          created_at?: string
+        }
+        Update: {
+          exercise_id?: string
+          exercise_taxonomy_tag_id?: string
+          source?: Database['public']['Enums']['exercise_taxonomy_assignment_source']
+          is_primary?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_taxonomy_assignments_exercise_id_fkey"
+            columns: ["exercise_id"]
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exercise_taxonomy_assignments_exercise_taxonomy_tag_id_fkey"
+            columns: ["exercise_taxonomy_tag_id"]
+            referencedRelation: "exercise_taxonomy_tags"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      exercise_taxonomy_tags: {
+        Row: {
+          id: string
+          slug: string
+          label: string
+          dimension: Database['public']['Enums']['exercise_taxonomy_dimension']
+          description: string | null
+          sort_order: number
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          slug: string
+          label: string
+          dimension: Database['public']['Enums']['exercise_taxonomy_dimension']
+          description?: string | null
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          slug?: string
+          label?: string
+          dimension?: Database['public']['Enums']['exercise_taxonomy_dimension']
+          description?: string | null
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           id: string
@@ -279,6 +352,46 @@ export interface Database {
           }
         ]
       }
+      manual_guests: {
+        Row: {
+          id: string
+          owner_user_id: string
+          name: string
+          linked_fms_user_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          owner_user_id: string
+          name: string
+          linked_fms_user_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          owner_user_id?: string
+          name?: string
+          linked_fms_user_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manual_guests_linked_fms_user_id_fkey"
+            columns: ["linked_fms_user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manual_guests_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -288,6 +401,8 @@ export interface Database {
     }
     Enums: {
       exercise_category: 'strength_training' | 'cardio' | 'kettlebell' | 'mobility_flexibility' | 'hiit' | 'recovery' | 'fms' | 'smr'
+      exercise_taxonomy_assignment_source: 'derived' | 'manual'
+      exercise_taxonomy_dimension: 'category' | 'equipment' | 'pattern_family' | 'laterality' | 'exact_pattern'
       movement_pattern: 'gait_stability' | 'gait_crawling' | 'hip_dominant_bilateral' | 'hip_dominant_unilateral' | 'knee_dominant_bilateral' | 'knee_dominant_unilateral' | 'horizontal_push_bilateral' | 'horizontal_push_unilateral' | 'horizontal_pull_bilateral' | 'horizontal_pull_unilateral' | 'vertical_push_bilateral' | 'vertical_push_unilateral' | 'vertical_pull_bilateral' | 'stability_anti_extension' | 'stability_anti_rotation' | 'stability_anti_flexion' | 'core_other' | 'local_exercises' | 'upper_body_mobility' | 'aslr_correction_first' | 'aslr_correction_second' | 'sm_correction_first' | 'sm_correction_second' | 'stability_correction' | 'mobilization'
     }
   }

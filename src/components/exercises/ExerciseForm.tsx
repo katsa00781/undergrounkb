@@ -4,9 +4,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { 
+  ExerciseTaxonomyTag,
   ExerciseCategory, 
   MovementPattern, 
   createExercise, 
+  getDerivedTaxonomySlugsForExerciseShape,
+  getExerciseCategoryLabel,
+  getMovementPatternLabel,
+  listExerciseTaxonomyTags,
   updateExercise 
 } from '../../lib/exerciseService';
 import { useAuth } from '../../hooks/useAuth';
@@ -18,6 +23,7 @@ const exerciseSchema = z.object({
   instructions: z.string().optional(),
   category: z.string().min(1, 'Category is required'),
   movement_pattern: z.string().min(1, 'Movement pattern is required'),
+  taxonomy_tag_slugs: z.array(z.string()).default([]),
   difficulty: z.number().int().min(1).max(5),
   image_url: z.string().url().optional().or(z.literal('')),
   video_url: z.string().url().optional().or(z.literal('')),
@@ -52,6 +58,7 @@ export const ExerciseForm = ({
 }: ExerciseFormProps) => {
   const { user } = useAuth();
   const [availableMovementPatterns, setAvailableMovementPatterns] = useState<MovementPattern[]>([]);
+  const [taxonomyTags, setTaxonomyTags] = useState<ExerciseTaxonomyTag[]>([]);
   const isEditing = Boolean(initialData?.id);
 
   const {
@@ -69,6 +76,7 @@ export const ExerciseForm = ({
       instructions: initialData?.instructions || '',
       category: initialData?.category || '',
       movement_pattern: initialData?.movement_pattern || '',
+      taxonomy_tag_slugs: initialData?.taxonomy_tag_slugs || [],
       difficulty: initialData?.difficulty !== undefined ? initialData.difficulty : 3,
       image_url: initialData?.image_url || '',
       video_url: initialData?.video_url || '',
@@ -77,6 +85,15 @@ export const ExerciseForm = ({
   });
 
   const selectedCategory = watch('category') as ExerciseCategory;
+  const selectedMovementPattern = watch('movement_pattern') as MovementPattern;
+  const selectedTaxonomyTagSlugs = watch('taxonomy_tag_slugs');
+  const derivedTaxonomySlugs = selectedCategory && selectedMovementPattern
+    ? getDerivedTaxonomySlugsForExerciseShape({
+        category: selectedCategory,
+        movement_pattern: selectedMovementPattern,
+      })
+    : [];
+  const selectableManualTaxonomyTags = taxonomyTags.filter((tag) => !derivedTaxonomySlugs.includes(tag.slug));
 
   // Update movement patterns when category changes
   useEffect(() => {
@@ -84,6 +101,21 @@ export const ExerciseForm = ({
       setAvailableMovementPatterns(movementPatterns[selectedCategory] || []);
     }
   }, [selectedCategory, movementPatterns]);
+
+  useEffect(() => {
+    const loadTaxonomyTags = async () => {
+      try {
+        const tags = await listExerciseTaxonomyTags({
+          dimensions: ['category', 'equipment', 'pattern_family', 'laterality'],
+        });
+        setTaxonomyTags(tags);
+      } catch (error) {
+        console.error('Failed to load exercise taxonomy tags:', error);
+      }
+    };
+
+    void loadTaxonomyTags();
+  }, []);
 
   const onSubmit = async (data: ExerciseFormData) => {
     try {
@@ -98,6 +130,7 @@ export const ExerciseForm = ({
         instructions: data.instructions,
         category: data.category as ExerciseCategory,
         movement_pattern: data.movement_pattern as MovementPattern,
+        taxonomyTagSlugs: data.taxonomy_tag_slugs.filter((slug) => !derivedTaxonomySlugs.includes(slug)),
         difficulty: data.difficulty,
         image_url: data.image_url || null,
         video_url: data.video_url || null,
@@ -152,7 +185,7 @@ export const ExerciseForm = ({
             <option value="">Select a category</option>
             {categories.map(category => (
               <option key={category} value={category}>
-                {category}
+                {getExerciseCategoryLabel(category)}
               </option>
             ))}
           </select>
@@ -169,12 +202,72 @@ export const ExerciseForm = ({
             <option value="">Select a movement pattern</option>
             {availableMovementPatterns.map(pattern => (
               <option key={pattern} value={pattern}>
-                {pattern}
+                {getMovementPatternLabel(pattern) || pattern}
               </option>
             ))}
           </select>
           {errors.movement_pattern && (
             <p className="mt-1 text-sm text-error-600 dark:text-error-400">{errors.movement_pattern.message}</p>
+          )}
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Automatikus DB-besorolás
+          </label>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {derivedTaxonomySlugs.length > 0 ? (
+              taxonomyTags
+                .filter((tag) => derivedTaxonomySlugs.includes(tag.slug))
+                .map((tag) => (
+                  <span key={tag.slug} className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                    {tag.label}
+                  </span>
+                ))
+            ) : (
+              <p className="text-sm text-gray-500 dark:text-gray-400">A kategória és a mozgásminta kiválasztása után itt látszanak az automatikusan képzett címkék.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            További DB-címkék
+          </label>
+          <Controller
+            control={control}
+            name="taxonomy_tag_slugs"
+            render={({ field }) => (
+              <select
+                multiple
+                value={field.value}
+                onChange={(event) => {
+                  const selectedValues = Array.from(event.target.selectedOptions).map((option) => option.value);
+                  field.onChange(selectedValues);
+                }}
+                className="input mt-1 min-h-40 w-full"
+              >
+                {selectableManualTaxonomyTags.map((tag) => (
+                  <option key={tag.slug} value={tag.slug}>
+                    {tag.label} ({tag.dimension})
+                  </option>
+                ))}
+              </select>
+            )}
+          />
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Itt adhatsz hozzá plusz besorolást, például Kettlebellt egy erő + vertikális nyomás + unilaterális gyakorlathoz.
+          </p>
+          {selectedTaxonomyTagSlugs.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {taxonomyTags
+                .filter((tag) => selectedTaxonomyTagSlugs.includes(tag.slug))
+                .map((tag) => (
+                  <span key={tag.slug} className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200">
+                    {tag.label}
+                  </span>
+                ))}
+            </div>
           )}
         </div>
 

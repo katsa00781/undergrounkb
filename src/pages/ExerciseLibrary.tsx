@@ -6,13 +6,15 @@ import { useProfile } from '../hooks/useProfile';
 import { 
   Exercise, 
   ExerciseCategory, 
-  MovementPattern, 
+  filterExercisesList,
+  getExerciseTaxonomyDimensionOptions,
   getExerciseCategories,
+  getExerciseCategoryMovementPatternMap,
   getExerciseCategoryLabel,
   getExerciseFMSFocuses,
   getFMSFocusOptions,
+  getExerciseManualTaxonomySlugs,
   getMovementPatternLabel,
-  getMovementPatterns,
   getExercises, 
   deleteExercise
 } from '../lib/exerciseService';
@@ -21,135 +23,9 @@ import ExerciseForm from '../components/exercises/ExerciseForm';
 import ExerciseFilter from '../components/exercises/ExerciseFilter';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 
-// Define the categories and movement patterns
-const CATEGORIES: ExerciseCategory[] = [
-  'strength_training',
-  'cardio',
-  'kettlebell',
-  'mobility_flexibility',
-  'hiit',
-  'recovery',
-  'fms',
-  'smr'
-];
-
-// Human-readable category labels
-const CATEGORY_LABELS: Record<ExerciseCategory, string> = {
-  'strength_training': 'Erősítő edzés',
-  'cardio': 'Cardio',
-  'kettlebell': 'Kettlebell',
-  'mobility_flexibility': 'Mobilitás és nyújtás',
-  'hiit': 'HIIT',
-  'recovery': 'Regeneráció',
-  'fms': 'FMS korrekció',
-  'smr': 'SMR (Henger)'
-};
-
-const ALL_MOVEMENT_PATTERNS = getMovementPatterns();
 const FMS_FOCUS_OPTIONS = getFMSFocusOptions();
-
-// Create a mapping of categories to their movement patterns
-const MOVEMENT_PATTERNS: Record<ExerciseCategory, MovementPattern[]> = {
-  'kettlebell': [
-    'gait_stability',
-    'gait_crawling',
-    'hip_dominant_bilateral',
-    'hip_dominant_unilateral',
-    'knee_dominant_bilateral',
-    'knee_dominant_unilateral',
-    'horizontal_push_bilateral',
-    'horizontal_push_unilateral',
-    'horizontal_pull_bilateral',
-    'horizontal_pull_unilateral',
-    'vertical_push_bilateral',
-    'vertical_push_unilateral',
-    'vertical_pull_bilateral',
-    'stability_anti_extension',
-    'stability_anti_rotation',
-    'stability_anti_flexion',
-    'core_other',
-    'local_exercises'
-  ],
-  'fms': [
-    'aslr_correction_first',
-    'aslr_correction_second',
-    'sm_correction_first',
-    'sm_correction_second',
-    'stability_correction',
-    'upper_body_mobility',
-    'mobilization',
-    'stability_anti_extension',
-    'stability_anti_rotation',
-    'stability_anti_flexion',
-    'knee_dominant_bilateral',
-    'knee_dominant_unilateral',
-    'hip_dominant_bilateral',
-    'hip_dominant_unilateral',
-    'horizontal_push_bilateral'
-  ],
-  'smr': [
-    'mobilization'
-  ],
-  'mobility_flexibility': [
-    'upper_body_mobility',
-    'mobilization'
-  ],
-  'strength_training': [
-    'hip_dominant_bilateral',
-    'hip_dominant_unilateral',
-    'knee_dominant_bilateral',
-    'knee_dominant_unilateral',
-    'horizontal_push_bilateral',
-    'horizontal_push_unilateral',
-    'horizontal_pull_bilateral',
-    'horizontal_pull_unilateral',
-    'vertical_push_bilateral',
-    'vertical_push_unilateral',
-    'vertical_pull_bilateral',
-    'core_other'
-  ],
-  'cardio': [
-    'gait_stability'
-  ],
-  'hiit': [
-    'gait_stability',
-    'hip_dominant_bilateral',
-    'knee_dominant_bilateral'
-  ],
-  'recovery': [
-    'mobilization',
-    'upper_body_mobility'
-  ]
-};
-
-// Movement pattern labels in Hungarian
-const MOVEMENT_PATTERN_LABELS: Record<MovementPattern, string> = {
-  'gait_stability': 'Gait – törzs stabilitás',
-  'gait_crawling': 'Gait mászásban – törzs stabilitás',
-  'hip_dominant_bilateral': 'Csípő domináns – bilaterális (FMS aktív lábemelés)',
-  'hip_dominant_unilateral': 'Csípő domináns – unilaterális (ASLR)',
-  'knee_dominant_bilateral': 'Térd domináns – bilaterális (ASLR)',
-  'knee_dominant_unilateral': 'Térd domináns – unilaterális (Kitörés)',
-  'horizontal_push_bilateral': 'Horizontális nyomás – bilaterális (SM + törzs)',
-  'horizontal_push_unilateral': 'Horizontális nyomás – unilaterális (SM + törzs)',
-  'horizontal_pull_bilateral': 'Horizontális húzás – bilaterális (SM)',
-  'horizontal_pull_unilateral': 'Horizontális húzás – unilaterális (SM + törzs)',
-  'vertical_push_bilateral': 'Vertikális nyomás – bilaterális',
-  'vertical_push_unilateral': 'Vertikális nyomás – unilaterális (SM + törzs)',
-  'vertical_pull_bilateral': 'Vertikális húzás – bilaterális',
-  'stability_anti_extension': 'Stabilitás – anti-extenzió',
-  'stability_anti_rotation': 'Stabilitás – anti-rotáció',
-  'stability_anti_flexion': 'Stabilitás – anti-flexió',
-  'core_other': 'Core – egyéb',
-  'local_exercises': 'Lokális gyakorlatok (L)',
-  'upper_body_mobility': 'Felsőtest mobilizálás',
-  'aslr_correction_first': 'ASLR korrekció – első pár',
-  'aslr_correction_second': 'ASLR korrekció – második hármas',
-  'sm_correction_first': 'SM korrekció – első pár',
-  'sm_correction_second': 'SM korrekció – második hármas',
-  'stability_correction': 'Stabilitás korrekció',
-  'mobilization': 'Mobilizálás'
-};
+const CATEGORIES: ExerciseCategory[] = getExerciseCategories().map((category) => category.id);
+const MOVEMENT_PATTERNS = getExerciseCategoryMovementPatternMap();
 
 const ExerciseLibrary = () => {
   const { user } = useAuth();
@@ -166,6 +42,8 @@ const ExerciseLibrary = () => {
     searchQuery: '',
     selectedCategory: null as string | null,
     selectedMovementPattern: null as string | null,
+    selectedPatternFamily: null as string | null,
+    selectedLaterality: null as string | null,
     selectedFMSFocus: null as string | null,
     selectedDifficulty: null as number | null,
     showInactive: false
@@ -224,6 +102,8 @@ const ExerciseLibrary = () => {
     searchQuery: string;
     selectedCategory: string | null;
     selectedMovementPattern: string | null;
+    selectedPatternFamily: string | null;
+    selectedLaterality: string | null;
     selectedFMSFocus: string | null;
     selectedDifficulty: number | null;
     showInactive: boolean;
@@ -232,40 +112,8 @@ const ExerciseLibrary = () => {
   };
 
   // Apply filters
-  const filteredExercises = exercises.filter(exercise => {
-    // Filter by search query
-    const matchesSearch = filters.searchQuery 
-      ? exercise.name.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-        (exercise.description?.toLowerCase().includes(filters.searchQuery.toLowerCase()) ?? false)
-      : true;
-    
-    // Filter by category
-    const matchesCategory = filters.selectedCategory 
-      ? filters.selectedCategory === 'fms'
-        ? exercise.category === 'fms' || getExerciseFMSFocuses(exercise).length > 0
-        : exercise.category === filters.selectedCategory
-      : true;
-    
-    // Filter by movement pattern
-    const matchesMovementPattern = filters.selectedMovementPattern
-      ? exercise.movement_pattern === filters.selectedMovementPattern
-      : true;
-
-    const matchesFMSFocus = filters.selectedFMSFocus
-      ? getExerciseFMSFocuses(exercise).includes(filters.selectedFMSFocus as ReturnType<typeof getFMSFocusOptions>[number]['id'])
-      : true;
-    
-    // Filter by difficulty
-    const matchesDifficulty = filters.selectedDifficulty
-      ? exercise.difficulty === filters.selectedDifficulty
-      : true;
-    
-    // Filter by active status
-    const matchesActiveState = !filters.showInactive
-      ? exercise.is_active
-      : true;
-    
-    return matchesSearch && matchesCategory && matchesMovementPattern && matchesFMSFocus && matchesDifficulty && matchesActiveState;
+  const filteredExercises = filterExercisesList(exercises, filters, {
+    isFmsCandidate: (exercise) => exercise.category === 'fms' || getExerciseFMSFocuses(exercise).length > 0,
   });
 
   if (isLoading) {
@@ -282,18 +130,20 @@ const ExerciseLibrary = () => {
   // Convert the categories and movement patterns to the format expected by the components
   const formattedCategories = getExerciseCategories().map(category => ({
     value: category.id,
-    label: CATEGORY_LABELS[category.id] || getExerciseCategoryLabel(category.id),
+    label: getExerciseCategoryLabel(category.id),
   }));
   const formattedMovementPatterns = Object.entries(MOVEMENT_PATTERNS).reduce(
     (acc, [category, patterns]) => {
       acc[category] = patterns.map(pattern => ({
         value: pattern,
-        label: MOVEMENT_PATTERN_LABELS[pattern] || getMovementPatternLabel(pattern) || pattern,
+        label: getMovementPatternLabel(pattern) || pattern,
       }));
       return acc;
     },
     {} as Record<string, Array<{ value: string; label: string }>>
   );
+  const patternFamilyOptions = getExerciseTaxonomyDimensionOptions(exercises, 'pattern_family');
+  const lateralityOptions = getExerciseTaxonomyDimensionOptions(exercises, 'laterality');
 
   const isAdmin = profile?.role === 'admin';
 
@@ -349,6 +199,7 @@ const ExerciseLibrary = () => {
               instructions: editingExercise.instructions || undefined,
               category: editingExercise.category,
               movement_pattern: editingExercise.movement_pattern,
+              taxonomy_tag_slugs: getExerciseManualTaxonomySlugs(editingExercise),
               difficulty: editingExercise.difficulty,
               image_url: editingExercise.image_url || undefined,
               video_url: editingExercise.video_url || undefined,
@@ -362,6 +213,8 @@ const ExerciseLibrary = () => {
           <ExerciseFilter
             categories={formattedCategories}
             movementPatterns={formattedMovementPatterns}
+            patternFamilies={patternFamilyOptions}
+            lateralities={lateralityOptions}
             fmsFocuses={FMS_FOCUS_OPTIONS.map(focus => ({ value: focus.id, label: focus.label }))}
             onFilterChange={handleFilterChange}
             showInactiveToggle={isAdmin}

@@ -25,7 +25,7 @@ const Sidebar = ({ open, onClose, isMobile }: SidebarProps) => {
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-20 w-64 transform bg-white shadow-lg transition-transform duration-300 ease-in-out dark:bg-gray-800 md:static md:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-20 flex h-full w-64 transform flex-col bg-white shadow-lg transition-transform duration-300 ease-in-out dark:bg-gray-800 md:static md:translate-x-0 ${
         open ? 'translate-x-0' : isMobile ? '-translate-x-full' : 'translate-x-0'
       }`}
     >
@@ -52,7 +52,7 @@ const Sidebar = ({ open, onClose, isMobile }: SidebarProps) => {
         </button>
       </div>
 
-      <nav className="mt-5 px-2">
+      <nav className="mt-5 flex-1 overflow-y-auto px-2 pb-6">
         <NavLink
           to="/dashboard"
           className={({ isActive }) =>
@@ -63,6 +63,12 @@ const Sidebar = ({ open, onClose, isMobile }: SidebarProps) => {
           <Home size={20} />
           <span>Irányítópult</span>
         </NavLink>
+
+        <div className="px-3 pb-2 pt-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
+            Edzések
+          </p>
+        </div>
 
         <NavLink
           to="/log"
@@ -98,17 +104,58 @@ const Sidebar = ({ open, onClose, isMobile }: SidebarProps) => {
         </NavLink>
 
         {permissions.canAccessWorkoutPlanner && (
-          <NavLink
-            to="/planner"
-            className={({ isActive }) =>
-              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
-            }
-            onClick={onClose}
-          >
-            <CalendarDays size={20} />
-            <span>Edzéstervező</span>
-          </NavLink>
+          <>
+            <NavLink
+              to="/workout-planner"
+              className={({ isActive }) =>
+                `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+              }
+              onClick={onClose}
+            >
+              <CalendarDays size={20} />
+              <span>Edzéstervező</span>
+            </NavLink>
+
+            <NavLink
+              to="/workout-planner/template-generator"
+              className={({ isActive }) =>
+                `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+              }
+              onClick={onClose}
+            >
+              <CalendarDays size={20} />
+              <span>Sablongenerátor</span>
+            </NavLink>
+
+            <NavLink
+              to="/workout-planner/periodized-generator"
+              className={({ isActive }) =>
+                `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+              }
+              onClick={onClose}
+            >
+              <CalendarDays size={20} />
+              <span>Ciklusgenerátor</span>
+            </NavLink>
+
+            <NavLink
+              to="/workout-planner/pwron-generator"
+              className={({ isActive }) =>
+                `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+              }
+              onClick={onClose}
+            >
+              <CalendarDays size={20} />
+              <span>Pwron generátor</span>
+            </NavLink>
+          </>
         )}
+
+        <div className="px-3 pb-2 pt-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 dark:text-gray-500">
+            További nézetek
+          </p>
+        </div>
 
         {permissions.canAccessExerciseLibrary && (
           <NavLink

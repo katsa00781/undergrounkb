@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Calendar, BarChart2, ClipboardList, User, Users, Dumbbell } from 'lucide-react';
+import { Home, Calendar, BarChart2, ClipboardList, User, Users, CalendarDays } from 'lucide-react';
 import { useRolePermission } from '../../hooks/useRolePermission';
 
 const MobileNav = () => {
@@ -26,7 +26,7 @@ const MobileNav = () => {
           </NavLink>
           
           <NavLink
-            to="/exercises"
+            to="/workout-planner"
             className={({ isActive }) =>
               `mobile-tab ${
                 isActive
@@ -35,8 +35,8 @@ const MobileNav = () => {
               }`
             }
           >
-            <Dumbbell size={20} />
-            <span>Gyakorlatok</span>
+            <CalendarDays size={20} />
+            <span>Edzések</span>
           </NavLink>
           
           <NavLink
@@ -103,7 +103,7 @@ const MobileNav = () => {
         </NavLink>
 
         <NavLink
-          to="/my-workouts"
+          to="/log"
           className={({ isActive }) =>
             `mobile-tab ${
               isActive
@@ -113,7 +113,7 @@ const MobileNav = () => {
           }
         >
           <ClipboardList size={20} />
-          <span>Edzések</span>
+          <span>Napló</span>
         </NavLink>
 
         <NavLink

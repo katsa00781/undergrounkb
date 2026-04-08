@@ -6,6 +6,39 @@ export type ExerciseInsert = Database['public']['Tables']['exercises']['Insert']
 export type ExerciseUpdate = Database['public']['Tables']['exercises']['Update'];
 export type ExerciseCategory = Database['public']['Enums']['exercise_category'];
 export type MovementPattern = Database['public']['Enums']['movement_pattern'];
+export type ExerciseTaxonomyTag = Database['public']['Tables']['exercise_taxonomy_tags']['Row'];
+export type ExerciseTaxonomyDimension = Database['public']['Enums']['exercise_taxonomy_dimension'];
+export type ExerciseTaxonomyAssignmentSource = Database['public']['Enums']['exercise_taxonomy_assignment_source'];
+
+export type ExerciseWithTaxonomy = Exercise & {
+  exercise_taxonomy_assignments?: Array<{
+    source: ExerciseTaxonomyAssignmentSource;
+    is_primary: boolean;
+    exercise_taxonomy_tags: ExerciseTaxonomyTag | null;
+  }>;
+  taxonomy_tags: ExerciseTaxonomyTag[];
+  manual_taxonomy_tags: ExerciseTaxonomyTag[];
+  derived_taxonomy_tags: ExerciseTaxonomyTag[];
+};
+
+export type ExerciseWriteInput = ExerciseInsert & {
+  taxonomyTagSlugs?: string[];
+};
+
+export type ExerciseWriteUpdate = ExerciseUpdate & {
+  taxonomyTagSlugs?: string[];
+};
+
+export type ExerciseListFilters = {
+  searchQuery: string;
+  selectedCategory: string | null;
+  selectedMovementPattern: string | null;
+  selectedPatternFamily: string | null;
+  selectedLaterality: string | null;
+  selectedFMSFocus: string | null;
+  selectedDifficulty: number | null;
+  showInactive: boolean;
+};
 export type FMSFocusId =
   | 'deep_squat'
   | 'hurdle_step'
@@ -25,6 +58,96 @@ const EXERCISE_CATEGORY_OPTIONS: { id: ExerciseCategory; label: string }[] = [
   { id: 'fms', label: 'FMS' },
   { id: 'smr', label: 'SMR' },
 ];
+
+const EXERCISE_CATEGORY_MOVEMENT_PATTERNS: Record<ExerciseCategory, MovementPattern[]> = {
+  kettlebell: [
+    'gait_stability',
+    'gait_crawling',
+    'hip_dominant_bilateral',
+    'hip_dominant_unilateral',
+    'knee_dominant_bilateral',
+    'knee_dominant_unilateral',
+    'horizontal_push_bilateral',
+    'horizontal_push_unilateral',
+    'horizontal_pull_bilateral',
+    'horizontal_pull_unilateral',
+    'vertical_push_bilateral',
+    'vertical_push_unilateral',
+    'vertical_pull_bilateral',
+    'stability_anti_extension',
+    'stability_anti_rotation',
+    'stability_anti_flexion',
+    'core_other',
+    'local_exercises',
+  ],
+  fms: [
+    'aslr_correction_first',
+    'aslr_correction_second',
+    'sm_correction_first',
+    'sm_correction_second',
+    'stability_correction',
+    'upper_body_mobility',
+    'mobilization',
+    'stability_anti_extension',
+    'stability_anti_rotation',
+    'stability_anti_flexion',
+    'knee_dominant_bilateral',
+    'knee_dominant_unilateral',
+    'hip_dominant_bilateral',
+    'hip_dominant_unilateral',
+    'horizontal_push_bilateral',
+    'core_other',
+  ],
+  smr: [
+    'mobilization',
+  ],
+  mobility_flexibility: [
+    'upper_body_mobility',
+    'mobilization',
+  ],
+  strength_training: [
+    'hip_dominant_bilateral',
+    'hip_dominant_unilateral',
+    'knee_dominant_bilateral',
+    'knee_dominant_unilateral',
+    'horizontal_push_bilateral',
+    'horizontal_push_unilateral',
+    'horizontal_pull_bilateral',
+    'horizontal_pull_unilateral',
+    'vertical_push_bilateral',
+    'vertical_push_unilateral',
+    'vertical_pull_bilateral',
+    'stability_anti_extension',
+    'stability_anti_rotation',
+    'stability_anti_flexion',
+    'core_other',
+    'gait_stability',
+    'gait_crawling',
+  ],
+  cardio: [
+    'gait_stability',
+    'gait_crawling',
+  ],
+  hiit: [
+    'gait_stability',
+    'gait_crawling',
+    'hip_dominant_bilateral',
+    'knee_dominant_bilateral',
+    'stability_anti_extension',
+    'stability_anti_rotation',
+    'stability_anti_flexion',
+    'core_other',
+  ],
+  recovery: [
+    'mobilization',
+    'upper_body_mobility',
+    'stability_anti_extension',
+    'stability_anti_rotation',
+    'stability_anti_flexion',
+    'core_other',
+    'gait_stability',
+  ],
+};
 
 const MOVEMENT_PATTERN_OPTIONS: { id: MovementPattern; label: string; category?: string }[] = [
   { id: 'gait_stability', label: 'Gait – törzs stabilitás', category: 'Gait' },
@@ -119,8 +242,364 @@ const FMS_FOCUS_EXERCISE_NAMES: Record<FMSFocusId, string[]> = {
   ],
 };
 
+const LEGACY_CATEGORY_TO_TAXONOMY_SLUG: Record<ExerciseCategory, string> = {
+  strength_training: 'strength',
+  cardio: 'cardio',
+  kettlebell: 'kettlebell',
+  mobility_flexibility: 'mobility',
+  hiit: 'hiit',
+  recovery: 'recovery',
+  fms: 'fms',
+  smr: 'smr',
+};
+
+const EXACT_PATTERN_TO_TAXONOMY_SLUG: Record<MovementPattern, string> = {
+  gait_stability: 'gait_stability',
+  gait_crawling: 'gait_crawling',
+  hip_dominant_bilateral: 'hip_dominant_bilateral',
+  hip_dominant_unilateral: 'hip_dominant_unilateral',
+  knee_dominant_bilateral: 'knee_dominant_bilateral',
+  knee_dominant_unilateral: 'knee_dominant_unilateral',
+  horizontal_push_bilateral: 'horizontal_push_bilateral',
+  horizontal_push_unilateral: 'horizontal_push_unilateral',
+  horizontal_pull_bilateral: 'horizontal_pull_bilateral',
+  horizontal_pull_unilateral: 'horizontal_pull_unilateral',
+  vertical_push_bilateral: 'vertical_push_bilateral',
+  vertical_push_unilateral: 'vertical_push_unilateral',
+  vertical_pull_bilateral: 'vertical_pull_bilateral',
+  stability_anti_extension: 'stability_anti_extension',
+  stability_anti_rotation: 'stability_anti_rotation',
+  stability_anti_flexion: 'stability_anti_flexion',
+  core_other: 'core_other',
+  local_exercises: 'local_exercises',
+  upper_body_mobility: 'upper_body_mobility_pattern',
+  aslr_correction_first: 'aslr_correction_first',
+  aslr_correction_second: 'aslr_correction_second',
+  sm_correction_first: 'sm_correction_first',
+  sm_correction_second: 'sm_correction_second',
+  stability_correction: 'stability_correction_pattern',
+  mobilization: 'mobilization_pattern',
+};
+
+const PATTERN_FAMILY_AND_LATERALITY_TAGS: Record<MovementPattern, string[]> = {
+  gait_stability: ['gait', 'locomotion'],
+  gait_crawling: ['gait', 'locomotion'],
+  hip_dominant_bilateral: ['hip_dominant', 'bilateral'],
+  hip_dominant_unilateral: ['hip_dominant', 'unilateral'],
+  knee_dominant_bilateral: ['knee_dominant', 'bilateral'],
+  knee_dominant_unilateral: ['knee_dominant', 'unilateral'],
+  horizontal_push_bilateral: ['horizontal_push', 'bilateral'],
+  horizontal_push_unilateral: ['horizontal_push', 'unilateral'],
+  horizontal_pull_bilateral: ['horizontal_pull', 'bilateral'],
+  horizontal_pull_unilateral: ['horizontal_pull', 'unilateral'],
+  vertical_push_bilateral: ['vertical_push', 'bilateral'],
+  vertical_push_unilateral: ['vertical_push', 'unilateral'],
+  vertical_pull_bilateral: ['vertical_pull', 'bilateral'],
+  stability_anti_extension: ['anti_extension', 'core'],
+  stability_anti_rotation: ['anti_rotation', 'core'],
+  stability_anti_flexion: ['anti_flexion', 'core'],
+  core_other: ['core'],
+  local_exercises: ['local_exercise'],
+  upper_body_mobility: ['upper_body_mobility'],
+  aslr_correction_first: ['fms'],
+  aslr_correction_second: ['fms'],
+  sm_correction_first: ['fms'],
+  sm_correction_second: ['fms'],
+  stability_correction: ['stability_correction'],
+  mobilization: ['mobilization'],
+};
+
+const FILTERABLE_PATTERN_FAMILY_SLUGS = new Set([
+  'gait',
+  'hip_dominant',
+  'knee_dominant',
+  'horizontal_push',
+  'horizontal_pull',
+  'vertical_push',
+  'vertical_pull',
+  'anti_extension',
+  'anti_rotation',
+  'anti_flexion',
+  'core',
+  'local_exercise',
+  'upper_body_mobility',
+  'mobilization',
+  'stability_correction',
+]);
+
+const FILTERABLE_LATERALITY_SLUGS = new Set([
+  'bilateral',
+  'unilateral',
+  'locomotion',
+]);
+
 function normalizeExerciseText(value: string | null | undefined): string {
   return (value ?? '').trim().toLowerCase();
+}
+
+function mapExerciseWithTaxonomy(exercise: Exercise & {
+  exercise_taxonomy_assignments?: Array<{
+    source: ExerciseTaxonomyAssignmentSource;
+    is_primary: boolean;
+    exercise_taxonomy_tags: ExerciseTaxonomyTag | null;
+  }>;
+}): ExerciseWithTaxonomy {
+  const assignments = exercise.exercise_taxonomy_assignments ?? [];
+  const taxonomyTags = assignments
+    .map((assignment) => assignment.exercise_taxonomy_tags)
+    .filter((tag): tag is ExerciseTaxonomyTag => Boolean(tag));
+
+  return {
+    ...exercise,
+    exercise_taxonomy_assignments: assignments,
+    taxonomy_tags: taxonomyTags,
+    manual_taxonomy_tags: assignments
+      .filter((assignment) => assignment.source === 'manual')
+      .map((assignment) => assignment.exercise_taxonomy_tags)
+      .filter((tag): tag is ExerciseTaxonomyTag => Boolean(tag)),
+    derived_taxonomy_tags: assignments
+      .filter((assignment) => assignment.source === 'derived')
+      .map((assignment) => assignment.exercise_taxonomy_tags)
+      .filter((tag): tag is ExerciseTaxonomyTag => Boolean(tag)),
+  };
+}
+
+function getNormalizedTaxonomySlugs(slugs?: string[]): string[] {
+  return Array.from(new Set((slugs ?? []).map((slug) => slug.trim()).filter(Boolean)));
+}
+
+async function replaceManualTaxonomyAssignments(exerciseId: string, taxonomyTagSlugs?: string[]) {
+  const normalizedSlugs = getNormalizedTaxonomySlugs(taxonomyTagSlugs);
+
+  const { error: deleteError } = await supabase
+    .from('exercise_taxonomy_assignments')
+    .delete()
+    .eq('exercise_id', exerciseId)
+    .eq('source', 'manual');
+
+  if (deleteError) {
+    throw new Error(`Error resetting exercise taxonomy tags: ${deleteError.message}`);
+  }
+
+  if (normalizedSlugs.length === 0) {
+    return;
+  }
+
+  const { data: matchingTags, error: tagsError } = await supabase
+    .from('exercise_taxonomy_tags')
+    .select('id, slug')
+    .in('slug', normalizedSlugs)
+    .eq('is_active', true);
+
+  if (tagsError) {
+    throw new Error(`Error fetching taxonomy tags: ${tagsError.message}`);
+  }
+
+  if (!matchingTags || matchingTags.length === 0) {
+    return;
+  }
+
+  const { error: insertError } = await supabase
+    .from('exercise_taxonomy_assignments')
+    .insert(
+      matchingTags.map((tag) => ({
+        exercise_id: exerciseId,
+        exercise_taxonomy_tag_id: tag.id,
+        source: 'manual' as const,
+        is_primary: false,
+      }))
+    );
+
+  if (insertError) {
+    throw new Error(`Error saving taxonomy tags: ${insertError.message}`);
+  }
+}
+
+export function getDerivedTaxonomySlugsForExerciseShape(exercise: Pick<Exercise, 'category' | 'movement_pattern'>): string[] {
+  return Array.from(new Set([
+    LEGACY_CATEGORY_TO_TAXONOMY_SLUG[exercise.category],
+    EXACT_PATTERN_TO_TAXONOMY_SLUG[exercise.movement_pattern],
+    ...(PATTERN_FAMILY_AND_LATERALITY_TAGS[exercise.movement_pattern] ?? []),
+  ].filter(Boolean)));
+}
+
+export function getExerciseTaxonomyTags(exercise: Pick<ExerciseWithTaxonomy, 'taxonomy_tags'> | Exercise): ExerciseTaxonomyTag[] {
+  if ('taxonomy_tags' in exercise && Array.isArray(exercise.taxonomy_tags)) {
+    return exercise.taxonomy_tags;
+  }
+
+  return [];
+}
+
+export function getExerciseManualTaxonomySlugs(exercise: Pick<ExerciseWithTaxonomy, 'manual_taxonomy_tags'> | Exercise): string[] {
+  if ('manual_taxonomy_tags' in exercise && Array.isArray(exercise.manual_taxonomy_tags)) {
+    return exercise.manual_taxonomy_tags.map((tag) => tag.slug);
+  }
+
+  return [];
+}
+
+export function exerciseHasTaxonomyTag(exercise: ExerciseWithTaxonomy | Exercise, slug: string): boolean {
+  return getExerciseTaxonomyTags(exercise).some((tag) => tag.slug === slug);
+}
+
+export function exerciseMatchesCategoryFilter(exercise: ExerciseWithTaxonomy | Exercise, selectedCategory: string): boolean {
+  if (!selectedCategory) {
+    return true;
+  }
+
+  if (exercise.category === selectedCategory) {
+    return true;
+  }
+
+  const mappedSlug = LEGACY_CATEGORY_TO_TAXONOMY_SLUG[selectedCategory as ExerciseCategory];
+  if (!mappedSlug) {
+    return false;
+  }
+
+  return getExerciseTaxonomyTags(exercise).some((tag) => tag.slug === mappedSlug);
+}
+
+export function exerciseMatchesMovementPatternFilter(exercise: ExerciseWithTaxonomy | Exercise, selectedMovementPattern: string): boolean {
+  if (!selectedMovementPattern) {
+    return true;
+  }
+
+  if (exercise.movement_pattern === selectedMovementPattern) {
+    return true;
+  }
+
+  const patternSlug = EXACT_PATTERN_TO_TAXONOMY_SLUG[selectedMovementPattern as MovementPattern];
+  if (!patternSlug) {
+    return false;
+  }
+
+  return getExerciseTaxonomyTags(exercise).some((tag) => tag.slug === patternSlug);
+}
+
+export function getExerciseTaxonomyDimensionOptions(
+  exercises: Array<ExerciseWithTaxonomy | Exercise>,
+  dimension: ExerciseTaxonomyDimension,
+): Array<{ value: string; label: string }> {
+  const allowedSlugs = dimension === 'pattern_family'
+    ? FILTERABLE_PATTERN_FAMILY_SLUGS
+    : dimension === 'laterality'
+      ? FILTERABLE_LATERALITY_SLUGS
+      : null;
+
+  const uniqueTags = new Map<string, string>();
+
+  exercises.forEach((exercise) => {
+    getExerciseTaxonomyTags(exercise)
+      .filter((tag) => tag.dimension === dimension)
+      .filter((tag) => !allowedSlugs || allowedSlugs.has(tag.slug))
+      .forEach((tag) => {
+        if (!uniqueTags.has(tag.slug)) {
+          uniqueTags.set(tag.slug, tag.label);
+        }
+      });
+  });
+
+  return Array.from(uniqueTags.entries())
+    .map(([value, label]) => ({ value, label }))
+    .sort((left, right) => left.label.localeCompare(right.label, 'hu'));
+}
+
+export function filterExercisesList(
+  exercises: Array<ExerciseWithTaxonomy | Exercise>,
+  filters: ExerciseListFilters,
+  options?: {
+    isFmsCandidate?: (exercise: ExerciseWithTaxonomy | Exercise) => boolean;
+  },
+) {
+  const normalizedSearch = filters.searchQuery.trim().toLowerCase();
+
+  return exercises.filter((exercise) => {
+    const matchesSearch = !normalizedSearch
+      || exercise.name.toLowerCase().includes(normalizedSearch)
+      || exercise.description?.toLowerCase().includes(normalizedSearch)
+      || exercise.instructions?.toLowerCase().includes(normalizedSearch);
+
+    const matchesCategory = !filters.selectedCategory || (filters.selectedCategory === 'fms'
+      ? (options?.isFmsCandidate ? options.isFmsCandidate(exercise) : exercise.category === 'fms')
+      : exerciseMatchesCategoryFilter(exercise, filters.selectedCategory));
+
+    const matchesMovementPattern = !filters.selectedMovementPattern
+      || exerciseMatchesMovementPatternFilter(exercise, filters.selectedMovementPattern);
+
+    const matchesPatternFamily = !filters.selectedPatternFamily
+      || exerciseHasTaxonomyTag(exercise, filters.selectedPatternFamily);
+
+    const matchesLaterality = !filters.selectedLaterality
+      || exerciseHasTaxonomyTag(exercise, filters.selectedLaterality);
+
+    const matchesFmsFocus = !filters.selectedFMSFocus
+      || getExerciseFMSFocuses(exercise).includes(filters.selectedFMSFocus as FMSFocusId);
+
+    const matchesDifficulty = !filters.selectedDifficulty
+      || exercise.difficulty === filters.selectedDifficulty;
+
+    const matchesActiveState = filters.showInactive || exercise.is_active;
+
+    return matchesSearch
+      && matchesCategory
+      && matchesMovementPattern
+      && matchesPatternFamily
+      && matchesLaterality
+      && matchesFmsFocus
+      && matchesDifficulty
+      && matchesActiveState;
+  });
+}
+
+export function getAvailableMovementPatternOptions(
+  exercises: Array<ExerciseWithTaxonomy | Exercise>,
+  filters: Pick<ExerciseListFilters, 'selectedCategory' | 'selectedPatternFamily' | 'selectedLaterality' | 'selectedFMSFocus' | 'searchQuery'>,
+  options?: {
+    isFmsCandidate?: (exercise: ExerciseWithTaxonomy | Exercise) => boolean;
+  },
+) {
+  const prefiltered = filterExercisesList(
+    exercises,
+    {
+      ...filters,
+      selectedMovementPattern: null,
+      selectedDifficulty: null,
+      showInactive: true,
+    },
+    options,
+  );
+
+  const availablePatternIds = new Set(prefiltered.map((exercise) => exercise.movement_pattern));
+  return MOVEMENT_PATTERN_OPTIONS.filter((pattern) => availablePatternIds.has(pattern.id));
+}
+
+export async function listExerciseTaxonomyTags(options?: {
+  dimensions?: ExerciseTaxonomyDimension[];
+  includeInactive?: boolean;
+}) {
+  let query = supabase
+    .from('exercise_taxonomy_tags')
+    .select('*')
+    .order('dimension')
+    .order('sort_order')
+    .order('label');
+
+  if (!options?.includeInactive) {
+    query = query.eq('is_active', true);
+  }
+
+  if (options?.dimensions?.length) {
+    query = query.in('dimension', options.dimensions);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw new Error(`Error fetching taxonomy tags: ${error.message}`);
+  }
+
+  return data;
 }
 
 /**
@@ -137,7 +616,7 @@ export async function getExercises(options?: {
 }) {
   let query = supabase
     .from('exercises')
-    .select('*');
+    .select('*, exercise_taxonomy_assignments(source, is_primary, exercise_taxonomy_tags(*))');
 
   // Apply filters
   if (options?.category) {
@@ -180,7 +659,7 @@ export async function getExercises(options?: {
     throw new Error(`Error fetching exercises: ${error.message}`);
   }
 
-  return data;
+  return (data ?? []).map((exercise) => mapExerciseWithTaxonomy(exercise as ExerciseWithTaxonomy));
 }
 
 /**
@@ -189,7 +668,7 @@ export async function getExercises(options?: {
 export async function getExerciseById(id: string) {
   const { data, error } = await supabase
     .from('exercises')
-    .select('*')
+    .select('*, exercise_taxonomy_assignments(source, is_primary, exercise_taxonomy_tags(*))')
     .eq('id', id)
     .single();
   
@@ -197,16 +676,17 @@ export async function getExerciseById(id: string) {
     throw new Error(`Error fetching exercise: ${error.message}`);
   }
 
-  return data;
+  return mapExerciseWithTaxonomy(data as ExerciseWithTaxonomy);
 }
 
 /**
  * Create a new exercise
  */
-export async function createExercise(exercise: ExerciseInsert) {
+export async function createExercise(exercise: ExerciseWriteInput) {
+  const { taxonomyTagSlugs, ...exerciseRow } = exercise;
   const { data, error } = await supabase
     .from('exercises')
-    .insert(exercise)
+    .insert(exerciseRow)
     .select()
     .single();
 
@@ -214,16 +694,18 @@ export async function createExercise(exercise: ExerciseInsert) {
     throw new Error(`Error creating exercise: ${error.message}`);
   }
 
-  return data;
+  await replaceManualTaxonomyAssignments(data.id, taxonomyTagSlugs);
+  return getExerciseById(data.id);
 }
 
 /**
  * Update an existing exercise
  */
-export async function updateExercise(id: string, updates: ExerciseUpdate) {
+export async function updateExercise(id: string, updates: ExerciseWriteUpdate) {
+  const { taxonomyTagSlugs, ...exerciseUpdates } = updates;
   const { data, error } = await supabase
     .from('exercises')
-    .update(updates)
+    .update(exerciseUpdates)
     .eq('id', id)
     .select()
     .single();
@@ -232,7 +714,8 @@ export async function updateExercise(id: string, updates: ExerciseUpdate) {
     throw new Error(`Error updating exercise: ${error.message}`);
   }
 
-  return data;
+  await replaceManualTaxonomyAssignments(id, taxonomyTagSlugs);
+  return getExerciseById(data.id);
 }
 
 /**
@@ -256,6 +739,14 @@ export async function deleteExercise(id: string) {
  */
 export function getExerciseCategories(): { id: ExerciseCategory, label: string }[] {
   return EXERCISE_CATEGORY_OPTIONS;
+}
+
+export function getExerciseCategoryMovementPatterns(category: ExerciseCategory): MovementPattern[] {
+  return EXERCISE_CATEGORY_MOVEMENT_PATTERNS[category] || [];
+}
+
+export function getExerciseCategoryMovementPatternMap(): Record<ExerciseCategory, MovementPattern[]> {
+  return EXERCISE_CATEGORY_MOVEMENT_PATTERNS;
 }
 
 export function getExerciseCategoryLabel(category: string | null | undefined): string {

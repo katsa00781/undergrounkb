@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import WorkoutCalendar from '../components/WorkoutCalendar';
 import { Workout } from '../lib/workouts';
-import { format } from 'date-fns';
-import { hu } from 'date-fns/locale';
 import { Calendar, Clock, Copy, Dumbbell, Edit2 } from 'lucide-react';
 import WorkoutSectionHeader from '../components/workouts/WorkoutSectionHeader';
 import { useNavigate } from 'react-router-dom';
+import { formatWorkoutDate, formatWorkoutDuration } from '../lib/workoutDisplay';
 
 const WorkoutCalendarPage: React.FC = () => {
   const navigate = useNavigate();
@@ -45,7 +44,7 @@ const WorkoutCalendarPage: React.FC = () => {
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
-                  {format(selectedDate, 'yyyy. MMMM d.', { locale: hu })}
+                  {formatWorkoutDate(selectedDate)}
                 </h3>
 
                 {selectedWorkouts.length > 0 ? (
@@ -84,7 +83,7 @@ const WorkoutCalendarPage: React.FC = () => {
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                             <Clock className="h-4 w-4" />
-                            <span>{Math.round(workout.duration / 60)} perc</span>
+                            <span>{formatWorkoutDuration(workout.duration)}</span>
                           </div>
 
                           {workout.notes && (

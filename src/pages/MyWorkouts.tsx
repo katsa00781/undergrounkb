@@ -17,6 +17,7 @@ import PersonalWorkoutTracker from '../components/PersonalWorkoutTracker';
 import WorkoutSectionHeader from '../components/workouts/WorkoutSectionHeader';
 import { useNavigate } from 'react-router-dom';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
+import { formatWorkoutDate, formatWorkoutDuration } from '../lib/workoutDisplay';
 
 interface WorkoutProgressData {
   date: string;
@@ -347,11 +348,11 @@ const MyWorkouts: React.FC = () => {
                     <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-3">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
-                        <span>{new Date(workout.date).toLocaleDateString('hu-HU')}</span>
+                        <span>{formatWorkoutDate(workout.date)}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
-                        <span>{workout.duration} perc</span>
+                        <span>{formatWorkoutDuration(workout.duration)}</span>
                       </div>
                     </div>
 

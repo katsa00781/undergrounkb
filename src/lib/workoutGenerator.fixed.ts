@@ -18,6 +18,9 @@ const CORE_MOVEMENT_PATTERNS = new Set([
   'stability_anti_rotation',
   'stability_anti_flexion',
   'core_other',
+  'gait_stability',
+  'gait_crawling',
+  'stability_correction',
 ]);
 
 function pushUnique(target: Exercise[], exercise: Exercise) {
@@ -29,6 +32,25 @@ function pushUnique(target: Exercise[], exercise: Exercise) {
 // A generált edzéstípusok
 export type WorkoutDay = 1 | 2 | 3 | 4;
 export type ProgramType = '2napos' | '3napos' | '4napos';
+export type CycleWeek = 1 | 2 | 3 | 4 | 5 | 6;
+export type TrainingFocus =
+  | 'ero'
+  | 'robbanekonysag'
+  | 'allokepesseg'
+  | 'hipertrofia'
+  | 'max_ero_hipertrofia'
+  | 'max_ero'
+  | 'hipertrofia_zsircsokkentes';
+
+export const TRAINING_FOCUS_OPTIONS: Array<{ value: TrainingFocus; label: string }> = [
+  { value: 'ero', label: 'Erő' },
+  { value: 'robbanekonysag', label: 'Robbanékonyság' },
+  { value: 'allokepesseg', label: 'Állóképesség / metcon' },
+  { value: 'hipertrofia', label: 'Hipertrófia' },
+  { value: 'max_ero_hipertrofia', label: 'Maximális erő és hipertrófia' },
+  { value: 'max_ero', label: 'Maximális erő' },
+  { value: 'hipertrofia_zsircsokkentes', label: 'Hipertrófia és zsírcsökkentés' },
+];
 
 export interface WorkoutExercise {
   exerciseId: string;
@@ -54,6 +76,38 @@ export interface GeneratedWorkoutPlan {
   sections: WorkoutSectionGenerated[];
   notes?: string;
   user_id: string;
+}
+
+type PrescriptionConfig = {
+  sets: number;
+  reps: string;
+  restPeriod: number;
+  intensity?: string;
+  note?: string;
+};
+
+type FocusPreset = {
+  label: string;
+  summary: string;
+  main: PrescriptionConfig;
+  accessory: PrescriptionConfig;
+  core: PrescriptionConfig;
+  carry: PrescriptionConfig;
+  correction: PrescriptionConfig;
+};
+
+const TRAINING_FOCUS_LABELS: Record<TrainingFocus, string> = {
+  ero: 'Erő',
+  robbanekonysag: 'Robbanékonyság',
+  allokepesseg: 'Állóképesség / metcon',
+  hipertrofia: 'Hipertrófia',
+  max_ero_hipertrofia: 'Maximális erő és hipertrófia',
+  max_ero: 'Maximális erő',
+  hipertrofia_zsircsokkentes: 'Hipertrófia és zsírcsökkentés',
+};
+
+export function getTrainingFocusLabel(focus: TrainingFocus): string {
+  return TRAINING_FOCUS_LABELS[focus];
 }
 
 // Az FMS korrekciók listája
@@ -134,8 +188,15 @@ function categorizeExercises(exercises: Exercise[]): Record<string, Exercise[]> 
     'pilometrikus': [],
     'core': [],
     'nyújtás': [],
+    'felsőtest_mobilizálás': [],
+    'csípőmobilizálás': [],
+    'stabilizálás': [],
+    'antirotációs': [],
+    'cipelés': [],
     'térddomináns_bi': [],
     'térddomináns_uni': [],
+    'csípődomináns_bi': [],
+    'csípődomináns_uni': [],
     'fms_korrekció': [],
     'horizontális_nyomás_bi': [],
     'horizontális_nyomás_uni': [],
@@ -166,9 +227,26 @@ function categorizeExercises(exercises: Exercise[]): Record<string, Exercise[]> 
       CORE_MOVEMENT_PATTERNS.has(movementPattern) ||
       exercise.category === 'fms' ||
       combinedText.includes('core') ||
-      combinedText.includes('plank')
+      combinedText.includes('plank') ||
+      combinedText.includes('stabil') ||
+      combinedText.includes('carry') ||
+      combinedText.includes('cipel')
     ) {
       pushUnique(categories['core'], exercise);
+    }
+
+    if (
+      movementPattern === 'stability_correction' ||
+      CORE_MOVEMENT_PATTERNS.has(movementPattern) ||
+      movementPattern === 'gait_stability' ||
+      movementPattern === 'gait_crawling' ||
+      combinedText.includes('stabil')
+    ) {
+      pushUnique(categories['stabilizálás'], exercise);
+    }
+
+    if (movementPattern === 'stability_anti_rotation') {
+      pushUnique(categories['antirotációs'], exercise);
     }
 
     if (
@@ -178,6 +256,27 @@ function categorizeExercises(exercises: Exercise[]): Record<string, Exercise[]> 
       combinedText.includes('stretch')
     ) {
       pushUnique(categories['nyújtás'], exercise);
+    }
+
+    if (
+      movementPattern === 'upper_body_mobility' ||
+      combinedText.includes('váll') ||
+      combinedText.includes('lapocka') ||
+      combinedText.includes('mellkas') ||
+      combinedText.includes('thoracic')
+    ) {
+      pushUnique(categories['felsőtest_mobilizálás'], exercise);
+    }
+
+    if (
+      movementPattern === 'mobilization' && (
+        combinedText.includes('csípő') ||
+        combinedText.includes('horpasz') ||
+        combinedText.includes('hip') ||
+        combinedText.includes('psoas')
+      )
+    ) {
+      pushUnique(categories['csípőmobilizálás'], exercise);
     }
 
     if (
@@ -196,6 +295,14 @@ function categorizeExercises(exercises: Exercise[]): Record<string, Exercise[]> 
 
     if (movementPattern === 'knee_dominant_unilateral') {
       pushUnique(categories['térddomináns_uni'], exercise);
+    }
+
+    if (movementPattern === 'hip_dominant_bilateral') {
+      pushUnique(categories['csípődomináns_bi'], exercise);
+    }
+
+    if (movementPattern === 'hip_dominant_unilateral') {
+      pushUnique(categories['csípődomináns_uni'], exercise);
     }
 
     if (movementPattern === 'hip_dominant_bilateral' || movementPattern === 'hip_dominant_unilateral') {
@@ -251,6 +358,17 @@ function categorizeExercises(exercises: Exercise[]): Record<string, Exercise[]> 
     }
 
     if (
+      combinedText.includes('carry') ||
+      combinedText.includes('farmer') ||
+      combinedText.includes('suitcase') ||
+      combinedText.includes('waiter') ||
+      combinedText.includes('overhead walk') ||
+      combinedText.includes('cipel')
+    ) {
+      pushUnique(categories['cipelés'], exercise);
+    }
+
+    if (
       exercise.category === 'fms' ||
       FMS_MOVEMENT_PATTERNS.has(movementPattern) ||
       combinedText.includes('fms') ||
@@ -295,6 +413,182 @@ function getRandomExercise(
   return categoryExercises[Math.floor(Math.random() * categoryExercises.length)];
 }
 
+const POWER_WEEK_PRESETS: Record<CycleWeek, PrescriptionConfig> = {
+  1: { sets: 6, reps: '5', restPeriod: 180, intensity: '30-50% 1RM', note: 'Összismétlés: 30-40 / gyakorlat • Szettminták: 6x6, 6x4, 6x5' },
+  2: { sets: 6, reps: '6', restPeriod: 180, intensity: '30-50% 1RM', note: 'Összismétlés: 30-40 / gyakorlat • Szettminták: 6x6, 6x4, 6x5' },
+  3: { sets: 4, reps: '4', restPeriod: 210, intensity: '50-80% 1RM', note: 'Összismétlés: 12-16 / gyakorlat • Szettminták: 4x3, 5x3, 4x4' },
+  4: { sets: 5, reps: '3', restPeriod: 210, intensity: '50-80% 1RM', note: 'Összismétlés: 12-16 / gyakorlat • Szettminták: 4x3, 5x3, 4x4' },
+  5: { sets: 4, reps: '3', restPeriod: 210, intensity: '30-50% 1RM', note: 'Összismétlés: 12-16 / gyakorlat • 1 fő gyakorlat' },
+  6: { sets: 6, reps: '5', restPeriod: 210, intensity: '30-50% 1RM', note: 'Összismétlés: 30-40 / gyakorlat • Szettminták: 6x6, 6x4, 6x5' },
+};
+
+const STRENGTH_WEEK_PRESETS: Record<CycleWeek, PrescriptionConfig> = {
+  1: { sets: 5, reps: '5', restPeriod: 105, intensity: '75-80% 1RM', note: 'Összismétlés: 25-30 / gyakorlat • 2-3 fő gyakorlat • 2 kiegészítő' },
+  2: { sets: 4, reps: '3', restPeriod: 135, intensity: '70-80% 1RM', note: 'Összismétlés: 12-15 / gyakorlat • 3 fő gyakorlat • 2 kiegészítő' },
+  3: { sets: 5, reps: '2', restPeriod: 150, intensity: '80-90% 1RM', note: 'Összismétlés: 9-10 / gyakorlat • Szettminták: 6x3, 5x2, 5x3, 6x2, 3x3, 4x3' },
+  4: { sets: 3, reps: '3', restPeriod: 150, intensity: '80-90% 1RM', note: 'Összismétlés: 9-10 / gyakorlat • Szettminták: 6x3, 5x2, 5x3, 6x2, 3x3, 4x3' },
+  5: { sets: 5, reps: '2', restPeriod: 150, intensity: '80-90% 1RM', note: 'Összismétlés: 9-10 / gyakorlat • Szettminták: 6x3, 5x2, 5x3, 6x2, 3x3, 4x3' },
+  6: { sets: 5, reps: '3', restPeriod: 135, intensity: '70-80% 1RM', note: 'Összismétlés: 12-15 / gyakorlat • 3 fő gyakorlat • 2 kiegészítő' },
+};
+
+function getFocusPreset(focus: TrainingFocus, week: CycleWeek): FocusPreset {
+  if (focus === 'robbanekonysag') {
+    const main = POWER_WEEK_PRESETS[week];
+    return {
+      label: getTrainingFocusLabel(focus),
+      summary: `${main.intensity}, pihenő ${main.restPeriod} mp, ${main.note}`,
+      main,
+      accessory: { sets: 3, reps: '6-8', restPeriod: 90, intensity: '30-50% 1RM', note: 'Technikai kivitelezés, robbanékony szándék' },
+      core: { sets: 3, reps: '8-10', restPeriod: 60, note: 'Törzsstabilitás és kontroll' },
+      carry: { sets: 3, reps: '20-30 méter', restPeriod: 60, note: 'Minőségi tartás és gait kontroll' },
+      correction: { sets: 2, reps: '8-10', restPeriod: 45, note: 'Sérülésmegelőzés és mozgásminőség' },
+    };
+  }
+
+  if (focus === 'allokepesseg') {
+    const duration = 5 + week;
+    const rest = week <= 2 ? 90 : 80;
+    return {
+      label: getTrainingFocusLabel(focus),
+      summary: `15 mp munka / gyakorlat, ${rest} mp pihenő, ${duration} perc munkaidő`,
+      main: { sets: 1, reps: `${duration} perc blokk • 15 mp munka`, restPeriod: rest, note: 'Metcon vagy körmunka jellegű főblokk' },
+      accessory: { sets: 3, reps: '15 mp', restPeriod: rest, note: 'Folyamatos tempó, alacsony holtidő' },
+      core: { sets: 3, reps: '15-30 mp', restPeriod: 30, note: 'Állóképességi törzsmunka' },
+      carry: { sets: 4, reps: '20-30 méter', restPeriod: 45, note: 'Kondicionáló cipelés' },
+      correction: { sets: 2, reps: '8-10', restPeriod: 30, note: 'Mozgásminőség fenntartása' },
+    };
+  }
+
+  if (focus === 'hipertrofia') {
+    return {
+      label: getTrainingFocusLabel(focus),
+      summary: '36-50 ismétlés, 70-80% 1RM, 1-2 perc pihenő, 6-9 gyakorlat',
+      main: { sets: 4, reps: '12', restPeriod: 90, intensity: '70-80% 1RM', note: 'Szettminták: 4x12, 5x10, 5x8' },
+      accessory: { sets: 5, reps: '10', restPeriod: 75, intensity: '70-80% 1RM', note: 'Volumen fókusz, 2-4 edzés / hét izomcsoportonként' },
+      core: { sets: 3, reps: '12-15', restPeriod: 45 },
+      carry: { sets: 3, reps: '20-30 méter', restPeriod: 45 },
+      correction: { sets: 2, reps: '10-12', restPeriod: 30 },
+    };
+  }
+
+  if (focus === 'max_ero_hipertrofia') {
+    return {
+      label: getTrainingFocusLabel(focus),
+      summary: '24-36 ismétlés, 80-90% 1RM, 2-3 perc pihenő, 4-6 gyakorlat',
+      main: { sets: 6, reps: '5', restPeriod: 150, intensity: '80-90% 1RM', note: 'Szettminták: 6x6, 5x5, 6x5, 7x4' },
+      accessory: { sets: 4, reps: '6-8', restPeriod: 120, intensity: '75-85% 1RM', note: '2-4 edzés / hét izomcsoportonként' },
+      core: { sets: 3, reps: '10-12', restPeriod: 60 },
+      carry: { sets: 3, reps: '20-30 méter', restPeriod: 60 },
+      correction: { sets: 2, reps: '8-10', restPeriod: 45 },
+    };
+  }
+
+  if (focus === 'max_ero') {
+    return {
+      label: getTrainingFocusLabel(focus),
+      summary: '9-15 ismétlés, 85-95% 1RM, 3-6 perc pihenő, 3-5 gyakorlat',
+      main: { sets: 5, reps: '3', restPeriod: 240, intensity: '85-95% 1RM', note: 'Szettminták: 4x3, 5x3, 6x2' },
+      accessory: { sets: 3, reps: '5-6', restPeriod: 150, intensity: '75-85% 1RM', note: '2-4 edzés / hét izomcsoportonként' },
+      core: { sets: 3, reps: '8-10', restPeriod: 60 },
+      carry: { sets: 3, reps: '15-20 méter', restPeriod: 60 },
+      correction: { sets: 2, reps: '8-10', restPeriod: 45 },
+    };
+  }
+
+  if (focus === 'hipertrofia_zsircsokkentes') {
+    return {
+      label: getTrainingFocusLabel(focus),
+      summary: '36-50 ismétlés, 70-80% 1RM, 30-60 mp pihenő, 6-9 gyakorlat',
+      main: { sets: 4, reps: '12', restPeriod: 45, intensity: '70-80% 1RM', note: 'Szettminták: 4x12, 5x10, 5x8' },
+      accessory: { sets: 5, reps: '10', restPeriod: 30, intensity: '70-80% 1RM', note: 'Sűrített volumen, magasabb anyagcsere-igény' },
+      core: { sets: 3, reps: '12-15', restPeriod: 30 },
+      carry: { sets: 4, reps: '20-30 méter', restPeriod: 30 },
+      correction: { sets: 2, reps: '10-12', restPeriod: 30 },
+    };
+  }
+
+  const main = STRENGTH_WEEK_PRESETS[week];
+  return {
+    label: getTrainingFocusLabel('ero'),
+    summary: `${main.intensity}, pihenő ${main.restPeriod} mp, ${main.note}`,
+    main,
+    accessory: { sets: 2, reps: '6-8', restPeriod: 90, intensity: '70-80% 1RM', note: 'Kiegészítő erőfejlesztés • 2 kiegészítő gyakorlat' },
+    core: { sets: 3, reps: '8-10', restPeriod: 60, note: 'Törzs és stabilitás' },
+    carry: { sets: 3, reps: '20-30 méter', restPeriod: 60, note: 'Erő-állóképességi cipelés' },
+    correction: { sets: 2, reps: '8-10', restPeriod: 45, note: 'Korrekció és sérülésmegelőzés' },
+  };
+}
+
+function classifyExerciseRole(exercise: WorkoutExercise): 'main' | 'core' | 'carry' | 'correction' {
+  const token = `${exercise.exerciseId || ''} ${exercise.name || ''}`.toLowerCase();
+
+  if (token.includes('fms') || token.includes('stretch') || token.includes('rehab') || token.includes('mobil')) {
+    return 'correction';
+  }
+
+  if (token.includes('gait') || token.includes('cipel')) {
+    return 'carry';
+  }
+
+  if (token.includes('core') || token.includes('rotacios') || token.includes('stabil')) {
+    return 'core';
+  }
+
+  return 'main';
+}
+
+function mergeInstruction(existingInstruction: string | undefined, note: string | undefined, intensity: string | undefined): string | undefined {
+  const parts = [existingInstruction, note, intensity ? `Célterhelés: ${intensity}` : undefined].filter(Boolean);
+  return parts.length > 0 ? parts.join(' | ') : undefined;
+}
+
+function applyConfigToExercise(exercise: WorkoutExercise, config: PrescriptionConfig): WorkoutExercise {
+  return {
+    ...exercise,
+    sets: config.sets,
+    reps: config.reps,
+    restPeriod: config.restPeriod,
+    instruction: mergeInstruction(exercise.instruction, config.note, config.intensity),
+  };
+}
+
+function applyFocusPresetToSections(sections: WorkoutSectionGenerated[], preset: FocusPreset): WorkoutSectionGenerated[] {
+  return sections.map((section) => ({
+    ...section,
+    exercises: section.exercises.map((exercise) => {
+      const role = classifyExerciseRole(exercise);
+
+      if (role === 'correction') {
+        return applyConfigToExercise(exercise, preset.correction);
+      }
+
+      if (role === 'carry') {
+        return applyConfigToExercise(exercise, preset.carry);
+      }
+
+      if (role === 'core') {
+        return applyConfigToExercise(exercise, preset.core);
+      }
+
+      return applyConfigToExercise(exercise, preset.main);
+    }),
+  }));
+}
+
+function getFirstAvailableExercise(
+  exercises: Record<string, Exercise[]>,
+  categories: string[]
+): Exercise | null {
+  for (const category of categories) {
+    const exercise = getRandomExercise(exercises, category);
+    if (exercise) {
+      return exercise;
+    }
+  }
+
+  return null;
+}
+
 // 2 napos program generátor
 function generate2DayPlan(
   categorizedExercises: Record<string, Exercise[]>,
@@ -303,157 +597,183 @@ function generate2DayPlan(
 ): WorkoutSectionGenerated[] {
   const sections: WorkoutSectionGenerated[] = [];
 
-  // FMS korrekció always first
+  const stretchExercise = getRandomExercise(categorizedExercises, 'nyújtás');
   sections.push({
-    name: 'FMS korrekció',
-    exercises: [
-      {
-        exerciseId: fmsCorrections[0] ? 'fms-correction-1' : 'placeholder-fms',
-        name: fmsCorrections[0] || 'FMS korrekciós gyakorlat',
-        sets: 2,
-        reps: '8-10',
-        weight: null,
-        restPeriod: 60,
-      },
-    ],
+    name: 'Horpaszizom nyújtás',
+    exercises: [{
+      exerciseId: stretchExercise?.id || 'placeholder-stretch',
+      name: stretchExercise?.name || 'Horpaszizom nyújtás',
+      sets: 2,
+      reps: '30 mp/oldal',
+      weight: null,
+      restPeriod: 0,
+      instruction: 'Mindkét oldalra végezd el',
+    }],
   });
 
   if (day === 1) {
-    // Első nap a táblázat szerint
+    const horizontalPushBi = getRandomExercise(categorizedExercises, 'horizontális_nyomás_bi');
+    const horizontalPushUni = getRandomExercise(categorizedExercises, 'horizontális_nyomás_uni');
+    const verticalPullBi = getRandomExercise(categorizedExercises, 'vertikális_húzás_bi');
+    const hipBent = getRandomExercise(categorizedExercises, 'csípődomináns_hajlított');
+    const rotational = getRandomExercise(categorizedExercises, 'rotációs');
+    const rehab = getRandomExercise(categorizedExercises, 'rehab');
+
     sections.push({
-      name: 'Első pár',
+      name: 'Első kör - Robbanékonyság fókusz',
       exercises: [
-        { // Térddomináns BI
+        {
           exerciseId: 'placeholder-terddom-bi',
           name: getRandomExercise(categorizedExercises, 'térddomináns_bi')?.name || 'Térddomináns BI',
           sets: 3,
-          reps: '8-10',
+          reps: '6-8',
           weight: null,
           restPeriod: 90,
         },
-        { // FMS korrekció
-          exerciseId: fmsCorrections[1] ? 'fms-correction-2' : 'placeholder-fms',
-          name: fmsCorrections[1] || 'FMS korrekciós gyakorlat',
-          sets: 2,
+        {
+          exerciseId: fmsCorrections[0] ? 'fms-correction-1' : 'placeholder-fms',
+          name: fmsCorrections[0] || 'FMS korrekciós gyakorlat',
+          sets: 3,
           reps: '8-10',
           weight: null,
           restPeriod: 60,
         },
-        { // Vertikális húzás
-          exerciseId:  'placeholder-vert-huzas-bi',
-          name: getRandomExercise(categorizedExercises, 'vertikális_húzás_bi')?.name || 'Vertikális húzás',
+        {
+          exerciseId: horizontalPushBi ? 'placeholder-horiz-nyomas-bi' : 'placeholder-horiz-nyomas-uni',
+          name: horizontalPushBi?.name || horizontalPushUni?.name || 'Horizontális nyomás',
           sets: 3,
           reps: '8-10',
           weight: null,
           restPeriod: 90,
+          instruction: horizontalPushUni ? 'Végezd el mindkét oldalra' : undefined,
         },
       ],
     });
 
     sections.push({
-      name: 'Első hármas',
+      name: 'Második kör - Robbanékonyság fókusz',
       exercises: [
-        { // Térddomináns Uni
-          exerciseId:  'placeholder-terddom-uni',
-          name: getRandomExercise(categorizedExercises, 'térddomináns_uni')?.name || 'Térddomináns Uni',
+        {
+          exerciseId: 'placeholder-vert-huzas-bi',
+          name: verticalPullBi?.name || 'Függőleges húzás',
           sets: 3,
-          reps: '8-10/oldal',
+          reps: '6-8',
           weight: null,
           restPeriod: 90,
         },
-        { // Horizontális nyomás uni
-          exerciseId:  'placeholder-horiz-nyomas-uni',
-          name: getRandomExercise(categorizedExercises, 'horizontális_nyomás_uni')?.name || 'Horizontális nyomás uni',
+        {
+          exerciseId: fmsCorrections[1] ? 'fms-correction-2' : 'placeholder-fms',
+          name: fmsCorrections[1] || 'FMS korrekciós gyakorlat',
           sets: 3,
-          reps: '8-10',
-          weight: null,
-          restPeriod: 90,
-        },
-        { // FMS korrekció
-          exerciseId: fmsCorrections[2] ? 'fms-correction-3' : 'placeholder-fms',
-          name: fmsCorrections[2] || 'FMS korrekciós gyakorlat',
-          sets: 2,
           reps: '8-10',
           weight: null,
           restPeriod: 60,
         },
-        { // Csípődomináns BI
-          exerciseId:  'placeholder-csipo-bi',
-          name: getRandomExercise(categorizedExercises, 'csípődomináns_nyújtott')?.name || 'Csípődomináns BI',
+        {
+          exerciseId: 'placeholder-csipo-hajlitott',
+          name: hipBent?.name || 'Csípődomináns hajlított lábas gyakorlat',
           sets: 3,
           reps: '8-10',
           weight: null,
           restPeriod: 90,
+        },
+        {
+          exerciseId: rotational ? 'placeholder-rotacios' : 'placeholder-rehab',
+          name: rotational?.name || rehab?.name || 'Rotációs vagy rehabilitációs gyakorlat',
+          sets: 3,
+          reps: '10/oldal',
+          weight: null,
+          restPeriod: 60,
         },
       ],
     });
   } else if (day === 2) {
-    // Második nap a táblázat szerint
+    const verticalPushBi = getRandomExercise(categorizedExercises, 'vertikális_nyomás_bi');
+    const verticalPushUni = getRandomExercise(categorizedExercises, 'vertikális_nyomás_uni');
+    const horizontalPullBi = getRandomExercise(categorizedExercises, 'horizontális_húzás_bi');
+    const horizontalPullUni = getRandomExercise(categorizedExercises, 'horizontális_húzás_uni');
+    const hipStraight = getRandomExercise(categorizedExercises, 'csípődomináns_nyújtott');
+    const rotational = getRandomExercise(categorizedExercises, 'rotációs');
+    const rehab = getRandomExercise(categorizedExercises, 'rehab');
+    const gait = getRandomExercise(categorizedExercises, 'gait');
+
     sections.push({
-      name: 'Első pár',
+      name: 'Első kör - Erő fókusz',
       exercises: [
-        { // Horizontális nyomás bi
-          exerciseId:  'placeholder-horiz-nyomas-bi',
-          name: getRandomExercise(categorizedExercises, 'horizontális_nyomás_bi')?.name || 'Horizontális nyomás bi',
+        {
+          exerciseId: 'placeholder-terddom-uni',
+          name: getRandomExercise(categorizedExercises, 'térddomináns_uni')?.name || 'Térddomináns Uni',
           sets: 3,
-          reps: '8-10',
+          reps: '6-8/oldal',
           weight: null,
           restPeriod: 90,
+          instruction: 'Végezd el mindkét oldalra',
         },
-        { // FMS korrekció
-          exerciseId: fmsCorrections[1] ? 'fms-correction-2' : 'placeholder-fms',
-          name: fmsCorrections[1] || 'FMS korrekciós gyakorlat',
-          sets: 2,
+        {
+          exerciseId: fmsCorrections[0] ? 'fms-correction-1' : 'placeholder-fms',
+          name: fmsCorrections[0] || 'FMS korrekciós gyakorlat',
+          sets: 3,
           reps: '8-10',
           weight: null,
           restPeriod: 60,
         },
-        { // Térddomináns Uni
-          exerciseId:  'placeholder-terddom-uni',
-          name: getRandomExercise(categorizedExercises, 'térddomináns_uni')?.name || 'Térddomináns uni',
+        {
+          exerciseId: verticalPushBi ? 'placeholder-vert-nyomas-bi' : 'placeholder-vert-nyomas-uni',
+          name: verticalPushBi?.name || verticalPushUni?.name || 'Vertikális nyomás',
           sets: 3,
-          reps: '8-10/oldal',
+          reps: '8-10',
           weight: null,
           restPeriod: 90,
+          instruction: verticalPushUni ? 'Végezd el mindkét oldalra' : undefined,
         },
       ],
     });
 
     sections.push({
-      name: 'Első hármas',
+      name: 'Második kör - Erő fókusz',
       exercises: [
-        { // Vertikális nyomás
-          exerciseId:  'placeholder-vert-nyomas-bi',
-          name: getRandomExercise(categorizedExercises, 'vertikális_nyomás_bi')?.name || 'Vertikális nyomás',
+        {
+          exerciseId: horizontalPullBi ? 'placeholder-horiz-huzas-bi' : 'placeholder-horiz-huzas-uni',
+          name: horizontalPullBi?.name || horizontalPullUni?.name || 'Vízszintes húzás',
           sets: 3,
           reps: '8-10',
           weight: null,
           restPeriod: 90,
+          instruction: horizontalPullUni ? 'Végezd el mindkét oldalra' : undefined,
         },
-        { // Horizontális húzás bi
-          exerciseId:  'placeholder-horiz-huzas-bi',
-          name: getRandomExercise(categorizedExercises, 'horizontális_húzás_bi')?.name || 'Horizontális húzás bi',
+        {
+          exerciseId: fmsCorrections[1] ? 'fms-correction-2' : 'placeholder-fms',
+          name: fmsCorrections[1] || 'FMS korrekciós gyakorlat',
           sets: 3,
-          reps: '8-10',
-          weight: null,
-          restPeriod: 90,
-        },
-        { // FMS korrekció
-          exerciseId: fmsCorrections[2] ? 'fms-correction-3' : 'placeholder-fms',
-          name: fmsCorrections[2] || 'FMS korrekciós gyakorlat',
-          sets: 2,
           reps: '8-10',
           weight: null,
           restPeriod: 60,
         },
-        { // Csípődomináns Uni
-          exerciseId:  'placeholder-csipo-uni',
-          name: getRandomExercise(categorizedExercises, 'csípődomináns_hajlított')?.name || 'Csípődomináns Uni',
+        {
+          exerciseId: 'placeholder-csipo-nyujtott',
+          name: hipStraight?.name || 'Csípődomináns nyújtott lábas gyakorlat',
           sets: 3,
-          reps: '8-10/oldal',
+          reps: '8-10',
           weight: null,
           restPeriod: 90,
         },
+        {
+          exerciseId: rotational ? 'placeholder-rotacios' : 'placeholder-rehab',
+          name: rotational?.name || rehab?.name || 'Rotációs vagy rehabilitációs gyakorlat',
+          sets: 3,
+          reps: '10/oldal',
+          weight: null,
+          restPeriod: 60,
+        },
+        ...(gait ? [{
+          exerciseId: 'placeholder-gait',
+          name: gait.name,
+          sets: 2,
+          reps: '20-30 méter',
+          weight: null,
+          restPeriod: 60,
+          instruction: 'Járás mintázat gyakorlása',
+        }] : []),
       ],
     });
   }
@@ -469,6 +789,11 @@ function generate3DayPlan(
 ): WorkoutSectionGenerated[] {
   // Structure based on your table
   const sections: WorkoutSectionGenerated[] = [];
+  const hipBilateral = getRandomExercise(categorizedExercises, 'csípődomináns_bi')
+    || getRandomExercise(categorizedExercises, 'csípődomináns_nyújtott');
+  const hipUnilateral = getRandomExercise(categorizedExercises, 'csípődomináns_uni')
+    || getRandomExercise(categorizedExercises, 'csípődomináns_hajlított');
+
   // FMS korrekció always first
   sections.push({
     name: 'FMS korrekció',
@@ -544,7 +869,7 @@ function generate3DayPlan(
         },
         { // Csípődomináns BI
           exerciseId:  'placeholder-csipo-bi',
-          name: getRandomExercise(categorizedExercises, 'csípődomináns_nyújtott')?.name || 'Csípődomináns BI',
+          name: hipBilateral?.name || 'Csípődomináns BI',
           sets: 3,
           reps: '8-10',
           weight: null,
@@ -612,7 +937,7 @@ function generate3DayPlan(
         },
         { // Csípődomináns Uni
           exerciseId:  'placeholder-csipo-uni',
-          name: getRandomExercise(categorizedExercises, 'csípődomináns_hajlított')?.name || 'Csípődomináns Uni',
+          name: hipUnilateral?.name || 'Csípődomináns Uni',
           sets: 3,
           reps: '8-10',
           weight: null,
@@ -699,194 +1024,91 @@ function generateDay1Plan(
   categorizedExercises: Record<string, Exercise[]>,
   fmsCorrections: string[]
 ): WorkoutSectionGenerated[] {
-  const sections: WorkoutSectionGenerated[] = [];
+  const hipBilateral = getFirstAvailableExercise(categorizedExercises, ['csípődomináns_bi', 'csípődomináns_nyújtott']);
+  const verticalPull = getRandomExercise(categorizedExercises, 'vertikális_húzás_bi');
+  const kneeUnilateral = getRandomExercise(categorizedExercises, 'térddomináns_uni');
+  const horizontalPushUnilateral = getRandomExercise(categorizedExercises, 'horizontális_nyomás_uni');
+  const antiRotation = getFirstAvailableExercise(categorizedExercises, ['antirotációs', 'rotációs']);
 
-  // 1. Bemelegítés
-  sections.push({
-    name: 'Bemelegítés',
-    exercises: Array(3).fill(0).map(() => {
-      const exercise = getRandomExercise(categorizedExercises, 'bemelegítés');
-      return {
-        exerciseId: exercise?.id || 'placeholder-warmup',
-        name: exercise?.name || 'Dinamikus bemelegítés',
-        sets: 1,
-        reps: '30-60 mp',
-        weight: null,
-        restPeriod: 0,
-      };
-    })
-  });
-
-  // 2. Pilometrikus gyakorlatok
-  sections.push({
-    name: 'Pilometrikus gyakorlatok',
-    exercises: Array(2).fill(0).map(() => {
-      const exercise = getRandomExercise(categorizedExercises, 'pilometrikus');
-      return {
-        exerciseId: exercise?.id || 'placeholder-plyo',
-        name: exercise?.name || 'Pilometrikus gyakorlat',
-        sets: 3,
-        reps: '5-8',
-        weight: null,
-        restPeriod: 90,
-      };
-    })
-  });
-
-  // 3. Core gyakorlatok
-  sections.push({
-    name: 'Core gyakorlatok',
-    exercises: Array(2).fill(0).map(() => {
-      const exercise = getRandomExercise(categorizedExercises, 'core');
-      return {
-        exerciseId: exercise?.id || 'placeholder-core',
-        name: exercise?.name || 'Core gyakorlat',
-        sets: 3,
-        reps: '10-12',
-        weight: null,
-        restPeriod: 60,
-      };
-    })
-  });
-
-  // 4. Horpaszizom nyújtás
-  const stretchExercise = getRandomExercise(categorizedExercises, 'nyújtás');
-  sections.push({
-    name: 'Horpaszizom nyújtás',
-    exercises: [{
-      exerciseId: stretchExercise?.id || 'placeholder-stretch',
-      name: stretchExercise?.name || 'Horpaszizom nyújtás',
-      sets: 2,
-      reps: '30 mp/oldal',
-      weight: null,
-      restPeriod: 0,
-      instruction: 'Mindkét oldalra végezze el'
-    }]
-  });
-
-  // 5. Első kör - A struktúra: Térddomináns Bi/Uni, FMS korrekció, Horizontális/Vertikális nyomás Bi/Uni
-
-  // Először a szükséges gyakorlatokat választjuk ki, hogy biztosan legyen minden pozícióhoz
-  const terdDominansBi = getRandomExercise(categorizedExercises, 'térddomináns_bi');
-  const terdDominansUni = getRandomExercise(categorizedExercises, 'térddomináns_uni');
-  const horizontalisNyomasBi = getRandomExercise(categorizedExercises, 'horizontális_nyomás_bi');
-  const horizontalisNyomasUni = getRandomExercise(categorizedExercises, 'horizontális_nyomás_uni');
-  const vertikalisNyomasBi = getRandomExercise(categorizedExercises, 'vertikális_nyomás_bi');
-  const vertikalisNyomasUni = getRandomExercise(categorizedExercises, 'vertikális_nyomás_uni');
-
-  // Térddomináns kiválasztása (bi vagy uni)
-  const terdDominans = terdDominansBi || terdDominansUni;
-  // Nyomó gyakorlat kiválasztása (horizontális vagy vertikális, bi vagy uni)
-  const nyomoGyakorlat = horizontalisNyomasBi || horizontalisNyomasUni || vertikalisNyomasBi || vertikalisNyomasUni;
-
-  sections.push({
-    name: 'Első kör - Robbanékonyság fókusz',
-    exercises: [
-      // Térddomináns Bi/Uni
-      {
-        exerciseId: terdDominans?.movement_pattern?.includes('unilaterális') ? 'placeholder-terddom-uni' : 'placeholder-terddom-bi',
-        name: terdDominans?.name || 'Guggolás kettlebell-lel',
-        sets: 3,
-        reps: '6-8',
-        weight: null,
-        restPeriod: 90,
-        instruction: terdDominans?.movement_pattern?.includes('unilaterális') ? 'Végezd el mindkét oldalra' : undefined
-      },
-      // FMS korrekció
-      {
+  return [
+    {
+      name: 'FMS korrekció',
+      exercises: [{
         exerciseId: fmsCorrections[0] ? 'fms-correction-1' : 'placeholder-fms',
         name: fmsCorrections[0] || 'FMS korrekciós gyakorlat',
-        sets: 3,
-        reps: '8-10',
-        weight: null,
-        restPeriod: 60,
-      },
-      // Horizontális/Vertikális nyomás Bi/Uni
-      {
-        exerciseId: nyomoGyakorlat?.movement_pattern?.includes('horizontális') 
-          ? (nyomoGyakorlat?.movement_pattern?.includes('unilaterális') ? 'placeholder-horiz-nyomas-uni' : 'placeholder-horiz-nyomas-bi')
-          : (nyomoGyakorlat?.movement_pattern?.includes('unilaterális') ? 'placeholder-vert-nyomas-uni' : 'placeholder-vert-nyomas-bi'),
-        name: nyomoGyakorlat?.name || 'Fekvőtámasz vagy Vállból nyomás',
-        sets: 3,
-        reps: '8-10',
-        weight: null,
-        restPeriod: 90,
-        instruction: nyomoGyakorlat?.movement_pattern?.includes('unilaterális') ? 'Végezd el mindkét oldalra' : undefined
-      }
-    ]
-  });
-
-  // 6. Második kör - A struktúra: Függőleges/Vízszintes húzás Bi, FMS korrekció, Csípődomináns hajlított/nyújtott lábas, Rotációs vagy rehab, Gait (ha van)
-
-  // Előre kiválasztjuk a szükséges gyakorlatokat
-  const vertikalisHuzasBi = getRandomExercise(categorizedExercises, 'vertikális_húzás_bi');
-  const horizontalisHuzasBi = getRandomExercise(categorizedExercises, 'horizontális_húzás_bi');
-  const csipoDominansHajlitott = getRandomExercise(categorizedExercises, 'csípődomináns_hajlított');
-  const csipoDominansNyujtott = getRandomExercise(categorizedExercises, 'csípődomináns_nyújtott');
-  const rotaciosGyakorlat = getRandomExercise(categorizedExercises, 'rotációs');
-  const rehabGyakorlat = getRandomExercise(categorizedExercises, 'rehab');
-  const gaitGyakorlat = getRandomExercise(categorizedExercises, 'gait');
-
-  // Húzás kiválasztása (vízszintes vagy függőleges, de mindenképp bilaterális)
-  const huzasGyakorlat = horizontalisHuzasBi || vertikalisHuzasBi;
-  // Csípő gyakorlat kiválasztása (hajlított vagy nyújtott)
-  const csipoGyakorlat = csipoDominansHajlitott || csipoDominansNyujtott;
-  // Rotációs vagy rehab gyakorlat
-  const rotaciosVagyRehab = rotaciosGyakorlat || rehabGyakorlat;
-
-  sections.push({
-    name: 'Második kör - Robbanékonyság fókusz',
-    exercises: [
-      // Függőleges/Vízszintes húzás Bi
-      {
-        exerciseId: huzasGyakorlat?.movement_pattern?.includes('vertikális') ? 'placeholder-vert-huzas-bi' : 'placeholder-horiz-huzas-bi',
-        name: huzasGyakorlat?.name || 'Húzódzkodás vagy Evezés',
-        sets: 3,
-        reps: '6-8',
-        weight: null,
-        restPeriod: 90,
-      },
-      // FMS korrekció
-      {
-        exerciseId: fmsCorrections[1] ? 'fms-correction-2' : 'placeholder-fms',
-        name: fmsCorrections[1] || 'FMS korrekciós gyakorlat',
-        sets: 3,
-        reps: '8-10',
-        weight: null,
-        restPeriod: 60,
-      },
-      // Csípődomináns hajlított/nyújtott lábas
-      {
-        exerciseId: csipoGyakorlat?.movement_pattern?.includes('hajlított') ? 'placeholder-csipo-hajlitott' : 'placeholder-csipo-nyujtott',
-        name: csipoGyakorlat?.name || 'Híd gyakorlat vagy Román felhúzás',
-        sets: 3,
-        reps: '8-10',
-        weight: null,
-        restPeriod: 90,
-      },
-      // Rotációs vagy rehab
-      {
-        exerciseId: rotaciosGyakorlat ? 'placeholder-rotacios' : 'placeholder-rehab',
-        name: rotaciosVagyRehab?.name || 'Rotációs vagy rehabilitációs gyakorlat',
-        sets: 3,
-        reps: '10 mindkét oldalra',
-        weight: null,
-        restPeriod: 60,
-      },
-      // Gait (ha van)
-      ...(gaitGyakorlat ? [{
-        exerciseId: 'placeholder-gait',
-        name: gaitGyakorlat.name,
         sets: 2,
-        reps: '20-30 méter',
+        reps: '8-10',
         weight: null,
         restPeriod: 60,
-        instruction: 'Járás mintázat gyakorlása'
-      }] : [])
-    ]
-  });
-
-  return sections;
+      }],
+    },
+    {
+      name: 'Első pár',
+      exercises: [
+        {
+          exerciseId: 'placeholder-csipo-bi',
+          name: hipBilateral?.name || 'Csípődomináns BI',
+          sets: 3,
+          reps: '6-8',
+          weight: null,
+          restPeriod: 90,
+        },
+        {
+          exerciseId: fmsCorrections[1] ? 'fms-correction-2' : 'placeholder-fms',
+          name: fmsCorrections[1] || 'FMS korrekciós gyakorlat',
+          sets: 2,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 60,
+        },
+        {
+          exerciseId: 'placeholder-vert-huzas-bi',
+          name: verticalPull?.name || 'Vertikális húzás',
+          sets: 3,
+          reps: '6-8',
+          weight: null,
+          restPeriod: 90,
+        },
+      ],
+    },
+    {
+      name: 'Első hármas',
+      exercises: [
+        {
+          exerciseId: 'placeholder-terddom-uni',
+          name: kneeUnilateral?.name || 'Térddomináns Uni',
+          sets: 3,
+          reps: '6-8 oldalanként',
+          weight: null,
+          restPeriod: 90,
+        },
+        {
+          exerciseId: 'placeholder-horiz-nyomas-uni',
+          name: horizontalPushUnilateral?.name || 'Horizontális nyomás uni',
+          sets: 3,
+          reps: '6-8 oldalanként',
+          weight: null,
+          restPeriod: 90,
+        },
+        {
+          exerciseId: fmsCorrections[2] ? 'fms-correction-3' : 'placeholder-fms',
+          name: fmsCorrections[2] || 'FMS korrekciós gyakorlat',
+          sets: 2,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 60,
+        },
+        {
+          exerciseId: antiRotation ? 'placeholder-rotacios' : 'placeholder-core',
+          name: antiRotation?.name || 'Antirotációs core',
+          sets: 3,
+          reps: '10/oldal',
+          weight: null,
+          restPeriod: 60,
+        },
+      ],
+    },
+  ];
 }
 
 /**
@@ -896,218 +1118,92 @@ function generateDay2Plan(
   categorizedExercises: Record<string, Exercise[]>,
   fmsCorrections: string[]
 ): WorkoutSectionGenerated[] {
-  const sections: WorkoutSectionGenerated[] = [];
+  const verticalPush = getFirstAvailableExercise(categorizedExercises, ['vertikális_nyomás_bi', 'vertikális_nyomás_uni']);
+  const upperBodyMobility = getFirstAvailableExercise(categorizedExercises, ['felsőtest_mobilizálás', 'nyújtás', 'rehab']);
+  const stabilization = getFirstAvailableExercise(categorizedExercises, ['stabilizálás', 'core']);
+  const core = getRandomExercise(categorizedExercises, 'core');
+  const antiRotation = getFirstAvailableExercise(categorizedExercises, ['antirotációs', 'rotációs']);
+  const carry = getFirstAvailableExercise(categorizedExercises, ['cipelés', 'gait']);
 
-  // 1. Bemelegítés
-  sections.push({
-    name: 'Bemelegítés',
-    exercises: Array(3).fill(0).map(() => {
-      const exercise = getRandomExercise(categorizedExercises, 'bemelegítés');
-      return {
-        exerciseId: exercise?.id || 'placeholder-warmup',
-        name: exercise?.name || 'Dinamikus bemelegítés',
-        sets: 1,
-        reps: '30-60 mp',
-        weight: null,
-        restPeriod: 0,
-      };
-    })
-  });
-
-  // 2. Pilometrikus gyakorlatok
-  sections.push({
-    name: 'Pilometrikus gyakorlatok',
-    exercises: Array(2).fill(0).map(() => {
-      const exercise = getRandomExercise(categorizedExercises, 'pilometrikus');
-      return {
-        exerciseId: exercise?.id || 'placeholder-plyo',
-        name: exercise?.name || 'Pilometrikus gyakorlat',
-        sets: 3,
-        reps: '5-8',
-        weight: null,
-        restPeriod: 90,
-      };
-    })
-  });
-
-  // 3. Core gyakorlatok
-  sections.push({
-    name: 'Core gyakorlatok',
-    exercises: Array(2).fill(0).map(() => {
-      const exercise = getRandomExercise(categorizedExercises, 'core');
-      return {
-        exerciseId: exercise?.id || 'placeholder-core',
-        name: exercise?.name || 'Core gyakorlat',
-        sets: 3,
-        reps: '10-12',
-        weight: null,
-        restPeriod: 60,
-      };
-    })
-  });
-
-  // 4. Horpaszizom nyújtás
-  const stretchExercise = getRandomExercise(categorizedExercises, 'nyújtás');
-  sections.push({
-    name: 'Horpaszizom nyújtás',
-    exercises: [{
-      exerciseId: stretchExercise?.id || 'placeholder-stretch',
-      name: stretchExercise?.name || 'Horpaszizom nyújtás',
-      sets: 2,
-      reps: '30 mp/oldal',
-      weight: null,
-      restPeriod: 0,
-      instruction: 'Mindkét oldalra végezze el'
-    }]
-  });
-
-  // 5. Első kör - A struktúra: Térddomináns Bi/Uni, FMS korrekció, Horizontális/Vertikális nyomás Bi/Uni
-  const fmsCorrection1 = fmsCorrections.length > 0 ? 
-    getRandomExercise(categorizedExercises, 'fms_korrekció') : null;
-
-  // Először a szükséges gyakorlatokat választjuk ki, hogy biztosan legyen minden pozícióhoz
-  const terdDominansBi = getRandomExercise(categorizedExercises, 'térddomináns_bi');
-  const terdDominansUni = getRandomExercise(categorizedExercises, 'térddomináns_uni');
-  const horizontalisNyomasBi = getRandomExercise(categorizedExercises, 'horizontális_nyomás_bi');
-  const horizontalisNyomasUni = getRandomExercise(categorizedExercises, 'horizontális_nyomás_uni');
-  const vertikalisNyomasBi = getRandomExercise(categorizedExercises, 'vertikális_nyomás_bi');
-  const vertikalisNyomasUni = getRandomExercise(categorizedExercises, 'vertikális_nyomás_uni');
-
-  // Térddomináns kiválasztása (második napon preferáljuk az uni gyakorlatokat)
-  const terdDominans = terdDominansUni || terdDominansBi;
-  // Nyomó gyakorlat kiválasztása (második napon preferáljuk a vertikális nyomást)
-  const nyomoGyakorlat = vertikalisNyomasBi || vertikalisNyomasUni || horizontalisNyomasBi || horizontalisNyomasUni;
-
-  sections.push({
-    name: 'Első kör - Erő fókusz',
-    exercises: [
-      // Térddomináns Bi/Uni (preferáltan Uni)
-      {
-        exerciseId: terdDominans?.movement_pattern?.includes('unilaterális') ? 'placeholder-terddom-uni' : 'placeholder-terddom-bi',
-        name: terdDominans?.name || 'Bolgár kitörés',
-        sets: 3,
-        reps: terdDominans?.movement_pattern?.includes('unilaterális') ? '6-8 oldalanként' : '6-8',
-        weight: null,
-        restPeriod: 90,
-        instruction: terdDominans?.movement_pattern?.includes('unilaterális') ? 'Végezd el mindkét oldalra' : undefined
-      },
-      // FMS korrekció
-      ...(fmsCorrection1 ? [{
-        exerciseId: 'placeholder-fms-1',
-        name: fmsCorrection1.name,
-        sets: 3,
+  return [
+    {
+      name: 'FMS korrekció',
+      exercises: [{
+        exerciseId: fmsCorrections[0] ? 'fms-correction-1' : 'placeholder-fms',
+        name: fmsCorrections[0] || 'FMS korrekciós gyakorlat',
+        sets: 2,
         reps: '8-10',
         weight: null,
         restPeriod: 60,
-        instruction: `FMS korrekció: ${fmsCorrections[0] || 'Általános korrekció'}`
-      }] : [{
-        // Ha nincs FMS korrekció, akkor placeholder
-        exerciseId: 'placeholder-fms-1',
-        name: 'FMS korrekciós gyakorlat (opcionális)',
-        sets: 3,
-        reps: '8-10',
-        weight: null,
-        restPeriod: 60,
-        instruction: 'Ez a gyakorlat kihagyható, ha nincs FMS korrekcióra szükség'
-      }]),
-      // Horizontális/Vertikális nyomás Bi/Uni (preferáltan Vertikális nyomás)
-      {
-        exerciseId: nyomoGyakorlat?.movement_pattern?.includes('vertikális') 
-          ? (nyomoGyakorlat?.movement_pattern?.includes('unilaterális') ? 'placeholder-vert-nyomas-uni' : 'placeholder-vert-nyomas-bi')
-          : (nyomoGyakorlat?.movement_pattern?.includes('unilaterális') ? 'placeholder-horiz-nyomas-uni' : 'placeholder-horiz-nyomas-bi'),
-        name: nyomoGyakorlat?.name || 'Vállból nyomás',
-        sets: 3,
-        reps: '8-10',
-        weight: null,
-        restPeriod: 90,
-        instruction: nyomoGyakorlat?.movement_pattern?.includes('unilaterális') ? 'Végezd el mindkét oldalra' : undefined
-      }
-    ]
-  });
-
-  // 6. Második kör - A struktúra: Függőleges/Vízszintes húzás Bi, FMS korrekció, Csípődomináns hajlított/nyújtott lábas, Rotációs vagy rehab, Gait (ha van)
-  const fmsCorrection2 = fmsCorrections.length > 1 ? 
-    getRandomExercise(categorizedExercises, 'fms_korrekció') : null;
-
-  // Előre kiválasztjuk a szükséges gyakorlatokat
-  const vertikalisHuzasBi = getRandomExercise(categorizedExercises, 'vertikális_húzás_bi');
-  const horizontalisHuzasBi = getRandomExercise(categorizedExercises, 'horizontális_húzás_bi');
-  const csipoDominansHajlitott = getRandomExercise(categorizedExercises, 'csípődomináns_hajlított');
-  const csipoDominansNyujtott = getRandomExercise(categorizedExercises, 'csípődomináns_nyújtott');
-  const rotaciosGyakorlat = getRandomExercise(categorizedExercises, 'rotációs');
-  const rehabGyakorlat = getRandomExercise(categorizedExercises, 'rehab');
-  const gaitGyakorlat = getRandomExercise(categorizedExercises, 'gait');
-
-  // Húzás kiválasztása (második napon preferáljuk a horizontális húzást, de mindenképp bilaterális)
-  const huzasGyakorlat = horizontalisHuzasBi || vertikalisHuzasBi;
-  // Csípő gyakorlat kiválasztása (második napon preferáljuk a nyújtott lábas változatot)
-  const csipoGyakorlat = csipoDominansNyujtott || csipoDominansHajlitott;
-  // Rotációs vagy rehab gyakorlat
-  const rotaciosVagyRehab = rotaciosGyakorlat || rehabGyakorlat;
-
-  sections.push({
-    name: 'Második kör - Erő fókusz',
-    exercises: [
-      // Függőleges/Vízszintes húzás Bi (preferáltan horizontális)
-      {
-        exerciseId: huzasGyakorlat?.movement_pattern?.includes('horizontális') ? 'placeholder-horiz-huzas-bi' : 'placeholder-vert-huzas-bi',
-        name: huzasGyakorlat?.name || 'Fekvő evezés',
-        sets: 3,
-        reps: '8-10',
-        weight: null,
-        restPeriod: 90,
-      },
-      // FMS korrekció
-      ...(fmsCorrection2 ? [{
-        exerciseId: 'placeholder-fms-2',
-        name: fmsCorrection2.name,
-        sets: 3,
-        reps: '8-10',
-        weight: null,
-        restPeriod: 60,
-        instruction: `FMS korrekció: ${fmsCorrections[1] || 'Általános korrekció'}`
-      }] : [{
-        // Ha nincs FMS korrekció, akkor placeholder
-        exerciseId: 'placeholder-fms-2',
-        name: 'FMS korrekciós gyakorlat (opcionális)',
-        sets: 3,
-        reps: '8-10',
-        weight: null,
-        restPeriod: 60,
-        instruction: 'Ez a gyakorlat kihagyható, ha nincs FMS korrekcióra szükség'
-      }]),
-      // Csípődomináns nyújtott/hajlított lábas (preferáltan nyújtott lábas)
-      {
-        exerciseId: csipoGyakorlat?.movement_pattern?.includes('nyújtott') ? 'placeholder-csipo-nyujtott' : 'placeholder-csipo-hajlitott',
-        name: csipoGyakorlat?.name || 'Román felhúzás',
-        sets: 3,
-        reps: '8-10',
-        weight: null,
-        restPeriod: 90,
-      },
-      // Rotációs vagy rehab
-      {
-        exerciseId: rotaciosGyakorlat ? 'placeholder-rotacios' : 'placeholder-rehab',
-        name: rotaciosVagyRehab?.name || 'Rotációs vagy rehabilitációs gyakorlat',
-        sets: 3,
-        reps: '10 mindkét oldalra',
-        weight: null,
-        restPeriod: 60,
-      },
-      // Gait (ha van)
-      ...(gaitGyakorlat ? [{
-        exerciseId: 'placeholder-gait',
-        name: gaitGyakorlat.name,
-        sets: 3,
-        reps: '20-30 méter',
-        weight: null,
-        restPeriod: 60,
-        instruction: 'Járás mintázat gyakorlása'
-      }] : [])
-    ]
-  });
-
-  return sections;
+      }],
+    },
+    {
+      name: 'Első pár',
+      exercises: [
+        {
+          exerciseId: verticalPush?.movement_pattern === 'vertical_push_unilateral' ? 'placeholder-vert-nyomas-uni' : 'placeholder-vert-nyomas-bi',
+          name: verticalPush?.name || 'Függőleges tolás',
+          sets: 3,
+          reps: verticalPush?.movement_pattern === 'vertical_push_unilateral' ? '6-8 oldalanként' : '6-8',
+          weight: null,
+          restPeriod: 90,
+        },
+        {
+          exerciseId: 'placeholder-rehab',
+          name: upperBodyMobility?.name || 'Felsőtest mobilizálás',
+          sets: 2,
+          reps: '30-45 mp',
+          weight: null,
+          restPeriod: 30,
+        },
+        {
+          exerciseId: 'placeholder-core',
+          name: stabilization?.name || 'Stabilizálás',
+          sets: 3,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 60,
+        },
+      ],
+    },
+    {
+      name: 'Első hármas',
+      exercises: [
+        {
+          exerciseId: 'placeholder-core',
+          name: core?.name || 'Core',
+          sets: 3,
+          reps: '10-12',
+          weight: null,
+          restPeriod: 60,
+        },
+        {
+          exerciseId: antiRotation ? 'placeholder-rotacios' : 'placeholder-core',
+          name: antiRotation?.name || 'Antirotációs core',
+          sets: 3,
+          reps: '10/oldal',
+          weight: null,
+          restPeriod: 60,
+        },
+        {
+          exerciseId: fmsCorrections[1] ? 'fms-correction-2' : 'placeholder-fms',
+          name: fmsCorrections[1] || 'FMS korrekciós gyakorlat',
+          sets: 2,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 60,
+        },
+        {
+          exerciseId: carry ? 'placeholder-gait' : 'placeholder-core',
+          name: carry?.name || 'Cipelések',
+          sets: 3,
+          reps: '20-30 méter',
+          weight: null,
+          restPeriod: 60,
+        },
+      ],
+    },
+  ];
 }
 
 /**
@@ -1117,202 +1213,91 @@ function generateDay3Plan(
   categorizedExercises: Record<string, Exercise[]>,
   fmsCorrections: string[]
 ): WorkoutSectionGenerated[] {
-  const sections: WorkoutSectionGenerated[] = [];
+  const kneeBilateral = getRandomExercise(categorizedExercises, 'térddomináns_bi');
+  const verticalPull = getRandomExercise(categorizedExercises, 'vertikális_húzás_bi');
+  const hipDominant = getFirstAvailableExercise(categorizedExercises, ['csípődomináns_bi', 'csípődomináns_nyújtott', 'csípődomináns_hajlított']);
+  const horizontalPullUnilateral = getRandomExercise(categorizedExercises, 'horizontális_húzás_uni');
+  const gaitOrCore = getFirstAvailableExercise(categorizedExercises, ['gait', 'core']);
 
-  // 1. Bemelegítés
-  sections.push({
-    name: 'Bemelegítés',
-    exercises: Array(3).fill(0).map(() => {
-      const exercise = getRandomExercise(categorizedExercises, 'bemelegítés');
-      return {
-        exerciseId: exercise?.id || 'placeholder-warmup',
-        name: exercise?.name || 'Dinamikus bemelegítés',
-        sets: 1,
-        reps: '30-60 mp',
-        weight: null,
-        restPeriod: 0,
-      };
-    })
-  });
-
-  // 2. Core gyakorlatok
-  sections.push({
-    name: 'Core gyakorlatok',
-    exercises: Array(3).fill(0).map(() => {
-      const exercise = getRandomExercise(categorizedExercises, 'core');
-      return {
-        exerciseId: exercise?.id || 'placeholder-core',
-        name: exercise?.name || 'Core gyakorlat',
-        sets: 3,
-        reps: '10-12',
+  return [
+    {
+      name: 'FMS korrekció',
+      exercises: [{
+        exerciseId: fmsCorrections[0] ? 'fms-correction-1' : 'placeholder-fms',
+        name: fmsCorrections[0] || 'FMS korrekciós gyakorlat',
+        sets: 2,
+        reps: '8-10',
         weight: null,
         restPeriod: 60,
-      };
-    })
-  });
-
-  // 3. Fő köredzés - Tartalmaz egy első és egy második kört a standard struktúra szerint
-
-  // Előre kiválasztjuk a szükséges gyakorlatokat az első körhöz
-  const terdDominansBi = getRandomExercise(categorizedExercises, 'térddomináns_bi');
-  const terdDominansUni = getRandomExercise(categorizedExercises, 'térddomináns_uni');
-  const horizontalisNyomasBi = getRandomExercise(categorizedExercises, 'horizontális_nyomás_bi');
-  const horizontalisNyomasUni = getRandomExercise(categorizedExercises, 'horizontális_nyomás_uni');
-  const vertikalisNyomasBi = getRandomExercise(categorizedExercises, 'vertikális_nyomás_bi');
-  const vertikalisNyomasUni = getRandomExercise(categorizedExercises, 'vertikális_nyomás_uni');
-
-  // Előre kiválasztjuk a szükséges gyakorlatokat a második körhöz
-  const horizontalisHuzasBi = getRandomExercise(categorizedExercises, 'horizontális_húzás_bi');
-  const vertikalisHuzasBi = getRandomExercise(categorizedExercises, 'vertikális_húzás_bi');
-  const csipoDominansHajlitott = getRandomExercise(categorizedExercises, 'csípődomináns_hajlított');
-  const csipoDominansNyujtott = getRandomExercise(categorizedExercises, 'csípődomináns_nyújtott');
-  const rotaciosGyakorlat = getRandomExercise(categorizedExercises, 'rotációs');
-  const rehabGyakorlat = getRandomExercise(categorizedExercises, 'rehab');
-  const gaitGyakorlat = getRandomExercise(categorizedExercises, 'gait');
-
-  // FMS korrekciók kiválasztása
-  const fmsCorrection1 = fmsCorrections.length > 0 ? 
-    getRandomExercise(categorizedExercises, 'fms_korrekció') : null;
-  const fmsCorrection2 = fmsCorrections.length > 1 ? 
-    getRandomExercise(categorizedExercises, 'fms_korrekció') : null;
-
-  // Gyakorlatok kiválasztása az első körre
-  const terdDominans = terdDominansBi || terdDominansUni;
-  const nyomoGyakorlat = horizontalisNyomasBi || horizontalisNyomasUni || vertikalisNyomasBi || vertikalisNyomasUni;
-
-  // Gyakorlatok kiválasztása a második körre
-  const huzasGyakorlat = horizontalisHuzasBi || vertikalisHuzasBi;
-  const csipoGyakorlat = csipoDominansHajlitott || csipoDominansNyujtott;
-  const rotaciosVagyRehab = rotaciosGyakorlat || rehabGyakorlat;
-
-  sections.push({
-    name: 'Kombinált erő-robbanékonyság köredzés (Első kör)',
-    exercises: [
-      // Térddomináns Bi/Uni
-      {
-        exerciseId: terdDominans?.movement_pattern?.includes('unilaterális') ? 'placeholder-terddom-uni' : 'placeholder-terddom-bi',
-        name: terdDominans?.name || 'Goblet guggolás',
-        sets: 3,
-        reps: '8-10',
-        weight: null,
-        restPeriod: 30, // Köredzésben rövidebb pihenők
-        instruction: terdDominans?.movement_pattern?.includes('unilaterális') ? 'Végezd el mindkét oldalra' : undefined
-      },
-      // FMS korrekció
-      ...(fmsCorrection1 ? [{
-        exerciseId: 'placeholder-fms-1',
-        name: fmsCorrection1.name,
-        sets: 3,
-        reps: '10',
-        weight: null,
-        restPeriod: 30,
-        instruction: `FMS korrekció: ${fmsCorrections[0] || 'Általános korrekció'}`
-      }] : [{
-        // Ha nincs FMS korrekció, akkor placeholder
-        exerciseId: 'placeholder-fms-1',
-        name: 'FMS korrekciós gyakorlat (opcionális)',
-        sets: 3,
-        reps: '10',
-        weight: null,
-        restPeriod: 30,
-        instruction: 'Ez a gyakorlat kihagyható, ha nincs FMS korrekcióra szükség'
-      }]),
-      // Horizontális/Vertikális nyomás Bi/Uni
-      {
-        exerciseId: nyomoGyakorlat?.movement_pattern?.includes('horizontális') 
-          ? (nyomoGyakorlat?.movement_pattern?.includes('unilaterális') ? 'placeholder-horiz-nyomas-uni' : 'placeholder-horiz-nyomas-bi')
-          : (nyomoGyakorlat?.movement_pattern?.includes('unilaterális') ? 'placeholder-vert-nyomas-uni' : 'placeholder-vert-nyomas-bi'),
-        name: nyomoGyakorlat?.name || 'Mellre nyomás vagy Vállból nyomás',
-        sets: 3,
-        reps: '8-10',
-        weight: null,
-        restPeriod: 30,
-        instruction: nyomoGyakorlat?.movement_pattern?.includes('unilaterális') ? 'Végezd el mindkét oldalra' : undefined
-      }
-    ]
-  });
-
-  // Második kör a köredzésben
-  sections.push({
-    name: 'Kombinált erő-robbanékonyság köredzés (Második kör)',
-    exercises: [
-      // Függőleges/Vízszintes húzás Bi
-      {
-        exerciseId: huzasGyakorlat?.movement_pattern?.includes('vertikális') ? 'placeholder-vert-huzas-bi' : 'placeholder-horiz-huzas-bi',
-        name: huzasGyakorlat?.name || 'Evezés',
-        sets: 3,
-        reps: '10',
-        weight: null,
-        restPeriod: 30,
-      },
-      // FMS korrekció
-      ...(fmsCorrection2 ? [{
-        exerciseId: 'placeholder-fms-2',
-        name: fmsCorrection2.name,
-        sets: 3,
-        reps: '10',
-        weight: null,
-        restPeriod: 30,
-        instruction: `FMS korrekció: ${fmsCorrections[1] || 'Általános korrekció'}`
-      }] : [{
-        // Ha nincs FMS korrekció, akkor placeholder
-        exerciseId: 'placeholder-fms-2',
-        name: 'FMS korrekciós gyakorlat (opcionális)',
-        sets: 3,
-        reps: '10',
-        weight: null,
-        restPeriod: 30,
-        instruction: 'Ez a gyakorlat kihagyható, ha nincs FMS korrekcióra szükség'
-      }]),
-      // Csípődomináns hajlított/nyújtott lábas
-      {
-        exerciseId: csipoGyakorlat?.movement_pattern?.includes('hajlított') ? 'placeholder-csipo-hajlitott' : 'placeholder-csipo-nyujtott',
-        name: csipoGyakorlat?.name || 'Híd gyakorlat vagy Román felhúzás',
-        sets: 3,
-        reps: '10',
-        weight: null,
-        restPeriod: 30,
-      },
-      // Rotációs vagy rehab
-      {
-        exerciseId: rotaciosGyakorlat ? 'placeholder-rotacios' : 'placeholder-rehab',
-        name: rotaciosVagyRehab?.name || 'Rotációs vagy rehabilitációs gyakorlat',
-        sets: 3,
-        reps: '12/oldal',
-        weight: null,
-        restPeriod: 30,
-      },
-      // Gait (ha van)
-      ...(gaitGyakorlat ? [{
-        exerciseId: 'placeholder-gait',
-        name: gaitGyakorlat.name,
-        sets: 2,
-        reps: '20-30 méter',
-        weight: null,
-        restPeriod: 30,
-        instruction: 'Járás mintázat gyakorlása'
-      }] : [])
-    ]
-  });
-
-  // 4. Nyújtás és regeneráció
-  sections.push({
-    name: 'Nyújtás és regeneráció',
-    exercises: Array(3).fill(0).map(() => {
-      const exercise = getRandomExercise(categorizedExercises, 'nyújtás');
-      return {
-        exerciseId: 'placeholder-stretch',
-        name: exercise?.name || 'Stretching gyakorlat',
-        sets: 1,
-        reps: '45 mp',
-        weight: null,
-        restPeriod: 0,
-        instruction: 'Lassan, légzéssel összhangban'
-      };
-    })
-  });
-
-  return sections;
+      }],
+    },
+    {
+      name: 'Első pár',
+      exercises: [
+        {
+          exerciseId: 'placeholder-terddom-bi',
+          name: kneeBilateral?.name || 'Térddomináns BI',
+          sets: 3,
+          reps: '6-8',
+          weight: null,
+          restPeriod: 90,
+        },
+        {
+          exerciseId: fmsCorrections[1] ? 'fms-correction-2' : 'placeholder-fms',
+          name: fmsCorrections[1] || 'FMS korrekciós gyakorlat',
+          sets: 2,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 60,
+        },
+        {
+          exerciseId: 'placeholder-vert-huzas-bi',
+          name: verticalPull?.name || 'Vertikális húzás',
+          sets: 3,
+          reps: '6-8',
+          weight: null,
+          restPeriod: 90,
+        },
+      ],
+    },
+    {
+      name: 'Első hármas',
+      exercises: [
+        {
+          exerciseId: hipDominant?.movement_pattern === 'hip_dominant_unilateral' ? 'placeholder-csipo-uni' : 'placeholder-csipo-bi',
+          name: hipDominant?.name || 'Csípődomináns',
+          sets: 3,
+          reps: hipDominant?.movement_pattern === 'hip_dominant_unilateral' ? '6-8 oldalanként' : '6-8',
+          weight: null,
+          restPeriod: 90,
+        },
+        {
+          exerciseId: 'placeholder-horiz-huzas-uni',
+          name: horizontalPullUnilateral?.name || 'Horizontális húzás uni',
+          sets: 3,
+          reps: '8-10 oldalanként',
+          weight: null,
+          restPeriod: 90,
+        },
+        {
+          exerciseId: fmsCorrections[2] ? 'fms-correction-3' : 'placeholder-fms',
+          name: fmsCorrections[2] || 'FMS korrekciós gyakorlat',
+          sets: 2,
+          reps: '8-10',
+          weight: null,
+          restPeriod: 60,
+        },
+        {
+          exerciseId: gaitOrCore?.movement_pattern === 'gait_stability' || gaitOrCore?.movement_pattern === 'gait_crawling' ? 'placeholder-gait' : 'placeholder-core',
+          name: gaitOrCore?.name || 'Gait vagy Core',
+          sets: 3,
+          reps: gaitOrCore?.movement_pattern === 'gait_stability' || gaitOrCore?.movement_pattern === 'gait_crawling' ? '20-30 méter' : '10-12',
+          weight: null,
+          restPeriod: 60,
+        },
+      ],
+    },
+  ];
 }
 
 /**
@@ -1322,137 +1307,75 @@ function generateDay4Plan(
   categorizedExercises: Record<string, Exercise[]>,
   fmsCorrections: string[]
 ): WorkoutSectionGenerated[] {
-  const sections: WorkoutSectionGenerated[] = [];
+  const horizontalPush = getFirstAvailableExercise(categorizedExercises, ['horizontális_nyomás_bi', 'horizontális_nyomás_uni']);
+  const hipMobility = getFirstAvailableExercise(categorizedExercises, ['csípőmobilizálás', 'nyújtás', 'rehab']);
+  const core = getRandomExercise(categorizedExercises, 'core');
+  const antiRotation = getFirstAvailableExercise(categorizedExercises, ['antirotációs', 'rotációs']);
+  const carry = getFirstAvailableExercise(categorizedExercises, ['cipelés', 'gait']);
 
-  // 1. Bemelegítés
-  sections.push({
-    name: 'Könnyű bemelegítés',
-    exercises: Array(2).fill(0).map(() => {
-      const exercise = getRandomExercise(categorizedExercises, 'bemelegítés');
-      return {
-        exerciseId: exercise?.id || 'placeholder-warmup',
-        name: exercise?.name || 'Dinamikus bemelegítés',
-        sets: 1,
-        reps: '30-60 mp',
-        weight: null,
-        restPeriod: 0,
-      };
-    })
-  });
-
-  // 2. FMS korrekciós blokk - Átszervezzük, hogy megfeleljen a strukturált követelményeknek
-  // FMS korrekciók kiválasztása
-  const fmsCorrection1 = fmsCorrections.length > 0 ? 
-    getRandomExercise(categorizedExercises, 'fms_korrekció') : null;
-  const fmsCorrection2 = fmsCorrections.length > 1 ? 
-    getRandomExercise(categorizedExercises, 'fms_korrekció') : null;
-
-  // Az első korrekció
-  sections.push({
-    name: 'FMS korrekciós gyakorlatok (Első kör)',
-    exercises: [
-      ...(fmsCorrection1 ? [{
-        exerciseId: 'placeholder-fms-1',
-        name: fmsCorrection1.name,
-        sets: 3,
-        reps: '10-12',
-        weight: null,
-        restPeriod: 30,
-        instruction: `FMS korrekció: ${fmsCorrections[0] || 'Általános korrekció'}`
-      }] : [{
-        // Ha nincs FMS korrekció, akkor placeholder
-        exerciseId: 'placeholder-fms-1',
-        name: 'FMS korrekciós gyakorlat (opcionális)',
-        sets: 3,
-        reps: '10-12',
-        weight: null,
-        restPeriod: 30,
-        instruction: 'Ez a gyakorlat kihagyható, ha nincs FMS korrekcióra szükség'
-      }])
-    ]
-  });
-
-  // A második korrekció
-  // Mindig hozzáadjuk a második kört, üres placeholder-rel, ha nincs FMS korrekció
-  sections.push({
-    name: 'FMS korrekciós gyakorlatok (Második kör)',
-    exercises: fmsCorrection2 ? [{
-      exerciseId: 'placeholder-fms-2',
-      name: fmsCorrection2.name,
-      sets: 3,
-      reps: '10-12',
-      weight: null,
-      restPeriod: 30,
-      instruction: `FMS korrekció: ${fmsCorrections[1] || 'Általános korrekció'}`
-    }] : [{
-      // Ha nincs második FMS korrekció, akkor placeholder
-      exerciseId: 'placeholder-fms-2',
-      name: 'Második FMS korrekciós gyakorlat (opcionális)',
-      sets: 3,
-      reps: '10-12',
-      weight: null,
-      restPeriod: 30,
-      instruction: 'Ez a gyakorlat kihagyható, ha nincs második FMS korrekcióra szükség'
-    }]
-  });
-
-  // 3. Mobilitás fejlesztés
-  sections.push({
-    name: 'Mobilitás fejlesztés',
-    exercises: Array(4).fill(0).map(() => {
-      const exercise = getRandomExercise(categorizedExercises, 'nyújtás');
-      return {
-        exerciseId: 'placeholder-stretch',
-        name: exercise?.name || 'Mobilitás gyakorlat',
+  return [
+    {
+      name: 'FMS korrekció',
+      exercises: [{
+        exerciseId: fmsCorrections[0] ? 'fms-correction-1' : 'placeholder-fms',
+        name: fmsCorrections[0] || 'FMS korrekciós gyakorlat',
         sets: 2,
-        reps: '45-60 mp',
-        weight: null,
-        restPeriod: 10,
-        instruction: 'Lassan, kontrollált mozgásokkal'
-      };
-    })
-  });
-
-  // 4. Könnyű core aktiválás
-  sections.push({
-    name: 'Core aktiválás',
-    exercises: Array(3).fill(0).map(() => {
-      const exercise = getRandomExercise(categorizedExercises, 'core');
-      return {
-        exerciseId: 'placeholder-core',
-        name: exercise?.name || 'Core gyakorlat',
-        sets: 2,
-        reps: '12-15 (könnyű)',
-        weight: null,
-        restPeriod: 30,
-      };
-    })
-  });
-
-  // 5. Gait és funkcionális gyakorlatok
-  sections.push({
-    name: 'Gait és funkcionális gyakorlatok',
-    exercises: [
-      {
-        exerciseId: 'placeholder-gait',
-        name: getRandomExercise(categorizedExercises, 'gait')?.name || 'Gait gyakorlat',
-        sets: 2,
-        reps: '20 m',
+        reps: '8-10',
         weight: null,
         restPeriod: 60,
-      },
-      {
-        exerciseId: 'placeholder-rehab',
-        name: getRandomExercise(categorizedExercises, 'rehab')?.name || 'Rehabilitációs gyakorlat',
-        sets: 2,
-        reps: '10-12',
-        weight: null,
-        restPeriod: 30,
-      }
-    ]
-  });
-
-  return sections;
+      }],
+    },
+    {
+      name: 'Első pár',
+      exercises: [
+        {
+          exerciseId: horizontalPush?.movement_pattern === 'horizontal_push_unilateral' ? 'placeholder-horiz-nyomas-uni' : 'placeholder-horiz-nyomas-bi',
+          name: horizontalPush?.name || 'Horizontális tolás',
+          sets: 3,
+          reps: horizontalPush?.movement_pattern === 'horizontal_push_unilateral' ? '6-8 oldalanként' : '6-8',
+          weight: null,
+          restPeriod: 90,
+        },
+        {
+          exerciseId: 'placeholder-rehab',
+          name: hipMobility?.name || 'Csípőmobilizálás',
+          sets: 2,
+          reps: '30-45 mp',
+          weight: null,
+          restPeriod: 30,
+        },
+      ],
+    },
+    {
+      name: 'Első hármas',
+      exercises: [
+        {
+          exerciseId: 'placeholder-core',
+          name: core?.name || 'Core',
+          sets: 3,
+          reps: '10-12',
+          weight: null,
+          restPeriod: 60,
+        },
+        {
+          exerciseId: antiRotation ? 'placeholder-rotacios' : 'placeholder-core',
+          name: antiRotation?.name || 'Antirotációs core',
+          sets: 3,
+          reps: '10/oldal',
+          weight: null,
+          restPeriod: 60,
+        },
+        {
+          exerciseId: carry ? 'placeholder-gait' : 'placeholder-core',
+          name: carry?.name || 'Cipelések',
+          sets: 3,
+          reps: '20-30 méter',
+          weight: null,
+          restPeriod: 60,
+        },
+      ],
+    },
+  ];
 }
 
 /**
@@ -1571,10 +1494,22 @@ export async function generateWorkoutPlanV2(options: {
   userId: string;
   programType: ProgramType;
   day: number; // 1,2,3 or 4
+  cycleWeek?: CycleWeek;
+  trainingFocus?: TrainingFocus;
+  usePeriodizationPresets?: boolean;
   includeWeights?: boolean;
   adjustForFMS?: boolean;
 }): Promise<GeneratedWorkoutPlan> {
-  const { userId, programType, day, includeWeights = true, adjustForFMS = true } = options;
+  const {
+    userId,
+    programType,
+    day,
+    cycleWeek = 1,
+    trainingFocus = 'ero',
+    usePeriodizationPresets = false,
+    includeWeights = true,
+    adjustForFMS = true,
+  } = options;
 
   try {
     // 1. Gyakorlatok lekérése
@@ -1602,7 +1537,7 @@ export async function generateWorkoutPlanV2(options: {
 
     if (programType === '2napos') {
       title = '2 napos program';
-      description = '2 napos teljes test edzésterv';
+      description = '2 napos Boyle struktúrájú robbanékonyság és erő fókuszú edzésterv';
       sections = generate2DayPlan(categorizedExercises, fmsCorrections, day as 1 | 2);
     } else if (programType === '3napos') {
       title = '3 napos program';
@@ -1611,7 +1546,7 @@ export async function generateWorkoutPlanV2(options: {
     } else {
       // fallback to 4 napos (use existing logic)
       title = '4 napos program';
-      description = '4 napos strukturált edzésterv';
+      description = '4 napos felsőtest, alsótest és robbanékonyság fókuszú strukturált edzésterv';
       // You can call your existing day1-4 logic here
       switch (day) {
         case 1:
@@ -1630,6 +1565,12 @@ export async function generateWorkoutPlanV2(options: {
           sections = generateDay1Plan(categorizedExercises, fmsCorrections);
       }
     }
+
+    const preset = usePeriodizationPresets ? getFocusPreset(trainingFocus, cycleWeek) : null;
+    if (preset) {
+      sections = applyFocusPresetToSections(sections, preset);
+    }
+
     // Add weights if needed (reuse your logic)
     if (includeWeights) {
       sections.forEach(section => {
@@ -1645,12 +1586,14 @@ export async function generateWorkoutPlanV2(options: {
       });
     }
     return {
-      title,
-      description,
+      title: preset ? `${title} - ${cycleWeek}. hét` : title,
+      description: preset ? `${description}. Fókusz: ${preset.label}. ${preset.summary}` : description,
       date: new Date().toISOString().split('T')[0],
       duration: 60,
       sections,
-      notes: `Generált edzésterv - ${title}. Az edzés tartalmaz ${fmsCorrections.length} FMS korrekciós gyakorlatot.`,
+      notes: preset
+        ? `Generált edzésterv - ${title}. Ciklus: ${cycleWeek}. hét. Fókusz: ${preset.label}. Irányelvek: ${preset.summary}. Az edzés tartalmaz ${fmsCorrections.length} FMS korrekciós gyakorlatot.`
+        : `Generált edzésterv - ${title}. Az edzés tartalmaz ${fmsCorrections.length} FMS korrekciós gyakorlatot.`,
       user_id: userId
     };
   } catch (error) {

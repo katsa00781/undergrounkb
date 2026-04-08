@@ -303,6 +303,67 @@ export async function shareWorkoutWithParticipants(workoutId: string, appointmen
   }
 }
 
+export async function shareWorkoutWithUsers(workoutId: string, participantUserIds: string[]) {
+  try {
+    const uniqueParticipantIds = Array.from(new Set(participantUserIds.filter(Boolean)));
+
+    if (uniqueParticipantIds.length === 0) {
+      throw new Error('Nincs kiválasztott résztvevő');
+    }
+
+    const { data: originalWorkout, error: workoutError } = await supabase
+      .from('workouts')
+      .select('*')
+      .eq('id', workoutId)
+      .single();
+
+    if (workoutError || !originalWorkout) {
+      throw new Error('Workout not found');
+    }
+
+    let sections = originalWorkout.sections;
+    if (typeof sections === 'string') {
+      sections = JSON.parse(sections);
+    }
+
+    const personalWorkouts = [];
+
+    for (const participantUserId of uniqueParticipantIds) {
+      if (participantUserId === originalWorkout.user_id) {
+        continue;
+      }
+
+      const personalWorkout = {
+        title: `${originalWorkout.title} (Shared)`,
+        date: originalWorkout.date,
+        duration: originalWorkout.duration,
+        notes: `${originalWorkout.notes || ''}\n\nMegosztva a tervezőből.`,
+        sections,
+        user_id: participantUserId,
+        is_template: false,
+        original_workout_id: workoutId,
+        shared_from: originalWorkout.user_id,
+      };
+
+      const { data: newWorkout, error: insertError } = await supabase
+        .from('workouts')
+        .insert(personalWorkout)
+        .select()
+        .single();
+
+      if (!insertError && newWorkout) {
+        personalWorkouts.push(newWorkout);
+      }
+    }
+
+    notifyDataChanged('workouts');
+    return personalWorkouts;
+  } catch (error) {
+    console.error('Error sharing workout with users:', error);
+    throw error;
+  }
+}
+
 // Update personal workout with actual performance
 export async function updatePersonalWorkoutPerformance(
   workoutId: string, 
