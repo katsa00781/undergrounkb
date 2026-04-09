@@ -1,6 +1,14 @@
 import { RotateCw, Sparkles } from 'lucide-react';
 import { CycleWeek, ProgramType, TRAINING_FOCUS_OPTIONS, TrainingFocus, WorkoutDay } from '../../lib/workoutGenerator.fixed';
-import { PWRON_PROGRAM_OPTIONS, PwronProgramType, PwronSessionVariant, PwronWeekNumber, getPwronProgramTypeLabel } from '../../lib/pwronWorkoutGenerator';
+import {
+  PWRON_PROGRAM_OPTIONS,
+  PwronPrescriptionMode,
+  PwronProgramType,
+  PwronSessionVariant,
+  PwronWeekNumber,
+  getPwronProgramTypeLabel,
+  getPwronWeeklySetPatternOptions,
+} from '../../lib/pwronWorkoutGenerator';
 
 const getAvailableDays = (programType: ProgramType): WorkoutDay[] => {
   if (programType === '2napos') {
@@ -331,10 +339,16 @@ export const PwronGeneratorPanel = ({
   selectedProgramType,
   selectedWeek,
   selectedVariant,
+  selectedPrescriptionMode,
+  selectedPowerSetPattern,
+  selectedMainSetPattern,
   athleteName,
   onProgramTypeChange,
   onWeekChange,
   onVariantChange,
+  onPrescriptionModeChange,
+  onPowerSetPatternChange,
+  onMainSetPatternChange,
   onAthleteNameChange,
   onSwitchToTemplate,
   onClose,
@@ -345,16 +359,25 @@ export const PwronGeneratorPanel = ({
   selectedProgramType: PwronProgramType;
   selectedWeek: PwronWeekNumber;
   selectedVariant: PwronSessionVariant;
+  selectedPrescriptionMode: PwronPrescriptionMode;
+  selectedPowerSetPattern: string;
+  selectedMainSetPattern: string;
   athleteName: string;
   onProgramTypeChange: (programType: PwronProgramType) => void;
   onWeekChange: (week: PwronWeekNumber) => void;
   onVariantChange: (variant: PwronSessionVariant) => void;
+  onPrescriptionModeChange: (mode: PwronPrescriptionMode) => void;
+  onPowerSetPatternChange: (pattern: string) => void;
+  onMainSetPatternChange: (pattern: string) => void;
   onAthleteNameChange: (athleteName: string) => void;
   onSwitchToTemplate: () => void;
   onClose: () => void;
   onGenerate: () => void;
   isGenerating: boolean;
-}) => (
+}) => {
+  const availablePatterns = getPwronWeeklySetPatternOptions(selectedProgramType, selectedWeek);
+
+  return (
   <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
     <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Pwron generátor</h2>
     <p className="mb-4 text-gray-600 dark:text-gray-400">
@@ -456,11 +479,79 @@ export const PwronGeneratorPanel = ({
       </div>
     </div>
 
+    <div className="mb-6 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+      <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Prescription kitöltés</label>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => onPrescriptionModeChange('auto')}
+          className={`rounded-md px-4 py-2 text-sm ${
+            selectedPrescriptionMode === 'auto'
+              ? 'bg-primary-500 text-white'
+              : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+          }`}
+        >
+          Automatikus
+        </button>
+        <button
+          type="button"
+          onClick={() => onPrescriptionModeChange('manual')}
+          className={`rounded-md px-4 py-2 text-sm ${
+            selectedPrescriptionMode === 'manual'
+              ? 'bg-primary-500 text-white'
+              : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+          }`}
+        >
+          Kézi
+        </button>
+      </div>
+      <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+        Automatikus módban a variáns alapján választ mintát, kézi módban te adod meg a Power és fő blokk prescriptiont.
+      </p>
+    </div>
+
+    {selectedPrescriptionMode === 'manual' && (
+      <div className="mb-6 grid gap-4 lg:grid-cols-2">
+        <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Power prescription</label>
+          <select
+            value={selectedPowerSetPattern}
+            onChange={(event) => onPowerSetPatternChange(event.target.value)}
+            className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+          >
+            {availablePatterns.power.map((pattern) => (
+              <option key={pattern} value={pattern}>
+                {pattern}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Fő blokk prescription</label>
+          <select
+            value={selectedMainSetPattern}
+            onChange={(event) => onMainSetPatternChange(event.target.value)}
+            className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+          >
+            {availablePatterns.main.map((pattern) => (
+              <option key={pattern} value={pattern}>
+                {pattern}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    )}
+
     <div className="mb-6 mt-4 rounded bg-gray-50 p-3 dark:bg-gray-700">
       <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Kiválasztott tervező:</h3>
       <p className="text-gray-600 dark:text-gray-400">Pwron programgenerátor</p>
       <p className="text-gray-600 dark:text-gray-400">
         {getPwronProgramTypeLabel(selectedProgramType)} • {selectedWeek}. hét • {selectedVariant} variáns
+      </p>
+      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+        Prescription: {selectedPrescriptionMode === 'auto' ? 'Automatikus' : `Kézi (Power: ${selectedPowerSetPattern}, Fő blokk: ${selectedMainSetPattern})`}
       </p>
     </div>
 
@@ -483,4 +574,5 @@ export const PwronGeneratorPanel = ({
       </button>
     </div>
   </div>
-);
+  );
+};

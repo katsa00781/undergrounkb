@@ -4,6 +4,7 @@ import { GeneratedWorkoutPlan, WorkoutExercise, WorkoutSectionGenerated } from '
 export type PwronProgramType = 'ERO' | 'HIPERTROFIA' | 'HIPER_ZSIR';
 export type PwronWeekNumber = 1 | 2 | 3 | 4 | 5 | 6;
 export type PwronSessionVariant = 'A' | 'B';
+export type PwronPrescriptionMode = 'auto' | 'manual';
 
 type WeeklyPowerParams = {
   totalReps: string;
@@ -38,6 +39,12 @@ type CatalogExercise = {
 type CatalogMetconExercise = {
   name: string;
   baseDuration: string;
+};
+
+type ParsedSetPattern = {
+  sets: number;
+  reps: number;
+  pattern: string;
 };
 
 const EXERCISE_NAME_ALIASES: Record<string, string[]> = {
@@ -281,6 +288,55 @@ function buildMetconInstruction(params: WeeklyMetconParams, baseDuration: string
   ].join(' | ');
 }
 
+function parseSetPattern(pattern: string): ParsedSetPattern | null {
+  const match = pattern.trim().match(/^(\d+)\s*x\s*(\d+)$/i);
+  if (!match) {
+    return null;
+  }
+
+  const sets = Number.parseInt(match[1], 10);
+  const reps = Number.parseInt(match[2], 10);
+
+  if (Number.isNaN(sets) || Number.isNaN(reps) || sets <= 0 || reps <= 0) {
+    return null;
+  }
+
+  return {
+    sets,
+    reps,
+    pattern: `${sets}x${reps}`,
+  };
+}
+
+function resolveSetPattern(
+  setPatterns: string[],
+  sessionVariant: PwronSessionVariant,
+  mode: PwronPrescriptionMode,
+  selectedPattern?: string
+): ParsedSetPattern | null {
+  const parsedPatterns = setPatterns
+    .map((pattern) => parseSetPattern(pattern))
+    .filter((pattern): pattern is ParsedSetPattern => pattern !== null);
+
+  if (parsedPatterns.length === 0) {
+    return null;
+  }
+
+  if (mode === 'manual' && selectedPattern) {
+    const parsedManualPattern = parseSetPattern(selectedPattern);
+    if (parsedManualPattern) {
+      const hasMatchingPattern = parsedPatterns.some((pattern) => pattern.pattern === parsedManualPattern.pattern);
+      if (hasMatchingPattern) {
+        return parsedManualPattern;
+      }
+    }
+  }
+
+  // Keep variation deterministic: A starts from first pattern, B from second when available.
+  const preferredIndex = sessionVariant === 'B' && parsedPatterns.length > 1 ? 1 : 0;
+  return parsedPatterns[preferredIndex] || parsedPatterns[0];
+}
+
 function resolvePlaceholderId(name: string, fallback: string): string {
   const normalized = normalizeText(name);
 
@@ -338,14 +394,39 @@ export function getPwronProgramTypeLabel(programType: PwronProgramType): string 
   return PWRON_PROGRAM_OPTIONS.find((option) => option.value === programType)?.label || programType;
 }
 
+export function getPwronWeeklySetPatternOptions(
+  programType: PwronProgramType,
+  weekNumber: PwronWeekNumber
+): {
+  power: string[];
+  main: string[];
+} {
+  return {
+    power: [...WEEKLY_PARAMS[programType].power[weekNumber].setPatterns],
+    main: [...WEEKLY_PARAMS[programType].mainBlock[weekNumber].setPatterns],
+  };
+}
+
 export async function generatePwronWorkoutPlan(options: {
   userId: string;
   programType: PwronProgramType;
   weekNumber: PwronWeekNumber;
   sessionVariant: PwronSessionVariant;
   athleteName?: string;
+  prescriptionMode?: PwronPrescriptionMode;
+  powerSetPattern?: string;
+  mainSetPattern?: string;
 }): Promise<GeneratedWorkoutPlan> {
-  const { userId, programType, weekNumber, sessionVariant, athleteName } = options;
+  const {
+    userId,
+    programType,
+    weekNumber,
+    sessionVariant,
+    athleteName,
+    prescriptionMode = 'auto',
+    powerSetPattern,
+    mainSetPattern,
+  } = options;
   const availableExercises = await getExercises();
   const weeklyParams = WEEKLY_PARAMS[programType];
   const powerParams = weeklyParams.power[weekNumber];
@@ -357,6 +438,32 @@ export async function generatePwronWorkoutPlan(options: {
   const suppExercises = EXERCISES.suppExercises[sessionVariant];
   const metconExercise = EXERCISES.metcon[sessionVariant];
   const coreExercises = CORE_EXERCISES[sessionVariant];
+  const resolvedPowerPattern = resolveSetPattern(
+    powerParams.setPatterns,
+    sessionVariant,
+    prescriptionMode,
+    powerSetPattern
+  );
+  const resolvedMainPattern = resolveSetPattern(
+    mainParams.setPatterns,
+    sessionVariant,
+    prescriptionMode,
+    mainSetPattern
+  );
+
+  const powerInstruction = [
+    resolvedPowerPattern ? `Kitöltött prescription: ${resolvedPowerPattern.pattern}` : undefined,
+    buildPowerInstruction(powerParams),
+  ]
+    .filter(Boolean)
+    .join(' | ');
+
+  const mainInstruction = [
+    resolvedMainPattern ? `Kitöltött prescription: ${resolvedMainPattern.pattern}` : undefined,
+    buildMainInstruction(mainParams),
+  ]
+    .filter(Boolean)
+    .join(' | ');
 
   const sections: WorkoutSectionGenerated[] = [
     {
@@ -416,9 +523,13 @@ export async function generatePwronWorkoutPlan(options: {
       name: 'Power',
       exercises: [
         createExerciseEntry(
-          powerExercise,
+          {
+            ...powerExercise,
+            sets: resolvedPowerPattern?.sets || powerExercise.sets,
+            reps: resolvedPowerPattern?.reps || powerExercise.reps,
+          },
           availableExercises,
-          buildPowerInstruction(powerParams),
+          powerInstruction,
           Number.parseInt(powerParams.restSec.split('-')[0], 10) || 180
         ),
       ],
@@ -427,9 +538,13 @@ export async function generatePwronWorkoutPlan(options: {
       name: mainBlockLabel,
       exercises: [
         ...mainExercises.map((exercise) => createExerciseEntry(
-          exercise,
+          {
+            ...exercise,
+            sets: resolvedMainPattern?.sets || exercise.sets,
+            reps: resolvedMainPattern?.reps || exercise.reps,
+          },
           availableExercises,
-          buildMainInstruction(mainParams),
+          mainInstruction,
           Number.parseInt(mainParams.restSec.split('-')[0], 10) || 90
         )),
         ...suppExercises.map((exercise) => createExerciseEntry(
@@ -473,7 +588,7 @@ export async function generatePwronWorkoutPlan(options: {
     date: new Date().toISOString().split('T')[0],
     duration: 60,
     sections,
-    notes: `${athleteNote}${PRIORITY_SUMMARY[programType]} Power: ${buildPowerInstruction(powerParams)}. ${mainBlockLabel}: ${buildMainInstruction(mainParams)}. Metcon: ${buildMetconInstruction(metconParams, metconExercise.baseDuration)}.`,
+    notes: `${athleteNote}${PRIORITY_SUMMARY[programType]} Power: ${powerInstruction}. ${mainBlockLabel}: ${mainInstruction}. Metcon: ${buildMetconInstruction(metconParams, metconExercise.baseDuration)}.`,
     user_id: userId,
   };
 }

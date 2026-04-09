@@ -11,7 +11,14 @@ import { mapGeneratedWorkoutToPlannerSections } from '../lib/workoutPlannerGener
 import { filterExercisesList, getAvailableMovementPatternOptions, getExerciseCategories, getExerciseCategoryLabel, getExerciseFMSFocuses, getExerciseTaxonomyDimensionOptions, getFMSFocusLabel, getFMSFocusOptions, getMovementPatternLabel, getMovementPatterns } from '../lib/exerciseService';
 import { listFMSAssessmentSubjects, FMSAssessmentSubject } from '../lib/fms';
 import { CycleWeek, WorkoutDay, generateWorkoutPlanV2, ProgramType, TrainingFocus } from '../lib/workoutGenerator.fixed';
-import { generatePwronWorkoutPlan, PwronProgramType, PwronSessionVariant, PwronWeekNumber } from '../lib/pwronWorkoutGenerator';
+import {
+  generatePwronWorkoutPlan,
+  getPwronWeeklySetPatternOptions,
+  PwronPrescriptionMode,
+  PwronProgramType,
+  PwronSessionVariant,
+  PwronWeekNumber,
+} from '../lib/pwronWorkoutGenerator';
 import { createManualGuest, deleteManualGuest, listManualGuests, ManualGuest, updateManualGuest } from '../lib/manualGuests';
 import WorkoutSharingDialog from '../components/WorkoutSharingDialog';
 import { PeriodizedGeneratorPanel, PwronGeneratorPanel, TemplateGeneratorPanel } from '../components/workouts/WorkoutGeneratorPanels';
@@ -413,6 +420,9 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
   const [selectedPwronProgramType, setSelectedPwronProgramType] = useState<PwronProgramType>('ERO');
   const [selectedPwronWeek, setSelectedPwronWeek] = useState<PwronWeekNumber>(1);
   const [selectedPwronVariant, setSelectedPwronVariant] = useState<PwronSessionVariant>('A');
+  const [selectedPwronPrescriptionMode, setSelectedPwronPrescriptionMode] = useState<PwronPrescriptionMode>('auto');
+  const [selectedPwronPowerSetPattern, setSelectedPwronPowerSetPattern] = useState('');
+  const [selectedPwronMainSetPattern, setSelectedPwronMainSetPattern] = useState('');
   const [pwronAthleteName, setPwronAthleteName] = useState('');
   const [showGenerateForm, setShowGenerateForm] = useState(false);
   const [showSharingDialog, setShowSharingDialog] = useState(false);
@@ -517,6 +527,21 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
 
     setSelectedFmsUserId((current) => (current && selectedParticipantIds.includes(current) ? current : selectedParticipantIds[0]));
   }, [selectedParticipantIds]);
+
+  useEffect(() => {
+    const patternOptions = getPwronWeeklySetPatternOptions(selectedPwronProgramType, selectedPwronWeek);
+
+    if (selectedPwronPrescriptionMode !== 'manual') {
+      return;
+    }
+
+    setSelectedPwronPowerSetPattern((current) => (
+      patternOptions.power.includes(current) ? current : (patternOptions.power[0] || '')
+    ));
+    setSelectedPwronMainSetPattern((current) => (
+      patternOptions.main.includes(current) ? current : (patternOptions.main[0] || '')
+    ));
+  }, [selectedPwronProgramType, selectedPwronWeek, selectedPwronPrescriptionMode]);
 
   useEffect(() => {
     if (!isGenerateRoute) {
@@ -1034,6 +1059,9 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
             weekNumber: selectedPwronWeek,
             sessionVariant: selectedPwronVariant,
             athleteName: pwronAthleteName.trim() || undefined,
+            prescriptionMode: selectedPwronPrescriptionMode,
+            powerSetPattern: selectedPwronPrescriptionMode === 'manual' ? selectedPwronPowerSetPattern : undefined,
+            mainSetPattern: selectedPwronPrescriptionMode === 'manual' ? selectedPwronMainSetPattern : undefined,
           })
         : await generateWorkoutPlanV2({
             userId: fmsTargetUserId,
@@ -1441,10 +1469,24 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
                 selectedProgramType={selectedPwronProgramType}
                 selectedWeek={selectedPwronWeek}
                 selectedVariant={selectedPwronVariant}
+                selectedPrescriptionMode={selectedPwronPrescriptionMode}
+                selectedPowerSetPattern={selectedPwronPowerSetPattern}
+                selectedMainSetPattern={selectedPwronMainSetPattern}
                 athleteName={pwronAthleteName}
                 onProgramTypeChange={setSelectedPwronProgramType}
                 onWeekChange={setSelectedPwronWeek}
                 onVariantChange={setSelectedPwronVariant}
+                onPrescriptionModeChange={(mode) => {
+                  setSelectedPwronPrescriptionMode(mode);
+
+                  if (mode === 'manual') {
+                    const patternOptions = getPwronWeeklySetPatternOptions(selectedPwronProgramType, selectedPwronWeek);
+                    setSelectedPwronPowerSetPattern((current) => current || patternOptions.power[0] || '');
+                    setSelectedPwronMainSetPattern((current) => current || patternOptions.main[0] || '');
+                  }
+                }}
+                onPowerSetPatternChange={setSelectedPwronPowerSetPattern}
+                onMainSetPatternChange={setSelectedPwronMainSetPattern}
                 onAthleteNameChange={setPwronAthleteName}
                 onSwitchToTemplate={() => openGenerator('template')}
                 onClose={closeGenerateForm}
