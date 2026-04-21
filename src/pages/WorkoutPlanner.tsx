@@ -727,32 +727,27 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
       if (!data.sections || data.sections.length === 0) {
         throw new Error('Workout must have at least one section');
       }
-      
-      for (const section of data.sections) {
-        if (!section.exercises || section.exercises.length === 0) {
-          throw new Error(`Section "${section.name}" must have at least one exercise`);
-        }
 
-        const unresolvedPlaceholder = section.exercises.find((exercise) => exercise.exerciseId?.startsWith('placeholder-'));
-        if (unresolvedPlaceholder) {
-          throw new Error(`A(z) "${section.name}" blokkban még nincs kiválasztva valódi gyakorlat: ${unresolvedPlaceholder.name || 'helykitöltő tétel'}`);
-        }
-        
-        // Remove placeholder exercises before saving
-        section.exercises = section.exercises.filter(exercise => 
-          exercise.exerciseId && !exercise.exerciseId.startsWith('placeholder-')
+      const isFakeId = (id?: string) =>
+        !id || id.startsWith('placeholder-') || id.startsWith('fms-correction-');
+
+      // Strip fake/unresolved exercise IDs and clean UI-only fields
+      for (const section of data.sections) {
+        section.exercises = (section.exercises || []).filter(
+          (exercise) => !isFakeId(exercise.exerciseId)
         );
-        
-        // Remove exerciseName field which is only used for UI display
         section.exercises.forEach(exercise => {
           if ('exerciseName' in exercise) {
             delete (exercise as {exerciseName?: string}).exerciseName;
           }
         });
-        
-        if (section.exercises.length === 0) {
-          throw new Error(`Section "${section.name}" must have at least one real exercise`);
-        }
+      }
+
+      // Drop sections that became empty after filtering
+      data.sections = data.sections.filter((section) => section.exercises.length > 0);
+
+      if (data.sections.length === 0) {
+        throw new Error('Az edzéstervhez legalább egy valódi gyakorlatot ki kell választani');
       }
       
       if (isEditMode && editWorkout) {
@@ -1252,7 +1247,7 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
       </div>
 
       <div className="mb-8 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="flex items-center gap-2 text-gray-900 dark:text-white">
               <Users size={18} />
@@ -1268,7 +1263,7 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
             )}
           </div>
 
-          <div className="w-full lg:max-w-sm">
+          <div className="w-full md:max-w-sm">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">FMS-alapú generálás célvendége</label>
             <select
               value={selectedFmsUserId}
@@ -1289,7 +1284,7 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_260px]">
           <div>
             <div className="mb-3 flex flex-col gap-2 sm:flex-row">
               <input
@@ -1596,7 +1591,7 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
         {/* Workout Sections */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Workout Sections</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Edzés szekciók</h2>
             <button
               type="button"
               onClick={addSection}
@@ -1608,13 +1603,13 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
           </div>
 
           {sections.map((section, sectionIndex) => (
-            <div key={section.id} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <div className="mb-4 flex items-start justify-between gap-4">
-                <div className="flex flex-1 items-start gap-3">
+            <div key={section.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 md:p-6">
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="flex flex-1 items-start gap-2 md:gap-3">
                   <button
                     type="button"
                     onClick={() => toggleSectionCollapse(section.id)}
-                    className="mt-2 rounded-md border border-gray-200 p-2 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                    className="mt-1.5 rounded-md border border-gray-200 p-2.5 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
                     aria-label={collapsedSections[section.id] ? 'Szekció kinyitása' : 'Szekció összecsukása'}
                   >
                     {collapsedSections[section.id] ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
@@ -1640,11 +1635,11 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
                     <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{getSectionSummary(section)}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => duplicateSection(sectionIndex)}
-                    className="rounded-md border border-gray-200 p-2 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                    className="rounded-md border border-gray-200 p-2.5 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
                     title="Szekció duplikálása"
                   >
                     <Copy size={16} />
@@ -1653,10 +1648,10 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
                     <button
                       type="button"
                       onClick={() => removeSection(sectionIndex)}
-                      className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                      className="rounded-md p-2.5 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
                       title="Szekció törlése"
                     >
-                      <Trash2 size={20} />
+                      <Trash2 size={18} />
                     </button>
                   )}
                 </div>
@@ -1666,7 +1661,7 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
               {!collapsedSections[section.id] && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-md font-medium text-gray-900 dark:text-white">Exercises</h3>
+                  <h3 className="text-md font-medium text-gray-900 dark:text-white">Gyakorlatok</h3>
                   <button
                     type="button"
                     onClick={() => addExercise(sectionIndex)}
@@ -1708,11 +1703,11 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
                         </span>
                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{getExerciseSummary(exercise)}</p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => duplicateExercise(sectionIndex, exerciseIndex)}
-                          className="rounded-md border border-gray-200 p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
+                          className="rounded-md border border-gray-200 p-2.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
                           title="Gyakorlat duplikálása"
                         >
                           <Copy size={14} />
@@ -1721,19 +1716,19 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
                           <button
                             type="button"
                             onClick={() => removeExercise(sectionIndex, exerciseIndex)}
-                            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                            className="rounded-md p-2.5 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
                             title="Gyakorlat törlése"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={15} />
                           </button>
                         )}
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="space-y-3">
                       {/* Exercise Selection */}
-                      <div className="sm:col-span-2 lg:col-span-1">
-                        <div className="rounded-xl border border-gray-200 bg-white/80 p-3 shadow-sm dark:border-gray-600 dark:bg-gray-800/50 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
+                      <div>
+                        <div>
                         <div className="mb-3 flex items-center justify-between sm:hidden">
                           <div>
                             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">Gyakorlatválasztó</p>
@@ -1967,105 +1962,108 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
                         </div>
                       </div>
 
-                      {/* Sets */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Sorozat
-                        </label>
-                        <input
-                          {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.sets`, { valueAsNumber: true })}
-                          type="number"
-                          min="1"
-                          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                          placeholder="3"
-                          value={exercise.sets || ''}
-                          onFocus={(e) => e.target.select()}
-                          onChange={(e) => {
-                            const newSections = [...sections];
-                            const value = e.target.value;
-                            newSections[sectionIndex].exercises[exerciseIndex].sets = value === '' ? undefined : Number(value) || 1;
-                            setSections(newSections);
-                          }}
-                        />
-                      </div>
+                      {/* Sets / Reps / Weight / Rest — 2 col mobilon, 4 col iPaden+ */}
+                      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                        {/* Sets */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Sorozat
+                          </label>
+                          <input
+                            {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.sets`, { valueAsNumber: true })}
+                            type="number"
+                            min="1"
+                            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2.5 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                            placeholder="3"
+                            value={exercise.sets || ''}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => {
+                              const newSections = [...sections];
+                              const value = e.target.value;
+                              newSections[sectionIndex].exercises[exerciseIndex].sets = value === '' ? undefined : Number(value) || 1;
+                              setSections(newSections);
+                            }}
+                          />
+                        </div>
 
-                      {/* Reps */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Ismétlés
-                        </label>
-                        <input
-                          {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.reps`)}
-                          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                          placeholder="8"
-                          value={exercise.reps || ''}
-                          onFocus={(e) => e.target.select()}
-                          onChange={(e) => {
-                            const newSections = [...sections];
-                            newSections[sectionIndex].exercises[exerciseIndex].reps = e.target.value;
-                            setSections(newSections);
-                          }}
-                        />
-                      </div>
+                        {/* Reps */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Ismétlés
+                          </label>
+                          <input
+                            {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.reps`)}
+                            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2.5 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                            placeholder="8"
+                            value={exercise.reps || ''}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => {
+                              const newSections = [...sections];
+                              newSections[sectionIndex].exercises[exerciseIndex].reps = e.target.value;
+                              setSections(newSections);
+                            }}
+                          />
+                        </div>
 
-                      {/* Weight */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Súly (kg) <span className="text-gray-400 text-xs">(opcionális)</span>
-                        </label>
-                        <input
-                          {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.weight`, { 
-                            setValueAs: (v) => v === '' || v === null || v === undefined ? undefined : Number(v)
-                          })}
-                          type="number"
-                          step="0.5"
-                          min="0"
-                          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                          placeholder="Testsúlyos gyakorlatnál hagyd üresen"
-                          value={exercise.weight || ''}
-                          onFocus={(e) => e.target.select()}
-                          onChange={(e) => {
-                            const newSections = [...sections];
-                            const value = e.target.value;
-                            newSections[sectionIndex].exercises[exerciseIndex].weight = value === '' ? undefined : Number(value) || undefined;
-                            setSections(newSections);
-                          }}
-                        />
-                      </div>
+                        {/* Weight */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Súly (kg) <span className="text-xs text-gray-400">(opt.)</span>
+                          </label>
+                          <input
+                            {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.weight`, {
+                              setValueAs: (v) => v === '' || v === null || v === undefined ? undefined : Number(v)
+                            })}
+                            type="number"
+                            step="0.5"
+                            min="0"
+                            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2.5 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                            placeholder="— kg"
+                            value={exercise.weight || ''}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => {
+                              const newSections = [...sections];
+                              const value = e.target.value;
+                              newSections[sectionIndex].exercises[exerciseIndex].weight = value === '' ? undefined : Number(value) || undefined;
+                              setSections(newSections);
+                            }}
+                          />
+                        </div>
 
-                      {/* Rest Period */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Pihenő (mp) <span className="text-gray-400 text-xs">(opcionális)</span>
-                        </label>
-                        <input
-                          {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.restPeriod`, { 
-                            setValueAs: (v) => v === '' || v === null || v === undefined ? undefined : Number(v)
-                          })}
-                          type="number"
-                          min="0"
-                          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                          placeholder="pl. 60, üresen hagyva alapérték marad"
-                          value={exercise.restPeriod || ''}
-                          onFocus={(e) => e.target.select()}
-                          onChange={(e) => {
-                            const newSections = [...sections];
-                            const value = e.target.value;
-                            newSections[sectionIndex].exercises[exerciseIndex].restPeriod = value === '' ? undefined : Number(value) || undefined;
-                            setSections(newSections);
-                          }}
-                        />
+                        {/* Rest Period */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Pihenő (mp) <span className="text-xs text-gray-400">(opt.)</span>
+                          </label>
+                          <input
+                            {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.restPeriod`, {
+                              setValueAs: (v) => v === '' || v === null || v === undefined ? undefined : Number(v)
+                            })}
+                            type="number"
+                            min="0"
+                            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2.5 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                            placeholder="60"
+                            value={exercise.restPeriod || ''}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => {
+                              const newSections = [...sections];
+                              const value = e.target.value;
+                              newSections[sectionIndex].exercises[exerciseIndex].restPeriod = value === '' ? undefined : Number(value) || undefined;
+                              setSections(newSections);
+                            }}
+                          />
+                        </div>
                       </div>
 
                       {/* Notes */}
-                      <div className="sm:col-span-2 lg:col-span-1">
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                           Megjegyzés <span className="text-gray-400 text-xs">(opcionális)</span>
                         </label>
                         <input
                           {...register(`sections.${sectionIndex}.exercises.${exerciseIndex}.notes`)}
                           type="text"
-                          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2.5 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                           placeholder="Kiegészítő megjegyzés vagy instrukció"
                           value={exercise.notes || ''}
                           onChange={(e) => {
@@ -2088,11 +2086,11 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
         </div>
 
         {/* Submit Button */}
-        <div className="sticky bottom-4 z-10 flex justify-end gap-4 rounded-xl border border-gray-200 bg-white/95 p-4 shadow-lg backdrop-blur dark:border-gray-700 dark:bg-gray-900/95">
+        <div className="flex flex-col-reverse gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900 sm:flex-row sm:justify-end">
           <button
             type="submit"
             disabled={isLoading}
-            className="btn btn-primary flex items-center gap-2"
+            className="btn btn-primary flex w-full items-center justify-center gap-2 sm:w-auto"
           >
             {isLoading ? (
               <>
@@ -2111,7 +2109,7 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
             <button
               type="button"
               onClick={() => setShowSharingDialog(true)}
-              className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 flex items-center gap-2"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-3 text-white hover:bg-green-700 sm:w-auto"
             >
               <Share2 size={16} />
               Edzés megosztása

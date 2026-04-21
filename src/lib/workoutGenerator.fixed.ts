@@ -612,19 +612,21 @@ function generate2DayPlan(
   });
 
   if (day === 1) {
+    const terdDomBi = getRandomExercise(categorizedExercises, 'térddomináns_bi');
     const horizontalPushBi = getRandomExercise(categorizedExercises, 'horizontális_nyomás_bi');
     const horizontalPushUni = getRandomExercise(categorizedExercises, 'horizontális_nyomás_uni');
     const verticalPullBi = getRandomExercise(categorizedExercises, 'vertikális_húzás_bi');
     const hipBent = getRandomExercise(categorizedExercises, 'csípődomináns_hajlított');
     const rotational = getRandomExercise(categorizedExercises, 'rotációs');
     const rehab = getRandomExercise(categorizedExercises, 'rehab');
+    const pushEx = horizontalPushBi || horizontalPushUni;
 
     sections.push({
       name: 'Első kör - Robbanékonyság fókusz',
       exercises: [
         {
-          exerciseId: 'placeholder-terddom-bi',
-          name: getRandomExercise(categorizedExercises, 'térddomináns_bi')?.name || 'Térddomináns BI',
+          exerciseId: terdDomBi?.id || 'placeholder-terddom-bi',
+          name: terdDomBi?.name || 'Térddomináns BI',
           sets: 3,
           reps: '6-8',
           weight: null,
@@ -639,13 +641,13 @@ function generate2DayPlan(
           restPeriod: 60,
         },
         {
-          exerciseId: horizontalPushBi ? 'placeholder-horiz-nyomas-bi' : 'placeholder-horiz-nyomas-uni',
-          name: horizontalPushBi?.name || horizontalPushUni?.name || 'Horizontális nyomás',
+          exerciseId: pushEx?.id || 'placeholder-horiz-nyomas',
+          name: pushEx?.name || 'Horizontális nyomás',
           sets: 3,
           reps: '8-10',
           weight: null,
           restPeriod: 90,
-          instruction: horizontalPushUni ? 'Végezd el mindkét oldalra' : undefined,
+          instruction: horizontalPushUni && !horizontalPushBi ? 'Végezd el mindkét oldalra' : undefined,
         },
       ],
     });
@@ -654,7 +656,7 @@ function generate2DayPlan(
       name: 'Második kör - Robbanékonyság fókusz',
       exercises: [
         {
-          exerciseId: 'placeholder-vert-huzas-bi',
+          exerciseId: verticalPullBi?.id || 'placeholder-vert-huzas-bi',
           name: verticalPullBi?.name || 'Függőleges húzás',
           sets: 3,
           reps: '6-8',
@@ -670,7 +672,7 @@ function generate2DayPlan(
           restPeriod: 60,
         },
         {
-          exerciseId: 'placeholder-csipo-hajlitott',
+          exerciseId: hipBent?.id || 'placeholder-csipo-hajlitott',
           name: hipBent?.name || 'Csípődomináns hajlított lábas gyakorlat',
           sets: 3,
           reps: '8-10',
@@ -678,7 +680,7 @@ function generate2DayPlan(
           restPeriod: 90,
         },
         {
-          exerciseId: rotational ? 'placeholder-rotacios' : 'placeholder-rehab',
+          exerciseId: (rotational || rehab)?.id || 'placeholder-rotacios',
           name: rotational?.name || rehab?.name || 'Rotációs vagy rehabilitációs gyakorlat',
           sets: 3,
           reps: '10/oldal',
@@ -688,6 +690,7 @@ function generate2DayPlan(
       ],
     });
   } else if (day === 2) {
+    const terdDomUni = getRandomExercise(categorizedExercises, 'térddomináns_uni');
     const verticalPushBi = getRandomExercise(categorizedExercises, 'vertikális_nyomás_bi');
     const verticalPushUni = getRandomExercise(categorizedExercises, 'vertikális_nyomás_uni');
     const horizontalPullBi = getRandomExercise(categorizedExercises, 'horizontális_húzás_bi');
@@ -696,13 +699,15 @@ function generate2DayPlan(
     const rotational = getRandomExercise(categorizedExercises, 'rotációs');
     const rehab = getRandomExercise(categorizedExercises, 'rehab');
     const gait = getRandomExercise(categorizedExercises, 'gait');
+    const vertPushEx = verticalPushBi || verticalPushUni;
+    const horizPullEx = horizontalPullBi || horizontalPullUni;
 
     sections.push({
       name: 'Első kör - Erő fókusz',
       exercises: [
         {
-          exerciseId: 'placeholder-terddom-uni',
-          name: getRandomExercise(categorizedExercises, 'térddomináns_uni')?.name || 'Térddomináns Uni',
+          exerciseId: terdDomUni?.id || 'placeholder-terddom-uni',
+          name: terdDomUni?.name || 'Térddomináns Uni',
           sets: 3,
           reps: '6-8/oldal',
           weight: null,
@@ -718,13 +723,13 @@ function generate2DayPlan(
           restPeriod: 60,
         },
         {
-          exerciseId: verticalPushBi ? 'placeholder-vert-nyomas-bi' : 'placeholder-vert-nyomas-uni',
-          name: verticalPushBi?.name || verticalPushUni?.name || 'Vertikális nyomás',
+          exerciseId: vertPushEx?.id || 'placeholder-vert-nyomas',
+          name: vertPushEx?.name || 'Vertikális nyomás',
           sets: 3,
           reps: '8-10',
           weight: null,
           restPeriod: 90,
-          instruction: verticalPushUni ? 'Végezd el mindkét oldalra' : undefined,
+          instruction: verticalPushUni && !verticalPushBi ? 'Végezd el mindkét oldalra' : undefined,
         },
       ],
     });
@@ -733,13 +738,13 @@ function generate2DayPlan(
       name: 'Második kör - Erő fókusz',
       exercises: [
         {
-          exerciseId: horizontalPullBi ? 'placeholder-horiz-huzas-bi' : 'placeholder-horiz-huzas-uni',
-          name: horizontalPullBi?.name || horizontalPullUni?.name || 'Vízszintes húzás',
+          exerciseId: horizPullEx?.id || 'placeholder-horiz-huzas',
+          name: horizPullEx?.name || 'Vízszintes húzás',
           sets: 3,
           reps: '8-10',
           weight: null,
           restPeriod: 90,
-          instruction: horizontalPullUni ? 'Végezd el mindkét oldalra' : undefined,
+          instruction: horizontalPullUni && !horizontalPullBi ? 'Végezd el mindkét oldalra' : undefined,
         },
         {
           exerciseId: fmsCorrections[1] ? 'fms-correction-2' : 'placeholder-fms',
@@ -750,7 +755,7 @@ function generate2DayPlan(
           restPeriod: 60,
         },
         {
-          exerciseId: 'placeholder-csipo-nyujtott',
+          exerciseId: hipStraight?.id || 'placeholder-csipo-nyujtott',
           name: hipStraight?.name || 'Csípődomináns nyújtott lábas gyakorlat',
           sets: 3,
           reps: '8-10',
@@ -758,7 +763,7 @@ function generate2DayPlan(
           restPeriod: 90,
         },
         {
-          exerciseId: rotational ? 'placeholder-rotacios' : 'placeholder-rehab',
+          exerciseId: (rotational || rehab)?.id || 'placeholder-rotacios',
           name: rotational?.name || rehab?.name || 'Rotációs vagy rehabilitációs gyakorlat',
           sets: 3,
           reps: '10/oldal',
@@ -766,7 +771,7 @@ function generate2DayPlan(
           restPeriod: 60,
         },
         ...(gait ? [{
-          exerciseId: 'placeholder-gait',
+          exerciseId: gait.id,
           name: gait.name,
           sets: 2,
           reps: '20-30 méter',
@@ -809,19 +814,23 @@ function generate3DayPlan(
     ],
   });
   if (day === 1) {
-    // Első pár
+    const terdDomBi1 = getRandomExercise(categorizedExercises, 'térddomináns_bi');
+    const vertPull1 = getRandomExercise(categorizedExercises, 'vertikális_húzás_bi');
+    const terdDomUni1 = getRandomExercise(categorizedExercises, 'térddomináns_uni');
+    const horizPushUni1 = getRandomExercise(categorizedExercises, 'horizontális_nyomás_uni');
+
     sections.push({
       name: 'Első pár',
       exercises: [
-        { // Térddomináns BI
-          exerciseId:  'placeholder-terddom-bi',
-          name: getRandomExercise(categorizedExercises, 'térddomináns_bi')?.name || 'Térddomináns BI',
+        {
+          exerciseId: terdDomBi1?.id || 'placeholder-terddom-bi',
+          name: terdDomBi1?.name || 'Térddomináns BI',
           sets: 3,
           reps: '8-10',
           weight: null,
           restPeriod: 90,
         },
-        { // FMS korrekció
+        {
           exerciseId: fmsCorrections[1] ? 'fms-correction-2' : 'placeholder-fms',
           name: fmsCorrections[1] || 'FMS korrekciós gyakorlat',
           sets: 2,
@@ -829,9 +838,9 @@ function generate3DayPlan(
           weight: null,
           restPeriod: 60,
         },
-        { // Vertikális húzás
-          exerciseId:  'placeholder-vert-huzas-bi',
-          name: getRandomExercise(categorizedExercises, 'vertikális_húzás_bi')?.name || 'Vertikális húzás',
+        {
+          exerciseId: vertPull1?.id || 'placeholder-vert-huzas-bi',
+          name: vertPull1?.name || 'Vertikális húzás',
           sets: 3,
           reps: '8-10',
           weight: null,
@@ -839,27 +848,26 @@ function generate3DayPlan(
         },
       ],
     });
-    // Első hármas
     sections.push({
       name: 'Első hármas',
       exercises: [
-        { // Térddomináns Uni
-          exerciseId:  'placeholder-terddom-uni',
-          name: getRandomExercise(categorizedExercises, 'térddomináns_uni')?.name || 'Térddomináns Uni',
+        {
+          exerciseId: terdDomUni1?.id || 'placeholder-terddom-uni',
+          name: terdDomUni1?.name || 'Térddomináns Uni',
           sets: 3,
           reps: '8-10',
           weight: null,
           restPeriod: 90,
         },
-        { // Horizontális nyomás uni
-          exerciseId:  'placeholder-horiz-nyomas-uni',
-          name: getRandomExercise(categorizedExercises, 'horizontális_nyomás_uni')?.name || 'Horizontális nyomás uni',
+        {
+          exerciseId: horizPushUni1?.id || 'placeholder-horiz-nyomas-uni',
+          name: horizPushUni1?.name || 'Horizontális nyomás uni',
           sets: 3,
           reps: '8-10',
           weight: null,
           restPeriod: 90,
         },
-        { // FMS korrekció
+        {
           exerciseId: fmsCorrections[2] ? 'fms-correction-3' : 'placeholder-fms',
           name: fmsCorrections[2] || 'FMS korrekciós gyakorlat',
           sets: 2,
@@ -867,8 +875,8 @@ function generate3DayPlan(
           weight: null,
           restPeriod: 60,
         },
-        { // Csípődomináns BI
-          exerciseId:  'placeholder-csipo-bi',
+        {
+          exerciseId: hipBilateral?.id || 'placeholder-csipo-bi',
           name: hipBilateral?.name || 'Csípődomináns BI',
           sets: 3,
           reps: '8-10',
@@ -878,19 +886,23 @@ function generate3DayPlan(
       ],
     });
   } else if (day === 2) {
-    // Második nap szerkezete
+    const horizPushBi2 = getRandomExercise(categorizedExercises, 'horizontális_nyomás_bi');
+    const terdDomUni2 = getRandomExercise(categorizedExercises, 'térddomináns_uni');
+    const vertPushBi2 = getRandomExercise(categorizedExercises, 'vertikális_nyomás_bi');
+    const horizPullBi2 = getRandomExercise(categorizedExercises, 'horizontális_húzás_bi');
+
     sections.push({
       name: 'Első pár',
       exercises: [
-        { // Horizontális nyomás bi
-          exerciseId:  'placeholder-horiz-nyomas-bi',
-          name: getRandomExercise(categorizedExercises, 'horizontális_nyomás_bi')?.name || 'Horizontális nyomás bi',
+        {
+          exerciseId: horizPushBi2?.id || 'placeholder-horiz-nyomas-bi',
+          name: horizPushBi2?.name || 'Horizontális nyomás bi',
           sets: 3,
           reps: '8-10',
           weight: null,
           restPeriod: 90,
         },
-        { // FMS korrekció
+        {
           exerciseId: fmsCorrections[1] ? 'fms-correction-2' : 'placeholder-fms',
           name: fmsCorrections[1] || 'FMS korrekciós gyakorlat',
           sets: 2,
@@ -898,9 +910,9 @@ function generate3DayPlan(
           weight: null,
           restPeriod: 60,
         },
-        { // Térddomináns uni
-          exerciseId:  'placeholder-terddom-uni',
-          name: getRandomExercise(categorizedExercises, 'térddomináns_uni')?.name || 'Térddomináns uni',
+        {
+          exerciseId: terdDomUni2?.id || 'placeholder-terddom-uni',
+          name: terdDomUni2?.name || 'Térddomináns uni',
           sets: 3,
           reps: '8-10',
           weight: null,
@@ -911,23 +923,23 @@ function generate3DayPlan(
     sections.push({
       name: 'Első hármas',
       exercises: [
-        { // Vertikális nyomás
-          exerciseId:  'placeholder-vert-nyomas-bi',
-          name: getRandomExercise(categorizedExercises, 'vertikális_nyomás_bi')?.name || 'Vertikális nyomás',
+        {
+          exerciseId: vertPushBi2?.id || 'placeholder-vert-nyomas-bi',
+          name: vertPushBi2?.name || 'Vertikális nyomás',
           sets: 3,
           reps: '8-10',
           weight: null,
           restPeriod: 90,
         },
-        { // Horizontális húzás bi
-          exerciseId:  'placeholder-horiz-huzas-bi',
-          name: getRandomExercise(categorizedExercises, 'horizontális_húzás_bi')?.name || 'Horizontális húzás bi',
+        {
+          exerciseId: horizPullBi2?.id || 'placeholder-horiz-huzas-bi',
+          name: horizPullBi2?.name || 'Horizontális húzás bi',
           sets: 3,
           reps: '8-10',
           weight: null,
           restPeriod: 90,
         },
-        { // FMS korrekció
+        {
           exerciseId: fmsCorrections[2] ? 'fms-correction-3' : 'placeholder-fms',
           name: fmsCorrections[2] || 'FMS korrekciós gyakorlat',
           sets: 2,
@@ -935,8 +947,8 @@ function generate3DayPlan(
           weight: null,
           restPeriod: 60,
         },
-        { // Csípődomináns Uni
-          exerciseId:  'placeholder-csipo-uni',
+        {
+          exerciseId: hipUnilateral?.id || 'placeholder-csipo-uni',
           name: hipUnilateral?.name || 'Csípődomináns Uni',
           sets: 3,
           reps: '8-10',
@@ -946,19 +958,24 @@ function generate3DayPlan(
       ],
     });
   } else if (day === 3) {
-    // Harmadik nap szerkezete
+    const terdDomBi3 = getRandomExercise(categorizedExercises, 'térddomináns_bi');
+    const vertPull3 = getRandomExercise(categorizedExercises, 'vertikális_húzás_bi');
+    const horizPushUni3 = getRandomExercise(categorizedExercises, 'horizontális_nyomás_uni');
+    const horizPullUni3 = getRandomExercise(categorizedExercises, 'horizontális_húzás_uni');
+    const gaitOrCore3 = getRandomExercise(categorizedExercises, 'gait') || getRandomExercise(categorizedExercises, 'core');
+
     sections.push({
       name: 'Első pár',
       exercises: [
-        { // Térddomináns BI
-          exerciseId:  'placeholder-terddom-bi',
-          name: getRandomExercise(categorizedExercises, 'térddomináns_bi')?.name || 'Térddomináns BI',
+        {
+          exerciseId: terdDomBi3?.id || 'placeholder-terddom-bi',
+          name: terdDomBi3?.name || 'Térddomináns BI',
           sets: 3,
           reps: '8-10',
           weight: null,
           restPeriod: 90,
         },
-        { // FMS korrekció
+        {
           exerciseId: fmsCorrections[1] ? 'fms-correction-2' : 'placeholder-fms',
           name: fmsCorrections[1] || 'FMS korrekciós gyakorlat',
           sets: 2,
@@ -966,9 +983,9 @@ function generate3DayPlan(
           weight: null,
           restPeriod: 60,
         },
-        { // Vertikális húzás
-          exerciseId:  'placeholder-vert-huzas-bi',
-          name: getRandomExercise(categorizedExercises, 'vertikális_húzás_bi')?.name || 'Vertikális húzás',
+        {
+          exerciseId: vertPull3?.id || 'placeholder-vert-huzas-bi',
+          name: vertPull3?.name || 'Vertikális húzás',
           sets: 3,
           reps: '8-10',
           weight: null,
@@ -979,23 +996,23 @@ function generate3DayPlan(
     sections.push({
       name: 'Első hármas',
       exercises: [
-        { // Horizontális nyomás uni
-          exerciseId:  'placeholder-horiz-nyomas-uni',
-          name: getRandomExercise(categorizedExercises, 'horizontális_nyomás_uni')?.name || 'Horizontális nyomás uni',
+        {
+          exerciseId: horizPushUni3?.id || 'placeholder-horiz-nyomas-uni',
+          name: horizPushUni3?.name || 'Horizontális nyomás uni',
           sets: 3,
           reps: '8-10',
           weight: null,
           restPeriod: 90,
         },
-        { // Horizontális húzás uni
-          exerciseId:  'placeholder-horiz-huzas-uni',
-          name: getRandomExercise(categorizedExercises, 'horizontális_húzás_uni')?.name || 'Horizontális húzás uni',
+        {
+          exerciseId: horizPullUni3?.id || 'placeholder-horiz-huzas-uni',
+          name: horizPullUni3?.name || 'Horizontális húzás uni',
           sets: 3,
           reps: '8-10',
           weight: null,
           restPeriod: 90,
         },
-        { // FMS korrekció
+        {
           exerciseId: fmsCorrections[2] ? 'fms-correction-3' : 'placeholder-fms',
           name: fmsCorrections[2] || 'FMS korrekciós gyakorlat',
           sets: 2,
@@ -1003,9 +1020,9 @@ function generate3DayPlan(
           weight: null,
           restPeriod: 60,
         },
-        { // Gait vagy Core
-          exerciseId: 'placeholder-gait-core',
-          name: getRandomExercise(categorizedExercises, 'gait')?.name || getRandomExercise(categorizedExercises, 'core')?.name || 'Gait vagy Core',
+        {
+          exerciseId: gaitOrCore3?.id || 'placeholder-gait-core',
+          name: gaitOrCore3?.name || 'Gait vagy Core',
           sets: 3,
           reps: '8-10',
           weight: null,
@@ -1046,7 +1063,7 @@ function generateDay1Plan(
       name: 'Első pár',
       exercises: [
         {
-          exerciseId: 'placeholder-csipo-bi',
+          exerciseId: hipBilateral?.id || 'placeholder-csipo-bi',
           name: hipBilateral?.name || 'Csípődomináns BI',
           sets: 3,
           reps: '6-8',
@@ -1062,7 +1079,7 @@ function generateDay1Plan(
           restPeriod: 60,
         },
         {
-          exerciseId: 'placeholder-vert-huzas-bi',
+          exerciseId: verticalPull?.id || 'placeholder-vert-huzas-bi',
           name: verticalPull?.name || 'Vertikális húzás',
           sets: 3,
           reps: '6-8',
@@ -1075,7 +1092,7 @@ function generateDay1Plan(
       name: 'Első hármas',
       exercises: [
         {
-          exerciseId: 'placeholder-terddom-uni',
+          exerciseId: kneeUnilateral?.id || 'placeholder-terddom-uni',
           name: kneeUnilateral?.name || 'Térddomináns Uni',
           sets: 3,
           reps: '6-8 oldalanként',
@@ -1083,7 +1100,7 @@ function generateDay1Plan(
           restPeriod: 90,
         },
         {
-          exerciseId: 'placeholder-horiz-nyomas-uni',
+          exerciseId: horizontalPushUnilateral?.id || 'placeholder-horiz-nyomas-uni',
           name: horizontalPushUnilateral?.name || 'Horizontális nyomás uni',
           sets: 3,
           reps: '6-8 oldalanként',
@@ -1099,7 +1116,7 @@ function generateDay1Plan(
           restPeriod: 60,
         },
         {
-          exerciseId: antiRotation ? 'placeholder-rotacios' : 'placeholder-core',
+          exerciseId: antiRotation?.id || 'placeholder-rotacios',
           name: antiRotation?.name || 'Antirotációs core',
           sets: 3,
           reps: '10/oldal',
@@ -1141,7 +1158,7 @@ function generateDay2Plan(
       name: 'Első pár',
       exercises: [
         {
-          exerciseId: verticalPush?.movement_pattern === 'vertical_push_unilateral' ? 'placeholder-vert-nyomas-uni' : 'placeholder-vert-nyomas-bi',
+          exerciseId: verticalPush?.id || 'placeholder-vert-nyomas',
           name: verticalPush?.name || 'Függőleges tolás',
           sets: 3,
           reps: verticalPush?.movement_pattern === 'vertical_push_unilateral' ? '6-8 oldalanként' : '6-8',
@@ -1149,7 +1166,7 @@ function generateDay2Plan(
           restPeriod: 90,
         },
         {
-          exerciseId: 'placeholder-rehab',
+          exerciseId: upperBodyMobility?.id || 'placeholder-rehab',
           name: upperBodyMobility?.name || 'Felsőtest mobilizálás',
           sets: 2,
           reps: '30-45 mp',
@@ -1157,7 +1174,7 @@ function generateDay2Plan(
           restPeriod: 30,
         },
         {
-          exerciseId: 'placeholder-core',
+          exerciseId: stabilization?.id || 'placeholder-core',
           name: stabilization?.name || 'Stabilizálás',
           sets: 3,
           reps: '8-10',
@@ -1170,7 +1187,7 @@ function generateDay2Plan(
       name: 'Első hármas',
       exercises: [
         {
-          exerciseId: 'placeholder-core',
+          exerciseId: core?.id || 'placeholder-core',
           name: core?.name || 'Core',
           sets: 3,
           reps: '10-12',
@@ -1178,7 +1195,7 @@ function generateDay2Plan(
           restPeriod: 60,
         },
         {
-          exerciseId: antiRotation ? 'placeholder-rotacios' : 'placeholder-core',
+          exerciseId: antiRotation?.id || 'placeholder-rotacios',
           name: antiRotation?.name || 'Antirotációs core',
           sets: 3,
           reps: '10/oldal',
@@ -1194,7 +1211,7 @@ function generateDay2Plan(
           restPeriod: 60,
         },
         {
-          exerciseId: carry ? 'placeholder-gait' : 'placeholder-core',
+          exerciseId: carry?.id || 'placeholder-gait',
           name: carry?.name || 'Cipelések',
           sets: 3,
           reps: '20-30 méter',
@@ -1235,7 +1252,7 @@ function generateDay3Plan(
       name: 'Első pár',
       exercises: [
         {
-          exerciseId: 'placeholder-terddom-bi',
+          exerciseId: kneeBilateral?.id || 'placeholder-terddom-bi',
           name: kneeBilateral?.name || 'Térddomináns BI',
           sets: 3,
           reps: '6-8',
@@ -1251,7 +1268,7 @@ function generateDay3Plan(
           restPeriod: 60,
         },
         {
-          exerciseId: 'placeholder-vert-huzas-bi',
+          exerciseId: verticalPull?.id || 'placeholder-vert-huzas-bi',
           name: verticalPull?.name || 'Vertikális húzás',
           sets: 3,
           reps: '6-8',
@@ -1264,7 +1281,7 @@ function generateDay3Plan(
       name: 'Első hármas',
       exercises: [
         {
-          exerciseId: hipDominant?.movement_pattern === 'hip_dominant_unilateral' ? 'placeholder-csipo-uni' : 'placeholder-csipo-bi',
+          exerciseId: hipDominant?.id || 'placeholder-csipo',
           name: hipDominant?.name || 'Csípődomináns',
           sets: 3,
           reps: hipDominant?.movement_pattern === 'hip_dominant_unilateral' ? '6-8 oldalanként' : '6-8',
@@ -1272,7 +1289,7 @@ function generateDay3Plan(
           restPeriod: 90,
         },
         {
-          exerciseId: 'placeholder-horiz-huzas-uni',
+          exerciseId: horizontalPullUnilateral?.id || 'placeholder-horiz-huzas-uni',
           name: horizontalPullUnilateral?.name || 'Horizontális húzás uni',
           sets: 3,
           reps: '8-10 oldalanként',
@@ -1288,7 +1305,7 @@ function generateDay3Plan(
           restPeriod: 60,
         },
         {
-          exerciseId: gaitOrCore?.movement_pattern === 'gait_stability' || gaitOrCore?.movement_pattern === 'gait_crawling' ? 'placeholder-gait' : 'placeholder-core',
+          exerciseId: gaitOrCore?.id || 'placeholder-gait-core',
           name: gaitOrCore?.name || 'Gait vagy Core',
           sets: 3,
           reps: gaitOrCore?.movement_pattern === 'gait_stability' || gaitOrCore?.movement_pattern === 'gait_crawling' ? '20-30 méter' : '10-12',
@@ -1329,7 +1346,7 @@ function generateDay4Plan(
       name: 'Első pár',
       exercises: [
         {
-          exerciseId: horizontalPush?.movement_pattern === 'horizontal_push_unilateral' ? 'placeholder-horiz-nyomas-uni' : 'placeholder-horiz-nyomas-bi',
+          exerciseId: horizontalPush?.id || 'placeholder-horiz-nyomas',
           name: horizontalPush?.name || 'Horizontális tolás',
           sets: 3,
           reps: horizontalPush?.movement_pattern === 'horizontal_push_unilateral' ? '6-8 oldalanként' : '6-8',
@@ -1337,7 +1354,7 @@ function generateDay4Plan(
           restPeriod: 90,
         },
         {
-          exerciseId: 'placeholder-rehab',
+          exerciseId: hipMobility?.id || 'placeholder-rehab',
           name: hipMobility?.name || 'Csípőmobilizálás',
           sets: 2,
           reps: '30-45 mp',
@@ -1350,7 +1367,7 @@ function generateDay4Plan(
       name: 'Első hármas',
       exercises: [
         {
-          exerciseId: 'placeholder-core',
+          exerciseId: core?.id || 'placeholder-core',
           name: core?.name || 'Core',
           sets: 3,
           reps: '10-12',
@@ -1358,7 +1375,7 @@ function generateDay4Plan(
           restPeriod: 60,
         },
         {
-          exerciseId: antiRotation ? 'placeholder-rotacios' : 'placeholder-core',
+          exerciseId: antiRotation?.id || 'placeholder-rotacios',
           name: antiRotation?.name || 'Antirotációs core',
           sets: 3,
           reps: '10/oldal',
@@ -1366,7 +1383,7 @@ function generateDay4Plan(
           restPeriod: 60,
         },
         {
-          exerciseId: carry ? 'placeholder-gait' : 'placeholder-core',
+          exerciseId: carry?.id || 'placeholder-gait',
           name: carry?.name || 'Cipelések',
           sets: 3,
           reps: '20-30 méter',
