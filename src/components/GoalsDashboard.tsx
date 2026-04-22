@@ -113,11 +113,6 @@ const GoalsDashboard: React.FC = () => {
     }
   };
 
-  const startEditingCurrentValue = (goal: Goal) => {
-    setEditingCurrentValue(goal.id);
-    setTempCurrentValue(goal.current_value);
-  };
-
   // Ellenőrzi, hogy egy heti/havi cél ma már teljesítve lett-e
   const isTodayCompletedForPeriodic = (goalId: string) => {
     const progress = goalProgress[goalId];

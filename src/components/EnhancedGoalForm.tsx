@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Plus } from 'lucide-react';
 import { GoalType, GoalCategory, CreateGoalData } from '../lib/goals';
-import { addDays, addWeeks, addMonths, addYears, format } from 'date-fns';
+import { addDays, addWeeks, addMonths, format } from 'date-fns';
 
 interface EnhancedGoalFormProps {
   isOpen: boolean;
@@ -35,7 +35,7 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
   const [durationValue, setDurationValue] = useState(30);
 
   // Automatikus end_date számítás
-  const calculateEndDate = (startDate: string, type: GoalType, durationType: 'days' | 'weeks' | 'months', durationValue: number) => {
+  const calculateEndDate = (startDate: string, _type: GoalType, durationType: 'days' | 'weeks' | 'months', durationValue: number) => {
     const start = new Date(startDate);
     
     // Mindig a durationType alapján számolunk, függetlenül a goal type-tól

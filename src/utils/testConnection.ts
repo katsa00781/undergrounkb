@@ -63,7 +63,7 @@ export async function testConnection(): Promise<boolean> {
     // Részletes teszt futtatása
 
     const testResults = await runSupabaseConnectionTest();
-    const formattedResults = formatTestResults(testResults);
+    void formatTestResults(testResults);
 
     // Ellenőrizzük, hogy van-e policy recursion hiba
     const hasPolicyRecursion = testResults.errors.some(error => 

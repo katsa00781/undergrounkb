@@ -221,8 +221,9 @@ export class SupabaseManager {
       const subscription = this.client.channel(realtimeChannelName);
 
       // Set up the table change listener
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       subscription.on(
-        'postgres_changes',
+        'postgres_changes' as any,
         { event: event as '*' | 'INSERT' | 'UPDATE' | 'DELETE', schema, table },
         (payload: Record<string, unknown>) => {
           callback(payload as RealtimePayload);

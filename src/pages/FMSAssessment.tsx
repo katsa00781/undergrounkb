@@ -119,9 +119,7 @@ const FMSAssessment = () => {
         });
       } else {
         // Log each user before setting state
-        data.forEach(user => {
-
-        });
+        data.forEach(_user => { void _user; });
 
         setUsers(data);
         toast.success(`${data.length} felhasználó betöltve`);

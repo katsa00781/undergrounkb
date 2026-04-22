@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronDown, ChevronRight, Copy, Plus, Save, Search, Trash2, Sparkles, RotateCw, Share2, Users } from 'lucide-react';
+import { ChevronDown, ChevronRight, Copy, Plus, Save, Search, Trash2, Sparkles, RotateCw, Share2, Users, Link, ArrowRight, Timer } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Exercise, getExercises } from '../lib/exercises';
 import { createWorkout, updateWorkout, Workout } from '../lib/workouts';
@@ -21,6 +21,8 @@ import {
 } from '../lib/pwronWorkoutGenerator';
 import { createManualGuest, deleteManualGuest, listManualGuests, ManualGuest, updateManualGuest } from '../lib/manualGuests';
 import WorkoutSharingDialog from '../components/WorkoutSharingDialog';
+import KettlebellComplexBuilder, { isComplexSection } from '../components/workouts/KettlebellComplexBuilder';
+import CardioSectionBuilder, { isCardioSection } from '../components/workouts/CardioSectionBuilder';
 import { PeriodizedGeneratorPanel, PwronGeneratorPanel, TemplateGeneratorPanel } from '../components/workouts/WorkoutGeneratorPanels';
 import WorkoutSectionHeader from '../components/workouts/WorkoutSectionHeader';
 import toast from 'react-hot-toast';
@@ -30,26 +32,24 @@ const workoutSchema = z.object({
   date: z.string().min(1, 'A dátum megadása kötelező'),
   duration: z.number().min(1, 'Az időtartam legalább 1 perc legyen'),
   notes: z.string().optional(),
+  // Sections are managed via component state and validated manually in onSubmit
   sections: z.array(z.object({
-    name: z.string().min(1, 'A szekció neve kötelező'),
+    name: z.string().optional().default(''),
     exercises: z.array(z.object({
-      exerciseId: z.string(), // Allow empty exercises (placeholders)
-      exerciseName: z.string().optional(), // For storing placeholder exercise names
-      sets: z.number().min(1, 'Legalább 1 sorozat szükséges'),
-      reps: z.union([
-        z.number().min(1, 'Legalább 1 ismétlés szükséges'),
-        z.string().min(1, 'Add meg az ismétlésszámot')
-      ]), // Support both string and number for reps
-      weight: z.number().optional(),
+      exerciseId: z.string().optional().default(''),
+      exerciseName: z.string().optional(),
+      sets: z.union([z.number(), z.string(), z.undefined()]).optional(),
+      reps: z.union([z.number(), z.string(), z.undefined()]).optional(),
+      weight: z.union([z.number(), z.undefined()]).optional(),
       notes: z.string().optional(),
-      restPeriod: z.number().optional(),
-    })),
-  })),
+      restPeriod: z.union([z.number(), z.undefined()]).optional(),
+    })).optional().default([]),
+  })).optional().default([]),
 });
 
 type WorkoutFormData = z.infer<typeof workoutSchema>;
 
-type SectionExercise = {
+export type SectionExercise = {
   id: string;
   exerciseId?: string;
   name?: string;
@@ -59,9 +59,15 @@ type SectionExercise = {
   weight?: number;
   notes?: string;
   restPeriod?: number;
+  // Kardió mezők (cardio-session típusú exercise-nél)
+  cardioActivityType?: string;
+  cardioDuration?: number;
+  cardioDistance?: number;
+  cardioSpeed?: number;
+  cardioIncline?: number;
 };
 
-type Section = {
+export type Section = {
   id: string;
   name: string;
   exercises: SectionExercise[];
@@ -425,6 +431,8 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
   const [selectedPwronMainSetPattern, setSelectedPwronMainSetPattern] = useState('');
   const [pwronAthleteName, setPwronAthleteName] = useState('');
   const [showGenerateForm, setShowGenerateForm] = useState(false);
+  const [showComplexBuilder, setShowComplexBuilder] = useState(false);
+  const [showCardioBuilder, setShowCardioBuilder] = useState(false);
   const [showSharingDialog, setShowSharingDialog] = useState(false);
   const [lastCreatedWorkoutId, setLastCreatedWorkoutId] = useState<string | null>(null);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
@@ -474,11 +482,11 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
       : null);
   const isGenerateRoute = Boolean(generatorRouteMode);
   const selectedPlannerMode: PlannerMode = generatorRouteMode ?? 'template';
-  const movementPatterns = getMovementPatterns();
+  void getMovementPatterns();
   const exerciseCategories = getExerciseCategories();
   const fmsFocusOptions = getFMSFocusOptions();
 
-  const isExerciseFMSCandidate = (exercise: Exercise) => exercise.category === 'fms' || getExerciseFMSFocuses(exercise).length > 0;
+  const isExerciseFMSCandidate = (exercise: import('../lib/exerciseService').ExerciseWithTaxonomy) => exercise.category === 'fms' || getExerciseFMSFocuses(exercise).length > 0;
 
   useEffect(() => {
     loadExercises();
@@ -731,39 +739,37 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
       const isFakeId = (id?: string) =>
         !id || id.startsWith('placeholder-') || id.startsWith('fms-correction-');
 
-      // Strip fake/unresolved exercise IDs and clean UI-only fields
-      for (const section of data.sections) {
-        section.exercises = (section.exercises || []).filter(
-          (exercise) => !isFakeId(exercise.exerciseId)
-        );
-        section.exercises.forEach(exercise => {
-          if ('exerciseName' in exercise) {
-            delete (exercise as {exerciseName?: string}).exerciseName;
-          }
-        });
-      }
+      // Use sections state (not form data) to preserve cardio and complex extra fields
+      const cleanedSections = sections
+        .map((section) => ({
+          ...section,
+          exercises: section.exercises
+            .filter((exercise) => !isFakeId(exercise.exerciseId))
+            .map(({ exerciseName: _en, name: _n, ...rest }) => rest),
+        }))
+        .filter((section) => section.exercises.length > 0);
 
-      // Drop sections that became empty after filtering
-      data.sections = data.sections.filter((section) => section.exercises.length > 0);
-
-      if (data.sections.length === 0) {
+      if (cleanedSections.length === 0) {
         throw new Error('Az edzéstervhez legalább egy valódi gyakorlatot ki kell választani');
       }
-      
+
+      const workoutPayload = {
+        title: data.title,
+        date: data.date,
+        duration: data.duration,
+        notes: data.notes,
+        user_id: user.id,
+        sections: cleanedSections as import('../lib/workouts').WorkoutSection[],
+      };
+
       if (isEditMode && editWorkout) {
-        const updatedWorkout = await updateWorkout(editWorkout.id, {
-          ...data,
-          user_id: user.id,
-        });
+        const updatedWorkout = await updateWorkout(editWorkout.id, workoutPayload);
 
         setLastCreatedWorkoutId(updatedWorkout.id);
         toast.success('Edzésterv sikeresen frissítve');
         navigate('/log');
       } else {
-        const createdWorkout = await createWorkout({
-          ...data,
-          user_id: user.id,
-        });
+        const createdWorkout = await createWorkout(workoutPayload);
 
         setLastCreatedWorkoutId(createdWorkout.id);
         toast.success(
@@ -799,6 +805,18 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
     const newSectionId = Date.now().toString();
     setSections([...sections, createDefaultSection(newSectionId)]);
     setCollapsedSections(prev => ({ ...prev, [newSectionId]: false }));
+  };
+
+  const handleAddComplex = (section: Section) => {
+    setSections((prev) => [...prev, section]);
+    setCollapsedSections((prev) => ({ ...prev, [section.id]: false }));
+    setShowComplexBuilder(false);
+  };
+
+  const handleAddCardio = (section: Section) => {
+    setSections((prev) => [...prev, section]);
+    setCollapsedSections((prev) => ({ ...prev, [section.id]: false }));
+    setShowCardioBuilder(false);
   };
 
   const removeSection = (sectionIndex: number) => {
@@ -923,7 +941,8 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
       selectedDifficulty: null,
       showInactive: true,
     }, {
-      isFmsCandidate: isExerciseFMSCandidate,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      isFmsCandidate: isExerciseFMSCandidate as any,
     });
   };
 
@@ -936,7 +955,8 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
       selectedLaterality: lateralityFilters[exerciseKey] || null,
       selectedFMSFocus: fmsFocusFilters[exerciseKey] || null,
     }, {
-      isFmsCandidate: isExerciseFMSCandidate,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      isFmsCandidate: isExerciseFMSCandidate as any,
     });
   };
 
@@ -1521,7 +1541,7 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={handleSubmit(onSubmit, (errors) => { console.error('Form validation errors:', errors); toast.error('Töltsd ki a kötelező mezőket (cím, dátum, időtartam)'); })} className="space-y-8">
         {/* Basic Workout Info */}
         <div className="space-y-4">
           <div>
@@ -1590,19 +1610,150 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
 
         {/* Workout Sections */}
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Edzés szekciók</h2>
-            <button
-              type="button"
-              onClick={addSection}
-              className="btn btn-outline flex items-center gap-2"
-            >
-              <Plus size={16} />
-              Szekció hozzáadása
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setShowComplexBuilder(true)}
+                className="btn btn-outline flex items-center gap-2 border-amber-400 text-amber-700 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-400 dark:hover:bg-amber-900/20"
+              >
+                <Link size={15} />
+                KB Komplex
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCardioBuilder(true)}
+                className="btn btn-outline flex items-center gap-2 border-sky-400 text-sky-700 hover:bg-sky-50 dark:border-sky-600 dark:text-sky-400 dark:hover:bg-sky-900/20"
+              >
+                <Timer size={15} />
+                Kardió
+              </button>
+              <button
+                type="button"
+                onClick={addSection}
+                className="btn btn-outline flex items-center gap-2"
+              >
+                <Plus size={16} />
+                Szekció hozzáadása
+              </button>
+            </div>
           </div>
 
-          {sections.map((section, sectionIndex) => (
+          {sections.map((section, sectionIndex) => isCardioSection(section) ? (
+            /* ── Kardió szekció ── */
+            <div key={section.id} className="rounded-lg border border-sky-300 bg-sky-50 p-4 shadow-sm dark:border-sky-700 dark:bg-sky-950/20 md:p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Timer size={16} className="shrink-0 text-sky-600 dark:text-sky-400" />
+                  <div>
+                    <input
+                      {...register(`sections.${sectionIndex}.name`)}
+                      type="text"
+                      className="block rounded-md border border-sky-300 bg-transparent px-2 py-1 text-base font-semibold text-sky-900 shadow-sm focus:border-sky-500 focus:outline-none dark:border-sky-700 dark:text-sky-100"
+                      value={section.name}
+                      onChange={(e) => {
+                        const ns = [...sections];
+                        ns[sectionIndex].name = e.target.value;
+                        setSections(ns);
+                      }}
+                    />
+                    {section.exercises[0] && (() => {
+                      const ex = section.exercises[0];
+                      const parts: string[] = [];
+                      if (ex.cardioDuration) parts.push(`${ex.cardioDuration} perc`);
+                      if (ex.cardioDistance) parts.push(`${ex.cardioDistance} km`);
+                      if (ex.cardioSpeed) parts.push(`${ex.cardioSpeed} km/h`);
+                      if (ex.cardioIncline) parts.push(`${ex.cardioIncline}% dőlés`);
+                      return parts.length > 0 ? (
+                        <p className="mt-0.5 text-xs text-sky-700 dark:text-sky-400">
+                          {parts.join(' · ')}
+                        </p>
+                      ) : null;
+                    })()}
+                    {section.exercises[0]?.notes && (
+                      <p className="mt-0.5 text-xs text-sky-600 dark:text-sky-400">
+                        {section.exercises[0].notes}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {sections.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeSection(sectionIndex)}
+                    className="rounded-md p-2.5 text-sky-500 hover:bg-sky-100 hover:text-sky-700 dark:hover:bg-sky-900/30"
+                    title="Kardió szekció törlése"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : isComplexSection(section) ? (
+            /* ── Kettlebell Komplex szekció ── */
+            <div key={section.id} className="rounded-lg border border-amber-300 bg-amber-50 p-4 shadow-sm dark:border-amber-700 dark:bg-amber-950/20 md:p-5">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Link size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
+                  <div>
+                    <input
+                      {...register(`sections.${sectionIndex}.name`)}
+                      type="text"
+                      className="block rounded-md border border-amber-300 bg-transparent px-2 py-1 text-base font-semibold text-amber-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-amber-700 dark:text-amber-100"
+                      value={section.name}
+                      onChange={(e) => {
+                        const ns = [...sections];
+                        ns[sectionIndex].name = e.target.value;
+                        setSections(ns);
+                      }}
+                    />
+                    {section.exercises.length > 0 && (
+                      <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">
+                        {section.exercises[0]?.sets ?? '?'} kör
+                        {section.exercises[section.exercises.length - 1]?.restPeriod
+                          ? ` · ${section.exercises[section.exercises.length - 1].restPeriod} mp pihenő`
+                          : ''}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {sections.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeSection(sectionIndex)}
+                    className="rounded-md p-2.5 text-amber-500 hover:bg-amber-100 hover:text-amber-700 dark:hover:bg-amber-900/30"
+                    title="Komplex törlése"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
+
+              {/* Chain display */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {section.exercises.map((ex, exIdx) => {
+                  const exerciseData = exercises.find((e) => e.id === ex.exerciseId);
+                  const name = exerciseData?.name || ex.name || ex.exerciseName || '—';
+                  return (
+                    <span key={ex.id} className="flex items-center gap-1.5">
+                      <span className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 shadow-sm dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-100">
+                        {name}
+                        {ex.reps ? (
+                          <span className="ml-1.5 font-bold text-amber-600 dark:text-amber-400">
+                            ×{ex.reps}
+                          </span>
+                        ) : null}
+                      </span>
+                      {exIdx < section.exercises.length - 1 && (
+                        <ArrowRight size={14} className="text-amber-500" />
+                      )}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
             <div key={section.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 md:p-6">
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div className="flex flex-1 items-start gap-2 md:gap-3">
@@ -1889,7 +2040,7 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
                           <option value="">Válassz gyakorlatot</option>
                           {getFilteredExercises(section.id, exercise.id).map((ex) => (
                             <option key={ex.id} value={ex.id}>
-                              {getExerciseOptionLabel(ex, categoryFilters[exerciseKey])}
+                              {getExerciseOptionLabel(ex as Exercise, categoryFilters[exerciseKey])}
                             </option>
                           ))}
                         </select>
@@ -2118,6 +2269,23 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
         </div>
       </form>
       
+      {/* Kettlebell Complex Builder */}
+      {showComplexBuilder && (
+        <KettlebellComplexBuilder
+          exercises={exercises}
+          onAdd={handleAddComplex}
+          onClose={() => setShowComplexBuilder(false)}
+        />
+      )}
+
+      {/* Cardio Section Builder */}
+      {showCardioBuilder && (
+        <CardioSectionBuilder
+          onAdd={handleAddCardio}
+          onClose={() => setShowCardioBuilder(false)}
+        />
+      )}
+
       {/* Workout Sharing Dialog */}
       <WorkoutSharingDialog
         workoutId={lastCreatedWorkoutId || ''}

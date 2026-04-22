@@ -74,7 +74,7 @@ const TestAuth = () => {
       ];
 
       for (const weightData of testWeights) {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('user_weights')
           .insert({
             user_id: user.id,

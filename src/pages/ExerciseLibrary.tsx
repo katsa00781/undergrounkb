@@ -28,7 +28,7 @@ const CATEGORIES: ExerciseCategory[] = getExerciseCategories().map((category) =>
 const MOVEMENT_PATTERNS = getExerciseCategoryMovementPatternMap();
 
 const ExerciseLibrary = () => {
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const { profile } = useProfile();
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [isLoading, setIsLoading] = useState(true);

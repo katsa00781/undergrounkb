@@ -6,10 +6,9 @@ import {
   X, 
   CheckCircle2, 
   Clock, 
-  Trophy, 
-  TrendingUp, 
-  Flame, 
-  Calendar,
+  Trophy,
+  TrendingUp,
+  Flame,
   Edit,
   Trash2
 } from 'lucide-react';
@@ -176,11 +175,6 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
       console.error('Error updating current value:', error);
       alert('Nem sikerült frissíteni az aktuális értéket: ' + (error as Error).message);
     }
-  };
-
-  const startEditingCurrentValue = (goal: Goal) => {
-    setEditingCurrentValue(goal.id);
-    setTempCurrentValue(goal.current_value);
   };
 
   const handleEditGoal = (goal: Goal) => {

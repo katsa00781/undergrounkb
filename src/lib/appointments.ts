@@ -184,7 +184,7 @@ export async function getUserBookings(userId: string) {
       throw bookingsError;
     }
 
-    return (bookingsData || []) as (AppointmentParticipant & { appointments: Appointment })[];
+    return (bookingsData || []) as unknown as (AppointmentParticipant & { appointments: Appointment })[];
   } catch (error) {
     console.error('Error in getUserBookings:', error);
     return []; // Return empty array on error to avoid breaking the UI
