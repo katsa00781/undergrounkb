@@ -106,8 +106,8 @@ const MyWorkouts: React.FC = () => {
     loadProgressData();
   };
 
-  const handleEditWorkout = (workout: Workout) => {
-    navigate('/workout-planner', { state: { editWorkout: workout } });
+  const handleTrackWorkout = (workout: Workout) => {
+    setSelectedWorkout(workout);
   };
 
   const handleCopyWorkout = (workout: Workout) => {
@@ -373,12 +373,12 @@ const MyWorkouts: React.FC = () => {
                             type="button"
                             onClick={(event) => {
                               event.stopPropagation();
-                              handleEditWorkout(workout);
+                              handleTrackWorkout(workout);
                             }}
                             className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
                           >
                             <Edit2 className="h-3.5 w-3.5" />
-                            Szerkesztés
+                            Teljesítés rögzítése
                           </button>
                           <button
                             type="button"
