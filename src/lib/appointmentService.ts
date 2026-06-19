@@ -15,8 +15,6 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
       description: message,
       variant: type === 'success' ? 'default' : 'destructive',
     });
-  } else {
-
   }
 };
 

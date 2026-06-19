@@ -62,7 +62,7 @@ const ExerciseDetail = () => {
         // In a real app, this would be an API call
         await new Promise(resolve => setTimeout(resolve, 500));
         setExercise(SAMPLE_EXERCISE);
-      } catch (err) {
+      } catch {
         setError('Failed to load exercise details');
       } finally {
         setIsLoading(false);

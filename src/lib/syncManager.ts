@@ -79,7 +79,7 @@ export class SyncManager {
         try {
           await this.performSync(key, item);
           this.queue.delete(key);
-        } catch (error) {
+        } catch {
           if (!this.shouldRetry(item)) {
             this.queue.delete(key);
             toast.error(`Failed to sync data after ${this.maxRetries} attempts`);

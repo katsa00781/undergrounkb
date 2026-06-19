@@ -425,16 +425,18 @@ export async function getGoalProgress(goalId: string): Promise<GoalProgress> {
         expectedCompletions = Math.min(elapsedDays, totalDays);
         completionRate = expectedCompletions > 0 ? (completions.length / expectedCompletions) * 100 : 0;
         break;
-      case 'weekly':
+      case 'weekly': {
         const weeksElapsed = Math.ceil(elapsedDays / 7);
         expectedCompletions = Math.min(weeksElapsed, Math.ceil(totalDays / 7));
         completionRate = expectedCompletions > 0 ? (completions.length / expectedCompletions) * 100 : 0;
         break;
-      case 'monthly':
+      }
+      case 'monthly': {
         const monthsElapsed = Math.ceil(elapsedDays / 30);
         expectedCompletions = Math.min(monthsElapsed, Math.ceil(totalDays / 30));
         completionRate = expectedCompletions > 0 ? (completions.length / expectedCompletions) * 100 : 0;
         break;
+      }
       default:
         // Yearly, quarterly - simple completion check
         completionRate = completions.length > 0 ? 100 : 0;

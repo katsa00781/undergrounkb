@@ -46,7 +46,7 @@ export async function testConnection(): Promise<boolean> {
     }
 
     // Alapvető kapcsolat teszt
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    const { error: sessionError } = await supabase.auth.getSession();
 
     if (sessionError) {
       console.error('\nHiba a session lekérdezése során:');
@@ -54,10 +54,6 @@ export async function testConnection(): Promise<boolean> {
       console.error('- Hiba üzenet:', sessionError.message);
       console.error('- Hiba részletek:', 'N/A');
       return false;
-    }
-
-    if (session) {
-
     }
 
     // Részletes teszt futtatása

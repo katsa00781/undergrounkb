@@ -88,8 +88,6 @@ const TestAuth = () => {
           console.error('Error creating weight:', error);
           toast.error('Error creating weight: ' + error.message);
           return;
-        } else {
-
         }
       }
 

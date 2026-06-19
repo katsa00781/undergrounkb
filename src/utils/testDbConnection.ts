@@ -73,8 +73,6 @@ export async function validateDatabaseSchema() {
             results[table] = !error;
             if (error) {
                 console.error(`Table ${table} validation failed:`, error);
-            } else {
-
             }
         } catch (err) {
             results[table] = false;

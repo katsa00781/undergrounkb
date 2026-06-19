@@ -143,8 +143,6 @@ export async function testSupabaseConnection(): Promise<boolean> {
       } else if (tableError.code === '42P01') {
         console.warn('Table does not exist, but connection is working');
       }
-    } else {
-
     }
 
     // Test RPC function availability (not functionality)
@@ -159,19 +157,13 @@ export async function testSupabaseConnection(): Promise<boolean> {
       // 42883 - function does not exist (might not be deployed yet)
       // 42P17 - policy recursion
       // P0001 - raise exception (business logic error)
-      if (rpcError) {
-        if (['42501', '42883', '42P17', 'P0001'].includes(rpcError.code)) {
-
-        } else {
-          console.error('RPC function error:', {
-            code: rpcError.code,
-            message: rpcError.message,
-            details: rpcError.details
-          });
-          return false;
-        }
-      } else {
-
+      if (rpcError && !['42501', '42883', '42P17', 'P0001'].includes(rpcError.code)) {
+        console.error('RPC function error:', {
+          code: rpcError.code,
+          message: rpcError.message,
+          details: rpcError.details
+        });
+        return false;
       }
     } catch (error) {
       // Ignore RPC errors as they might be permission related
@@ -208,8 +200,6 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
       description: message,
       variant: type === 'success' ? 'default' : 'destructive',
     });
-  } else {
-
   }
 };
 

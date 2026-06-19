@@ -40,7 +40,7 @@ const Login = () => {
       }
       
       navigate('/');
-    } catch (error) {
+    } catch {
       setIsLoading(false);
     }
   };

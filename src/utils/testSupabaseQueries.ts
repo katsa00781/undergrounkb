@@ -32,11 +32,5 @@ export async function testSupabaseQueries(): Promise<boolean> {
 
 // Ha közvetlenül futtatjuk a fájlt, lefuttatjuk a tesztet
 if (require.main === module) {
-  testSupabaseQueries().then(success => {
-    if (success) {
-
-    } else {
-
-    }
-  });
+  void testSupabaseQueries();
 }
