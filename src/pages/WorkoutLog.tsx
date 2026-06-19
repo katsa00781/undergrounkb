@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Clock, Dumbbell, BarChart2, Trash2, Edit2, Filter, Copy } from 'lucide-react';
+import { Calendar, Clock, Dumbbell, BarChart2, Trash2, Edit2, Filter, Copy, Heart, Flame, Activity } from 'lucide-react';
 import { getWorkouts, deleteWorkout, Workout } from '../lib/workouts';
 import { getExercises, Exercise } from '../lib/exercises';
+import { getCardioSessions, type CardioSession } from '../lib/polarService';
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -13,6 +14,7 @@ const WorkoutLog = () => {
   const { user, initialized } = useAuth();
   const navigate = useNavigate();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [cardioSessions, setCardioSessions] = useState<CardioSession[]>([]);
   const [exercises, setExercises] = useState<{ [key: string]: Exercise }>({});
   const [isLoading, setIsLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState<string>('');
@@ -27,9 +29,10 @@ const WorkoutLog = () => {
     
     try {
       setIsLoading(true);
-      const [workoutsData, exercisesData] = await Promise.all([
+      const [workoutsData, exercisesData, cardioData] = await Promise.all([
         getWorkouts(user.id),
-        getExercises()
+        getExercises(),
+        getCardioSessions()
       ]);
 
       // Create a map of exercises for quick lookup
@@ -39,6 +42,7 @@ const WorkoutLog = () => {
       }, {} as { [key: string]: Exercise });
 
       setWorkouts(workoutsData);
+      setCardioSessions(cardioData);
       setExercises(exercisesMap);
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -96,6 +100,17 @@ const WorkoutLog = () => {
   const filteredWorkouts = dateFilter
     ? workouts.filter(workout => workout.date === dateFilter)
     : workouts;
+
+  const filteredCardio = dateFilter
+    ? cardioSessions.filter(session => session.start_time?.slice(0, 10) === dateFilter)
+    : cardioSessions;
+
+  const formatCardioDuration = (seconds: number | null) => {
+    if (!seconds) return '—';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.round((seconds % 3600) / 60);
+    return h > 0 ? `${h} ó ${m} p` : `${m} p`;
+  };
 
   if (isLoading) {
     return (
@@ -284,6 +299,65 @@ const WorkoutLog = () => {
                 ))}
             </div>
           </div>
+
+          {cardioSessions.length > 0 && (
+            <div className="card">
+              <h3 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
+                <Activity size={20} className="text-primary-600 dark:text-primary-400" />
+                Polar edzések
+              </h3>
+              <div className="mt-4 space-y-3">
+                {filteredCardio.length > 0 ? (
+                  filteredCardio.map((session) => (
+                    <div
+                      key={session.id}
+                      className="rounded-lg border border-gray-200 p-3 dark:border-gray-700"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {session.sport || 'Edzés'}
+                        </span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          {session.start_time
+                            ? formatWorkoutDate(session.start_time.slice(0, 10))
+                            : ''}
+                        </span>
+                      </div>
+                      <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <Clock size={14} />
+                          {formatCardioDuration(session.duration_seconds)}
+                        </span>
+                        {session.calories != null && (
+                          <span className="flex items-center gap-1">
+                            <Flame size={14} />
+                            {session.calories} kcal
+                          </span>
+                        )}
+                        {session.hr_avg != null && (
+                          <span className="flex items-center gap-1">
+                            <Heart size={14} />
+                            {session.hr_avg}
+                            {session.hr_max != null && ` / ${session.hr_max}`} bpm
+                          </span>
+                        )}
+                        {session.training_load != null && (
+                          <span className="flex items-center gap-1">
+                            <BarChart2 size={14} />
+                            Terhelés: {Math.round(Number(session.training_load))}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Nincs Polar edzés a kiválasztott napon.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

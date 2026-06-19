@@ -392,12 +392,114 @@ export interface Database {
           }
         ]
       }
+      polar_connections: {
+        Row: {
+          user_id: string
+          polar_user_id: string | null
+          access_token: string
+          member_id: string | null
+          last_transaction_id: string | null
+          connected_at: string
+          last_sync_at: string | null
+        }
+        Insert: {
+          user_id: string
+          polar_user_id?: string | null
+          access_token: string
+          member_id?: string | null
+          last_transaction_id?: string | null
+          connected_at?: string
+          last_sync_at?: string | null
+        }
+        Update: {
+          user_id?: string
+          polar_user_id?: string | null
+          access_token?: string
+          member_id?: string | null
+          last_transaction_id?: string | null
+          connected_at?: string
+          last_sync_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "polar_connections_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      cardio_sessions: {
+        Row: {
+          id: string
+          user_id: string
+          polar_exercise_id: string
+          source: string
+          start_time: string | null
+          duration_seconds: number | null
+          sport: string | null
+          calories: number | null
+          hr_avg: number | null
+          hr_max: number | null
+          training_load: number | null
+          hr_zones: Json | null
+          raw: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          polar_exercise_id: string
+          source?: string
+          start_time?: string | null
+          duration_seconds?: number | null
+          sport?: string | null
+          calories?: number | null
+          hr_avg?: number | null
+          hr_max?: number | null
+          training_load?: number | null
+          hr_zones?: Json | null
+          raw?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          polar_exercise_id?: string
+          source?: string
+          start_time?: string | null
+          duration_seconds?: number | null
+          sport?: string | null
+          calories?: number | null
+          hr_avg?: number | null
+          hr_max?: number | null
+          training_load?: number | null
+          hr_zones?: Json | null
+          raw?: Json | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cardio_sessions_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_polar_status: {
+        Args: Record<string, never>
+        Returns: {
+          connected: boolean
+          connected_at: string | null
+          last_sync_at: string | null
+        }[]
+      }
     }
     Enums: {
       exercise_category: 'strength_training' | 'cardio' | 'kettlebell' | 'mobility_flexibility' | 'hiit' | 'recovery' | 'fms' | 'smr'

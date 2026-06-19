@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { User, Calendar, Scale, Ruler, Target, X } from 'lucide-react';
 import { useProfileProvider } from '../hooks/useProfileProvider';
 import SchemaFixNotification from '../components/SchemaFixNotification';
+import PolarConnectionCard from '../components/PolarConnectionCard';
 import { showSchemaFixNotification } from '../utils/schemaNotifications';
 
 // Elérhető fitness célok
@@ -408,6 +409,9 @@ const Profile = () => {
           </button>
         </div>
       </form>
+
+      {/* Polar Flow integráció */}
+      <PolarConnectionCard />
 
       {/* Schema Fix Notification */}
       <SchemaFixNotification 

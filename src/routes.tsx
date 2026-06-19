@@ -26,6 +26,7 @@ const InviteAccept = lazy(() => import('./pages/InviteAccept'));
 const Goals = lazy(() => import('./pages/Goals'));
 const WorkoutCalendarPage = lazy(() => import('./pages/WorkoutCalendarPage'));
 const MyWorkouts = lazy(() => import('./pages/MyWorkouts'));
+const PolarCallback = lazy(() => import('./pages/PolarCallback'));
 
 interface AppRoutesProps {
   userRole: string;
@@ -74,6 +75,7 @@ export const AppRoutes = ({ userRole }: AppRoutesProps) => {
           {/* Routes accessible to all authenticated users */}
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/polar/callback" element={<PolarCallback />} />
           <Route path="/log" element={<WorkoutLog />} />
           <Route path="/calendar" element={<WorkoutCalendarPage />} />
           <Route path="/my-workouts" element={<MyWorkouts />} />

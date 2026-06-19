@@ -24,12 +24,15 @@ export default defineConfig({
     include: ['react', 'react-dom', 'react-router-dom'],
   },
   server: {
+    // Fixed app port; HMR runs over the same port via WS upgrade (no separate
+    // fixed HMR port, ami több párhuzamos dev szerver esetén ütközne).
+    port: 5173,
+    // strictPort: ha az 5173 foglalt (pl. már fut egy dev szerver), a második
+    // indítás EADDRINUSE hibával álljon le, ne ugorjon csendben másik portra.
+    strictPort: true,
     // HMR configuration
     hmr: {
       overlay: true,
-      port: 24678,
-      // Force client reload on errors
-      clientPort: 24678,
     },
     // Force reload on file changes
     watch: {
@@ -42,8 +45,6 @@ export default defineConfig({
     cors: true,
     // Force page reload for certain file changes
     middlewareMode: false,
-    // Strict port for consistency
-    strictPort: false,
     // Open browser automatically
     open: false,
   },
