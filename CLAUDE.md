@@ -39,7 +39,7 @@ supabase/
 - [src/routes.tsx](src/routes.tsx) — összes route, role-based védelem
 - [src/config/supabase.ts](src/config/supabase.ts) — Supabase kliens
 - [src/contexts/AuthContext.tsx](src/contexts/AuthContext.tsx) — globális auth állapot
-- [src/lib/workoutGenerator.ts](src/lib/workoutGenerator.ts) — fő edzésgeneráló algoritmus (1168 sor)
+- [src/lib/workoutGenerator.fixed.ts](src/lib/workoutGenerator.fixed.ts) — fő edzésgeneráló algoritmus (~1620 sor)
 - [src/lib/exerciseService.ts](src/lib/exerciseService.ts) — gyakorlat CRUD és szűrés
 - [src/pages/WorkoutPlanner.tsx](src/pages/WorkoutPlanner.tsx) — legkomplexebb oldal (2137 sor)
 - [src/types/supabase.ts](src/types/supabase.ts) — összes DB típusdefiníció
@@ -71,9 +71,9 @@ Fő típusok helye: [src/types/supabase.ts](src/types/supabase.ts)
 - Workout/Exercise/FMS típusok: [src/lib/exercises.ts](src/lib/exercises.ts), [src/lib/workouts.ts](src/lib/workouts.ts)
 
 ## Important Notes
-- **Két generátor**: `workoutGenerator.ts` (elsődleges) és `workoutGenerator.fixed.ts` (alternatív) — tisztázni kell melyik az aktív
+- **Generátor**: `workoutGenerator.fixed.ts` az egyetlen aktív edzésgenerátor (a korábbi `workoutGenerator.ts` 2026-06-24-én törölve)
 - **Pwron generátor**: `pwronWorkoutGenerator.ts` — speciális periodizált 4 napos split
 - **Supabase migrációk**: `supabase/migrations/` — sémaváltoztatáshoz mindig ide adjunk új migration fájlt
 - **Deployment**: Vercel-re (`vercel.json`) és Netlify-ra (`netlify.toml`) is konfigurálva
-- **DB fix szkriptek**: A gyökérkönyvtárban sok SQL/shell script van korábbi séma/permission problémák megoldásaiból
+- **DB fix szkriptek**: A korábbi séma/permission fix SQL/shell scriptek a `scripts/legacy/` mappában archiválva (2026-06-24); a gyökérben már csak `build.sh` és `deploy.sh` maradt
 - **Meghívórendszer**: Publikus `/invite/:token` route, AdminUI-ban kezelhető meghívók (EmailJS-en keresztül küldve)

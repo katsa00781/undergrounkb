@@ -11,12 +11,12 @@
     "test:supabase": "node -r dotenv/config node_modules/.bin/tsx src/utils/testConnection.ts",
     "validate:db": "node -r dotenv/config node_modules/.bin/tsx scripts/validate-database.ts",
     "diagnose:profile": "ts-node scripts/diagnose-profile-issue.ts",
-    "fix:profile": "./fix-profile-columns.sh",
-    "fix:profile:all": "./fix-profile-database.sh",
-    "fix:first-name": "./fix-first-name-column.sh",
-    "reset:schema": "./reset-schema-cache.sh",
+    "fix:profile": "./scripts/legacy/fix-profile-columns.sh",
+    "fix:profile:all": "./scripts/legacy/fix-profile-database.sh",
+    "fix:first-name": "./scripts/legacy/fix-first-name-column.sh",
+    "reset:schema": "./scripts/legacy/reset-schema-cache.sh",
     "reset:schema:js": "ts-node scripts/reset-schema-cache.ts",
-    "check:profile": "./check-profile-structure.sh"
+    "check:profile": "./scripts/legacy/check-profile-structure.sh"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
