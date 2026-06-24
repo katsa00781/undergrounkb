@@ -457,12 +457,43 @@ export async function getWorkoutProgressTrend(userId: string, exerciseId?: strin
       completed?: boolean;
     }> = [];
 
-    workouts.forEach(workout => {
+    // Normalize sections once and collect the exercise ids we need names for
+    const normalized = workouts.map(workout => {
       let sections = workout.sections;
       if (typeof sections === 'string') {
         sections = JSON.parse(sections);
       }
+      return { workout, sections: sections as WorkoutSection[] };
+    });
 
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const idsToResolve = new Set<string>();
+    normalized.forEach(({ sections }) => {
+      sections.forEach(section => {
+        section.exercises.forEach(exercise => {
+          if (exercise.exerciseId && UUID_RE.test(exercise.exerciseId)) {
+            idsToResolve.add(exercise.exerciseId);
+          }
+        });
+      });
+    });
+
+    // Batch-resolve exercise names in a single query (id -> name)
+    const nameById = new Map<string, string>();
+    if (idsToResolve.size > 0) {
+      const { data: exerciseRows, error: exerciseError } = await supabase
+        .from('exercises')
+        .select('id, name')
+        .in('id', Array.from(idsToResolve));
+
+      if (exerciseError) {
+        console.warn('Could not resolve exercise names:', exerciseError.message);
+      } else {
+        exerciseRows?.forEach(row => nameById.set(row.id, row.name));
+      }
+    }
+
+    normalized.forEach(({ workout, sections }) => {
       sections.forEach((section: WorkoutSection) => {
         section.exercises.forEach((exercise) => {
           if (!exerciseId || exercise.exerciseId === exerciseId) {
@@ -470,7 +501,8 @@ export async function getWorkoutProgressTrend(userId: string, exerciseId?: strin
               date: workout.date,
               workoutTitle: workout.title,
               exerciseId: exercise.exerciseId,
-              exerciseName: exercise.exerciseId, // TODO: Get actual exercise name
+              // Resolve the real exercise name, fall back to the id if unknown
+              exerciseName: nameById.get(exercise.exerciseId) ?? exercise.exerciseId,
               plannedSets: exercise.sets,
               actualSets: exercise.actualSets,
               plannedReps: exercise.reps,

@@ -76,4 +76,5 @@ Fő típusok helye: [src/types/supabase.ts](src/types/supabase.ts)
 - **Supabase migrációk**: `supabase/migrations/` — sémaváltoztatáshoz mindig ide adjunk új migration fájlt
 - **Deployment**: Vercel-re (`vercel.json`) és Netlify-ra (`netlify.toml`) is konfigurálva
 - **DB fix szkriptek**: A korábbi séma/permission fix SQL/shell scriptek a `scripts/legacy/` mappában archiválva (2026-06-24); a gyökérben már csak `build.sh` és `deploy.sh` maradt
+- **Régi Markdown-jegyzetek**: A korábbi egyszeri „fix/summary/status" md-fájlok a `docs/legacy/` mappában archiválva (2026-06-24); a gyökérben csak a core (CLAUDE/BACKLOG/README), a `database.md` és a setup/deployment guide-ok maradtak
 - **Meghívórendszer**: Publikus `/invite/:token` route, AdminUI-ban kezelhető meghívók (EmailJS-en keresztül küldve)

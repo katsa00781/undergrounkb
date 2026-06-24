@@ -1,6 +1,6 @@
 import { supabase } from '../config/supabase';
 import { toast } from '../components/ui/use-toast';
-import { isCurrentUserAdmin } from './userService';
+import { isCurrentUserAdmin } from './users';
 
 export interface FMSAssessment {
   id: string;
