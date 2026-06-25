@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Plus, Trash2, ArrowRight, X, Link, Save, BookOpen, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { Exercise } from '../../lib/exercises';
-import type { Section, SectionExercise } from '../../pages/WorkoutPlanner';
+import type { Section, SectionExercise } from '../../lib/workoutPlannerHelpers';
 import { useAuth } from '../../hooks/useAuth';
 import {
   listKbComplexes,

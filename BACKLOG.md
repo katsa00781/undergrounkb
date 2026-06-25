@@ -3,7 +3,7 @@
 > Ez a fájl a projekt **jelenlegi állapotát** rögzíti, és ide gyűjtjük a **jövőbeni fejlesztéseket** is.
 > Frissítsd, amikor egy feladatot elkezdesz, befejezel, vagy új ötlet merül fel.
 >
-> Utolsó frissítés: **2026-06-24** (takarítás végrehajtva)
+> Utolsó frissítés: **2026-06-25** (nagy fájlok refaktorálása befejezve)
 
 ---
 
@@ -57,10 +57,11 @@
 - [x] **Duplikált service-ek (használaton kívüliek) törlése**: `emailService-new.ts` (0 import) és `appointmentService.ts` (0 import) törölve. ✅ 2026-06-24
 - [x] **`users.ts` vs `userService.ts` összevonása**: az egyetlen külsőleg használt export (`isCurrentUserAdmin`, RPC `is_admin`-alapú) átemelve a `users.ts`-be; a `fmsService.ts` importja átállítva; a `userService.ts` (és a benne lévő, sehol nem importált Profile-segédek) törölve. Build + typecheck zöld. ✅ 2026-06-24
 - [x] **`src/lib/workouts.ts:473` TODO**: a `getWorkoutProgressTrend` most batch-lekérdezéssel (`id -> name` map, egyetlen `exercises` query) oldja fel a valódi gyakorlatneveket; ismeretlen id-nál a régi fallback (id) marad. ✅ 2026-06-24
-- [ ] **Nagy fájlok refaktorálása** (CLAUDE.md is jelöli):
-  - `WorkoutPlanner.tsx` (2303 sor) — komponensekre bontani 🔴
-  - `workoutGenerator.fixed.ts` (1620 sor) 🟡
-  - `exerciseService.ts` (869 sor), `ProgressTracking.tsx` (748 sor) 🟢
+- [x] **Nagy fájlok refaktorálása** (CLAUDE.md is jelöli): ✅ 2026-06-25
+  - [x] `WorkoutPlanner.tsx` (2303 → 920 sor) — komponensekre bontva ✅ 2026-06-25
+  - [x] `workoutGenerator.fixed.ts` (1620 → 242 sor) — modulokra bontva ✅ 2026-06-25
+  - [x] `exerciseService.ts` (869 → 225 sor) — `src/lib/exerciseTaxonomy/` modulokra bontva ✅ 2026-06-25
+  - [x] `ProgressTracking.tsx` (748 → 141 sor) — `components/progress/` komponensekre + `progressTrackingHelpers.ts`-be bontva ✅ 2026-06-25
 - [x] **Supabase teszt-/segéd-fájlok konszolidálása**: 3 halott fájl törölve (`supabaseConnection.ts` — `SupabaseConnectionManager`, 0 import; `utils/testConnection.ts` — 0 import; `lib/testSupabaseConnection.ts` — csak a halott `testConnection.ts` importálta). Megmaradt a 2 ténylegesen használt: `supabaseTest.ts` (UserManagement) és `supabaseUtils.ts` (megosztott `handleSupabaseError` / `testSupabaseConnection`). Build zöld. ✅ 2026-06-24
 
 ---
@@ -85,6 +86,10 @@
 
 ## 5. Done (lezárt tételek)
 
+- [x] **`exerciseService.ts` modulokra bontása** (2026-06-25): a 869 soros service 225 sorra csökkent (-74%); a `.ts` továbbra is a belépési pont (megtartja a Supabase CRUD-ot — `getExercises`/`getExerciseById`/`createExercise`/`updateExercise`/`deleteExercise`/`listExerciseTaxonomyTags` + a `replaceManualTaxonomyAssignments` helpert — és re-exportál minden publikus típust/függvényt, így a 9 importáló fájl egyikét sem kellett módosítani). Kiszervezve a `src/lib/exerciseTaxonomy/` mappába: `types.ts` (összes `export type`), `constants.ts` (kategória/mozgásminta-opciók + FMS-fókusz nevek + taxonómia-slug map-ek + szűrhető slug-halmazok), `mapping.ts` (`mapExerciseWithTaxonomy` + derived-slug + tag-getterek), `metadata.ts` (label/option getterek), `filters.ts` (`filterExercisesList` + kategória/minta-szűrők + `getExerciseFMSFocuses`). Build + lint zöld.
+- [x] **`ProgressTracking.tsx` komponensekre bontása** (2026-06-25): a 748 soros oldal 141 sorra csökkent (-81%). A főkomponens megtartja az adatbetöltést (`loadWeights` + `useAutoRefresh`) és a kompozíciót. Kiszervezve: `lib/progressTrackingHelpers.ts` (`weightSchema` zod + `WeightFormData` + `CHART_METRICS` adatvezérelt metrika-konfiguráció + `buildChartData`/`buildChartOptions`/`getChartLabels` — az 5× ismételt `switch (activeChart)` egy config-tömbbé olvasztva), `components/progress/MeasurementForm.tsx` (saját `useForm`), `ProgressChartCard.tsx` (Chart.js + metrika-gombok), `ProgressStatsCard.tsx`, `RecentEntriesCard.tsx`. Build + lint zöld.
+- [x] **`workoutGenerator.fixed.ts` modulokra bontása** (2026-06-25): az 1620 soros generátor 242 sorra csökkent (-85%); a `.fixed.ts` továbbra is a belépési pont (re-exportál minden publikus típust/függvényt, így egyetlen importáló fájlt sem kellett módosítani). Kiszervezve a `src/lib/workoutGenerator/` mappába: `types.ts` (típusok + `TRAINING_FOCUS_OPTIONS` + `getTrainingFocusLabel`), `exerciseCategorizer.ts` (konstansok + `categorizeExercises` + `getRandomExercise`/`getFirstAvailableExercise`), `fmsCorrections.ts` (`FMS_CORRECTIONS` + `identifyFMSCorrections`), `focusPresets.ts` (periodizációs presetek + `getFocusPreset` + `applyFocusPresetToSections`), `dayPlans.ts` (`generate2DayPlan`/`generate3DayPlan`/`generateDay1-4Plan`). A két publikus függvény közti duplikáció (alapsúly-kiegészítés, FMS-lekérés) közös helperekbe (`applyDefaultWeights`, `fetchFMSCorrections`) emelve. Build + lint zöld.
+- [x] **`WorkoutPlanner.tsx` komponensekre bontása** (2026-06-25): a 2303 soros oldal 920 sorra csökkent (-60%). Kiszervezve: `lib/workoutPlannerHelpers.ts` (típusok + `workoutSchema` + `getPlaceholderExerciseMeta` + default factory-k), `hooks/useSectionExerciseFilters.ts` (per-exercise szűrőállapot + műveletek), `components/workouts/ParticipantSelector.tsx`, `WorkoutSummaryCards.tsx`, `WorkoutSectionsEditor.tsx` (kardió/komplex/standard szekció renderelés). A `Section`/`SectionExercise` típus a helpers-be került (a builderek importja átállítva, körkörös import megszüntetve). Lint + build zöld.
 - [x] **Supabase teszt-/segéd-fájlok konszolidálása** (2026-06-24): 3 halott fájl törölve, 2 használt maradt; build zöld
 - [x] **`userService.ts` → `users.ts` merge** (2026-06-24): egyetlen használt export átemelve, import átállítva, `userService.ts` törölve; build zöld
 - [x] **`workouts.ts:473` gyakorlatnév-feloldás** (2026-06-24): batch `id -> name` lekérdezés a `getWorkoutProgressTrend`-ben; nincs több TODO/FIXME a kódban

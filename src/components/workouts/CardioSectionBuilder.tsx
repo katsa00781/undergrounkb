@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Timer } from 'lucide-react';
-import type { Section, SectionExercise } from '../../pages/WorkoutPlanner';
+import type { Section, SectionExercise } from '../../lib/workoutPlannerHelpers';
 
 export const CARDIO_PREFIX = 'Kardió';
 

@@ -39,9 +39,10 @@ supabase/
 - [src/routes.tsx](src/routes.tsx) — összes route, role-based védelem
 - [src/config/supabase.ts](src/config/supabase.ts) — Supabase kliens
 - [src/contexts/AuthContext.tsx](src/contexts/AuthContext.tsx) — globális auth állapot
-- [src/lib/workoutGenerator.fixed.ts](src/lib/workoutGenerator.fixed.ts) — fő edzésgeneráló algoritmus (~1620 sor)
-- [src/lib/exerciseService.ts](src/lib/exerciseService.ts) — gyakorlat CRUD és szűrés
-- [src/pages/WorkoutPlanner.tsx](src/pages/WorkoutPlanner.tsx) — legkomplexebb oldal (2137 sor)
+- [src/lib/workoutGenerator.fixed.ts](src/lib/workoutGenerator.fixed.ts) — fő edzésgeneráló belépési pont (242 sor: `generateWorkoutPlan`/`generateWorkoutPlanV2` + re-exportok); a logika a `src/lib/workoutGenerator/` modulokban: `types.ts`, `exerciseCategorizer.ts`, `fmsCorrections.ts`, `focusPresets.ts`, `dayPlans.ts`
+- [src/lib/exerciseService.ts](src/lib/exerciseService.ts) — gyakorlat CRUD belépési pont (225 sor: Supabase CRUD + taxonómia-hozzárendelés + re-exportok); a tiszta logika a `src/lib/exerciseTaxonomy/` modulokban: `types.ts`, `constants.ts` (kategória/mozgásminta/FMS taxonómia-adatok), `mapping.ts` (taxonómia-leképezés), `metadata.ts` (label/option getterek), `filters.ts` (gyakorlatszűrés + FMS-fókusz)
+- [src/pages/WorkoutPlanner.tsx](src/pages/WorkoutPlanner.tsx) — edzéstervező oldal (920 sor); a UI komponensekre bontva: `components/workouts/{ParticipantSelector,WorkoutSummaryCards,WorkoutSectionsEditor}.tsx`, a szűrőlogika a `hooks/useSectionExerciseFilters.ts`-ben, a típusok/segédek a `lib/workoutPlannerHelpers.ts`-ben
+- [src/pages/ProgressTracking.tsx](src/pages/ProgressTracking.tsx) — haladáskövető oldal (141 sor: adatbetöltés + kompozíció); a UI komponensekre bontva: `components/progress/{MeasurementForm,ProgressChartCard,ProgressStatsCard,RecentEntriesCard}.tsx`, a séma + chart-metrika-konfiguráció a `lib/progressTrackingHelpers.ts`-ben
 - [src/types/supabase.ts](src/types/supabase.ts) — összes DB típusdefiníció
 
 ## Development Commands
