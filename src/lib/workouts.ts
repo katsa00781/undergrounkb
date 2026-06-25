@@ -35,6 +35,11 @@ export interface Workout {
   original_workout_id?: string;
   shared_from?: string;
   appointment_id?: string;
+  // Microciklus / program kötés
+  program_id?: string | null;
+  program_week?: number | null;
+  program_day_label?: string | null;
+  program_sequence?: number | null;
 }
 
 // Define the database types

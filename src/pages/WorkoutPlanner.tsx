@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save, Sparkles, RotateCw, Share2 } from 'lucide-react';
+import { Save, Sparkles, RotateCw, Share2, Users, ChevronRight } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Exercise, getExercises } from '../lib/exercises';
 import { createWorkout, updateWorkout, Workout } from '../lib/workouts';
@@ -23,6 +23,8 @@ import {
   LongevityModality,
   LongevityWeekNumber,
 } from '../lib/longevityWorkoutGenerator';
+import { generateMicrocycle } from '../lib/microcycleGenerator';
+import { MICROCYCLE_WEEK_OPTIONS, MicrocycleParams } from '../lib/microcycle/types';
 import { createManualGuest, deleteManualGuest, listManualGuests, ManualGuest, updateManualGuest } from '../lib/manualGuests';
 import {
   createDefaultExercise,
@@ -51,6 +53,15 @@ export type { Section, SectionExercise, PlannerMode } from '../lib/workoutPlanne
 interface WorkoutPlannerProps {
   forcedGeneratorMode?: PlannerMode;
 }
+
+// A microciklus alapértelmezett kezdődátuma: a következő hétfő (YYYY-MM-DD).
+const getNextMonday = (): string => {
+  const today = new Date();
+  const day = today.getDay(); // 0 = vasárnap
+  const daysUntilMonday = ((8 - day) % 7) || 7;
+  const next = new Date(today.getFullYear(), today.getMonth(), today.getDate() + daysUntilMonday);
+  return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
+};
 
 const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
   const { user } = useAuth();
@@ -89,6 +100,7 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
   const [showSharingDialog, setShowSharingDialog] = useState(false);
   const [lastCreatedWorkoutId, setLastCreatedWorkoutId] = useState<string | null>(null);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const [collapsedExercises, setCollapsedExercises] = useState<Record<string, boolean>>({});
   const [isGeneratedPlan, setIsGeneratedPlan] = useState(false);
   const [guestUsers, setGuestUsers] = useState<ManualGuest[]>([]);
   const [isLoadingGuests, setIsLoadingGuests] = useState(false);
@@ -98,6 +110,10 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
   const [newGuestName, setNewGuestName] = useState('');
   const [selectedParticipantIds, setSelectedParticipantIds] = useState<string[]>([]);
   const [selectedFmsUserId, setSelectedFmsUserId] = useState('');
+  const [microcycleEnabled, setMicrocycleEnabled] = useState(false);
+  const [microcycleName, setMicrocycleName] = useState('');
+  const [microcycleStartDate, setMicrocycleStartDate] = useState(getNextMonday);
+  const [microcycleWeekCount, setMicrocycleWeekCount] = useState(4);
 
   const filters = useSectionExerciseFilters(exercises);
 
@@ -521,6 +537,23 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
     }));
   };
 
+  const toggleExerciseCollapse = (exerciseKey: string) => {
+    setCollapsedExercises(prev => ({
+      ...prev,
+      [exerciseKey]: !prev[exerciseKey],
+    }));
+  };
+
+  const allSectionsCollapsed = sections.length > 0 && sections.every((section) => collapsedSections[section.id]);
+
+  const toggleAllSections = () => {
+    if (allSectionsCollapsed) {
+      setCollapsedSections({});
+    } else {
+      setCollapsedSections(Object.fromEntries(sections.map((section) => [section.id, true])));
+    }
+  };
+
   const handleGenerateWorkout = async () => {
     if (!user?.id) {
       toast.error('Az edzésterv generálásához be kell jelentkezned');
@@ -577,6 +610,21 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
 
       setSections(uiSections);
 
+      // Generált terv: sok blokknál a szekciók alapból csukva, a gyakorlatok pedig
+      // mindig csukva — így a terv áttekinthető összegzésként jelenik meg.
+      setCollapsedSections(
+        uiSections.length > 4
+          ? Object.fromEntries(uiSections.map((section) => [section.id, true]))
+          : {},
+      );
+      setCollapsedExercises(
+        Object.fromEntries(
+          uiSections.flatMap((section) =>
+            section.exercises.map((exercise) => [`${section.id}-${exercise.id}`, true]),
+          ),
+        ),
+      );
+
       // Clear existing filters before setting new ones
       filters.resetAllFilters();
 
@@ -619,6 +667,61 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
     }
   };
 
+  const handleGenerateMicrocycle = async () => {
+    if (!user?.id) {
+      toast.error('A program generálásához be kell jelentkezned');
+      return;
+    }
+
+    if (!microcycleName.trim()) {
+      toast.error('Adj nevet a programnak');
+      return;
+    }
+
+    let params: MicrocycleParams;
+    if (selectedPlannerMode === 'longevity') {
+      params = {
+        mode: 'longevity',
+        agtVariant: selectedLongevityAgtVariant,
+        athleteName: longevityAthleteName.trim() || undefined,
+      };
+    } else if (selectedPlannerMode === 'pwron') {
+      params = {
+        mode: 'pwron',
+        programType: selectedPwronProgramType,
+        prescriptionMode: selectedPwronPrescriptionMode,
+        athleteName: pwronAthleteName.trim() || undefined,
+      };
+    } else {
+      params = {
+        mode: 'periodized',
+        programType: selectedProgramType,
+        trainingFocus: selectedTrainingFocus,
+      };
+    }
+
+    try {
+      setIsGenerating(true);
+      const result = await generateMicrocycle({
+        userId: user.id,
+        name: microcycleName.trim(),
+        startDate: microcycleStartDate,
+        weekCount: microcycleWeekCount,
+        params,
+      });
+
+      result.warnings.forEach((warning) => toast(warning, { icon: '⚠️' }));
+      toast.success(`${result.sessionCount} edzés létrehozva a programban`);
+      navigate(`/programs/${result.programId}`);
+    } catch (error) {
+      console.error('Failed to generate microcycle:', error);
+      const detail = error instanceof Error ? error.message : 'ismeretlen hiba';
+      toast.error(`Nem sikerült legenerálni a programot: ${detail}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const closeGenerateForm = () => {
     setShowGenerateForm(false);
     if (isGenerateRoute && !forcedGeneratorMode) {
@@ -655,6 +758,20 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
       ? `Az FMS-alapú generálás a kiválasztott vendéghez igazodik: ${selectedFmsGuestName}.`
       : `A kiválasztott vendéghez még nincs FMS eredmény hozzárendelve: ${selectedFmsGuestName}.`
     : 'Ha személyre szabott FMS-alapú tervet szeretnél, előbb válassz ki legalább egy résztvevőt. Az FMS-kötés a manuális vendéglistához fog tartozni.';
+
+  const microcyclePropsFor = (mode: 'periodized' | 'pwron' | 'longevity') => ({
+    enabled: microcycleEnabled,
+    onToggle: setMicrocycleEnabled,
+    name: microcycleName,
+    onNameChange: setMicrocycleName,
+    startDate: microcycleStartDate,
+    onStartDateChange: setMicrocycleStartDate,
+    weekCount: microcycleWeekCount,
+    onWeekCountChange: setMicrocycleWeekCount,
+    weekOptions: MICROCYCLE_WEEK_OPTIONS[mode],
+    onGenerate: handleGenerateMicrocycle,
+    isGenerating,
+  });
 
   const handleProgramTypeChange = (programType: ProgramType) => {
     setSelectedProgramType(programType);
@@ -703,24 +820,40 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
         date={watchedDate}
       />
 
-      <ParticipantSelector
-        guestUsers={guestUsers}
-        fmsSubjects={fmsSubjects}
-        isLoadingGuests={isLoadingGuests}
-        isLoadingFmsSubjects={isLoadingFmsSubjects}
-        selectedParticipantIds={selectedParticipantIds}
-        selectedFmsUserId={selectedFmsUserId}
-        newGuestName={newGuestName}
-        participantSearchQuery={participantSearchQuery}
-        isEditMode={isEditMode}
-        onNewGuestNameChange={setNewGuestName}
-        onAddGuest={handleAddGuest}
-        onParticipantSearchChange={setParticipantSearchQuery}
-        onToggleParticipant={toggleParticipant}
-        onRemoveGuest={handleRemoveGuest}
-        onGuestFmsLinkChange={handleGuestFmsLinkChange}
-        onSelectedFmsUserChange={setSelectedFmsUserId}
-      />
+      <details className="group mb-6 rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3">
+          <span className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+            <Users size={16} />
+            Résztvevők és FMS
+            {selectedParticipantIds.length > 0 && (
+              <span className="rounded-full bg-primary-100 px-2 py-0.5 text-xs font-semibold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
+                {selectedParticipantIds.length} kiválasztva
+              </span>
+            )}
+          </span>
+          <ChevronRight size={16} className="shrink-0 text-gray-400 transition-transform group-open:rotate-90" />
+        </summary>
+        <div className="border-t border-gray-100 p-4 dark:border-gray-700">
+          <ParticipantSelector
+            guestUsers={guestUsers}
+            fmsSubjects={fmsSubjects}
+            isLoadingGuests={isLoadingGuests}
+            isLoadingFmsSubjects={isLoadingFmsSubjects}
+            selectedParticipantIds={selectedParticipantIds}
+            selectedFmsUserId={selectedFmsUserId}
+            newGuestName={newGuestName}
+            participantSearchQuery={participantSearchQuery}
+            isEditMode={isEditMode}
+            onNewGuestNameChange={setNewGuestName}
+            onAddGuest={handleAddGuest}
+            onParticipantSearchChange={setParticipantSearchQuery}
+            onToggleParticipant={toggleParticipant}
+            onRemoveGuest={handleRemoveGuest}
+            onGuestFmsLinkChange={handleGuestFmsLinkChange}
+            onSelectedFmsUserChange={setSelectedFmsUserId}
+          />
+        </div>
+      </details>
 
       {/* Generate Workout Form */}
       {showGenerateForm && (
@@ -753,6 +886,7 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
                 onClose={closeGenerateForm}
                 onGenerate={handleGenerateWorkout}
                 isGenerating={isGenerating}
+                microcycle={microcyclePropsFor('longevity')}
               />
             ) : (
             selectedPlannerMode === 'pwron' ? (
@@ -784,6 +918,7 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
                 onClose={closeGenerateForm}
                 onGenerate={handleGenerateWorkout}
                 isGenerating={isGenerating}
+                microcycle={microcyclePropsFor('pwron')}
               />
             ) : (
             <PeriodizedGeneratorPanel
@@ -800,12 +935,22 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
               onClose={closeGenerateForm}
               onGenerate={handleGenerateWorkout}
               isGenerating={isGenerating}
+              microcycle={microcyclePropsFor('periodized')}
             />
             )
             )
           )}
         </div>
       )}
+
+      {/* Vékony sticky összegző sáv – görgetés közben is látszik a terv aktuális állása */}
+      <div className="sticky top-0 z-10 -mx-2 mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-gray-200 bg-white/95 px-4 py-2 text-sm shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/95">
+        <span className="font-semibold text-gray-900 dark:text-white">{watchedTitle || 'Névtelen edzés'}</span>
+        <span className="text-gray-500 dark:text-gray-400">{sections.length} szekció</span>
+        <span className="text-gray-500 dark:text-gray-400">{totalExerciseCount} gyakorlat</span>
+        <span className="text-gray-500 dark:text-gray-400">{totalSetCount} sorozat</span>
+        {watchedDuration ? <span className="text-gray-500 dark:text-gray-400">{watchedDuration} perc</span> : null}
+      </div>
 
       <form onSubmit={handleSubmit(onSubmit, (errors) => { console.error('Form validation errors:', errors); toast.error('Töltsd ki a kötelező mezőket (cím, dátum, időtartam)'); })} className="space-y-8">
         {/* Basic Workout Info */}
@@ -882,8 +1027,12 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
           register={register}
           errors={errors}
           collapsedSections={collapsedSections}
+          collapsedExercises={collapsedExercises}
           filters={filters}
           onToggleCollapse={toggleSectionCollapse}
+          onToggleExerciseCollapse={toggleExerciseCollapse}
+          allSectionsCollapsed={allSectionsCollapsed}
+          onToggleAllSections={toggleAllSections}
           onAddSection={addSection}
           onOpenComplexBuilder={() => setShowComplexBuilder(true)}
           onOpenCardioBuilder={() => setShowCardioBuilder(true)}

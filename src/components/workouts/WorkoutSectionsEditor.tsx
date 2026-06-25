@@ -29,8 +29,12 @@ interface WorkoutSectionsEditorProps {
   register: UseFormRegister<WorkoutFormData>;
   errors: FieldErrors<WorkoutFormData>;
   collapsedSections: Record<string, boolean>;
+  collapsedExercises: Record<string, boolean>;
   filters: SectionExerciseFiltersApi;
   onToggleCollapse: (sectionId: string) => void;
+  onToggleExerciseCollapse: (exerciseKey: string) => void;
+  allSectionsCollapsed: boolean;
+  onToggleAllSections: () => void;
   onAddSection: () => void;
   onOpenComplexBuilder: () => void;
   onOpenCardioBuilder: () => void;
@@ -71,8 +75,12 @@ const WorkoutSectionsEditor = ({
   register,
   errors,
   collapsedSections,
+  collapsedExercises,
   filters,
   onToggleCollapse,
+  onToggleExerciseCollapse,
+  allSectionsCollapsed,
+  onToggleAllSections,
   onAddSection,
   onOpenComplexBuilder,
   onOpenCardioBuilder,
@@ -118,6 +126,16 @@ const WorkoutSectionsEditor = ({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Edzés szekciók</h2>
         <div className="flex flex-wrap gap-2">
+          {sections.length > 1 && (
+            <button
+              type="button"
+              onClick={onToggleAllSections}
+              className="btn btn-outline flex items-center gap-2"
+            >
+              {allSectionsCollapsed ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+              {allSectionsCollapsed ? 'Mind kinyit' : 'Mind becsuk'}
+            </button>
+          )}
           <button
             type="button"
             onClick={onOpenComplexBuilder}
@@ -349,16 +367,28 @@ const WorkoutSectionsEditor = ({
                   const selectedMovementPatternLabel = selectedExercise
                     ? getMovementPatternLabel(selectedExercise.movement_pattern)
                     : placeholderMeta?.movementPatternLabel;
+                  const collapsed = collapsedExercises[exerciseKey];
+                  const exerciseHeaderName = selectedExercise?.name || placeholderMeta?.title || exercise.name || exercise.exerciseName || 'Válassz gyakorlatot';
 
                   return (
                     <>
-                <div className="mb-3 flex items-center justify-between">
-                  <div>
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      Gyakorlat {exerciseIndex + 1}
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onToggleExerciseCollapse(exerciseKey)}
+                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                    aria-label={collapsed ? 'Gyakorlat kinyitása' : 'Gyakorlat összecsukása'}
+                  >
+                    {collapsed
+                      ? <ChevronRight size={16} className="shrink-0 text-gray-400" />
+                      : <ChevronDown size={16} className="shrink-0 text-gray-400" />}
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium text-gray-800 dark:text-gray-200">
+                        {exerciseIndex + 1}. {exerciseHeaderName}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">{getExerciseSummary(exercise)}</span>
                     </span>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{getExerciseSummary(exercise)}</p>
-                  </div>
+                  </button>
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
@@ -381,6 +411,7 @@ const WorkoutSectionsEditor = ({
                   </div>
                 </div>
 
+                {!collapsed && (
                 <div className="space-y-3">
                   {/* Exercise Selection */}
                   <div>
@@ -413,9 +444,15 @@ const WorkoutSectionsEditor = ({
                               placeholder="Keresés név, leírás vagy instrukció alapján"
                             />
                           </div>
-                          <details className="rounded-md border border-gray-200 bg-white/70 px-3 py-2 dark:border-gray-600 dark:bg-gray-800/60">
-                            <summary className="cursor-pointer list-none text-xs font-medium text-gray-600 dark:text-gray-300">
-                              Speciális szűrők{activeFilterCount > 0 ? ` • ${activeFilterCount} aktív` : ''}
+                          <details className="group rounded-md border border-gray-200 bg-white/70 px-3 py-2 dark:border-gray-600 dark:bg-gray-800/60">
+                            <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-300">
+                              <ChevronRight size={14} className="shrink-0 text-gray-400 transition-transform group-open:rotate-90" />
+                              <span>Speciális szűrők</span>
+                              {activeFilterCount > 0 && (
+                                <span className="rounded-full bg-primary-100 px-2 py-0.5 text-[11px] font-semibold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
+                                  {activeFilterCount} aktív
+                                </span>
+                              )}
                             </summary>
                             <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                               <div>
@@ -716,6 +753,7 @@ const WorkoutSectionsEditor = ({
                     />
                   </div>
                 </div>
+                )}
                     </>
                   );
                 })()}

@@ -9,7 +9,8 @@ import {
   Users,
   Activity,
   Target,
-  CalendarDays
+  CalendarDays,
+  CalendarRange
 } from 'lucide-react';
 import { useRolePermission } from '../../hooks/useRolePermission';
 
@@ -158,6 +159,17 @@ const Sidebar = ({ open, onClose, isMobile }: SidebarProps) => {
             >
               <CalendarDays size={20} />
               <span>Longevity generátor</span>
+            </NavLink>
+
+            <NavLink
+              to="/programs"
+              className={({ isActive }) =>
+                `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+              }
+              onClick={onClose}
+            >
+              <CalendarRange size={20} />
+              <span>Programok</span>
             </NavLink>
           </>
         )}

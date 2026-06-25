@@ -1,4 +1,4 @@
-import { RotateCw, Sparkles } from 'lucide-react';
+import { CalendarRange, RotateCw, Sparkles } from 'lucide-react';
 import { CycleWeek, ProgramType, TRAINING_FOCUS_OPTIONS, TrainingFocus, WorkoutDay } from '../../lib/workoutGenerator.fixed';
 import {
   PWRON_PROGRAM_OPTIONS,
@@ -60,6 +60,121 @@ const getDayLabel = (programType: ProgramType, day: WorkoutDay) => {
   if (day === 3) return 'Nap 3 - Robbanékonyság/Erő';
   return 'Nap 4 - Felsőtest nyomás és húzás';
 };
+
+export interface MicrocyclePanelProps {
+  enabled: boolean;
+  onToggle: (enabled: boolean) => void;
+  name: string;
+  onNameChange: (name: string) => void;
+  startDate: string;
+  onStartDateChange: (date: string) => void;
+  weekCount: number;
+  onWeekCountChange: (weeks: number) => void;
+  weekOptions: number[];
+  onGenerate: () => void;
+  isGenerating: boolean;
+}
+
+const MicrocycleSection = ({
+  enabled,
+  onToggle,
+  name,
+  onNameChange,
+  startDate,
+  onStartDateChange,
+  weekCount,
+  onWeekCountChange,
+  weekOptions,
+  onGenerate,
+  isGenerating,
+}: MicrocyclePanelProps) => (
+  <div className="mb-6 rounded-lg border border-primary-200 bg-primary-50/60 p-4 dark:border-primary-900 dark:bg-primary-950/20">
+    <label className="flex cursor-pointer items-center gap-2">
+      <input
+        type="checkbox"
+        checked={enabled}
+        onChange={(event) => onToggle(event.target.checked)}
+        className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+      />
+      <span className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+        <CalendarRange size={16} />
+        Microciklus (többhetes program)
+      </span>
+    </label>
+    <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+      Egy gombbal legyártja az egész programot heti progresszióval, és a kezdődátumtól a naptárba ütemezi.
+    </p>
+
+    {enabled && (
+      <div className="mt-4 space-y-4">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <label htmlFor="microcycle-name" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Program neve
+            </label>
+            <input
+              id="microcycle-name"
+              type="text"
+              value={name}
+              onChange={(event) => onNameChange(event.target.value)}
+              placeholder="Pl. Tavaszi erőciklus"
+              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            />
+          </div>
+          <div>
+            <label htmlFor="microcycle-start" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Kezdődátum (hétfő ajánlott)
+            </label>
+            <input
+              id="microcycle-start"
+              type="date"
+              value={startDate}
+              onChange={(event) => onStartDateChange(event.target.value)}
+              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Hetek száma</label>
+            <div className="flex flex-wrap gap-2">
+              {weekOptions.map((weeks) => (
+                <button
+                  key={weeks}
+                  type="button"
+                  onClick={() => onWeekCountChange(weeks)}
+                  className={`rounded-md px-3 py-2 text-sm ${
+                    weekCount === weeks
+                      ? 'bg-primary-500 text-white'
+                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {weeks} hét
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onGenerate}
+          disabled={isGenerating || name.trim().length === 0 || startDate.length === 0}
+          className="btn btn-primary flex items-center gap-2"
+        >
+          {isGenerating ? (
+            <>
+              <RotateCw size={16} className="animate-spin" />
+              Program generálása...
+            </>
+          ) : (
+            <>
+              <CalendarRange size={16} />
+              Microciklus generálása ({weekCount} hét)
+            </>
+          )}
+        </button>
+      </div>
+    )}
+  </div>
+);
 
 const ProgramTypeSelector = ({
   selectedProgramType,
@@ -220,6 +335,7 @@ export const PeriodizedGeneratorPanel = ({
   onClose,
   onGenerate,
   isGenerating,
+  microcycle,
 }: {
   fmsMessage: string;
   selectedProgramType: ProgramType;
@@ -234,6 +350,7 @@ export const PeriodizedGeneratorPanel = ({
   onClose: () => void;
   onGenerate: () => void;
   isGenerating: boolean;
+  microcycle?: MicrocyclePanelProps;
 }) => (
   <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
     <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Ciklus alapú generátor</h2>
@@ -311,6 +428,8 @@ export const PeriodizedGeneratorPanel = ({
       onWorkoutDayChange={onWorkoutDayChange}
     />
 
+    {microcycle && <MicrocycleSection {...microcycle} />}
+
     <div className="mb-6 mt-4 rounded bg-gray-50 p-3 dark:bg-gray-700">
       <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Kiválasztott tervező:</h3>
       <p className="text-gray-600 dark:text-gray-400">Ciklus alapú tervező</p>
@@ -363,6 +482,7 @@ export const PwronGeneratorPanel = ({
   onClose,
   onGenerate,
   isGenerating,
+  microcycle,
 }: {
   message: string;
   selectedProgramType: PwronProgramType;
@@ -383,6 +503,7 @@ export const PwronGeneratorPanel = ({
   onClose: () => void;
   onGenerate: () => void;
   isGenerating: boolean;
+  microcycle?: MicrocyclePanelProps;
 }) => {
   const availablePatterns = getPwronWeeklySetPatternOptions(selectedProgramType, selectedWeek);
 
@@ -553,6 +674,8 @@ export const PwronGeneratorPanel = ({
       </div>
     )}
 
+    {microcycle && <MicrocycleSection {...microcycle} />}
+
     <div className="mb-6 mt-4 rounded bg-gray-50 p-3 dark:bg-gray-700">
       <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Kiválasztott tervező:</h3>
       <p className="text-gray-600 dark:text-gray-400">Pwron programgenerátor</p>
@@ -600,6 +723,7 @@ export const LongevityGeneratorPanel = ({
   onClose,
   onGenerate,
   isGenerating,
+  microcycle,
 }: {
   message: string;
   selectedWeek: LongevityWeekNumber;
@@ -614,6 +738,7 @@ export const LongevityGeneratorPanel = ({
   onClose: () => void;
   onGenerate: () => void;
   isGenerating: boolean;
+  microcycle?: MicrocyclePanelProps;
 }) => (
   <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
     <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Longevity generátor</h2>
@@ -716,6 +841,8 @@ export const LongevityGeneratorPanel = ({
         </p>
       </div>
     )}
+
+    {microcycle && <MicrocycleSection {...microcycle} />}
 
     <div className="mb-6 mt-4 rounded bg-gray-50 p-3 dark:bg-gray-700">
       <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Kiválasztott tervező:</h3>

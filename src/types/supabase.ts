@@ -253,6 +253,52 @@ export interface Database {
           }
         ]
       }
+      workout_programs: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          description: string | null
+          generator_mode: string
+          params: Json
+          week_count: number
+          start_date: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          description?: string | null
+          generator_mode: string
+          params?: Json
+          week_count: number
+          start_date: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          description?: string | null
+          generator_mode?: string
+          params?: Json
+          week_count?: number
+          start_date?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_programs_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      },
       workouts: {
         Row: {
           id: string
@@ -264,6 +310,10 @@ export interface Database {
           created_at: string
           updated_at: string
           user_id: string
+          program_id: string | null
+          program_week: number | null
+          program_day_label: string | null
+          program_sequence: number | null
         }
         Insert: {
           id?: string
@@ -275,6 +325,10 @@ export interface Database {
           created_at?: string
           updated_at?: string
           user_id: string
+          program_id?: string | null
+          program_week?: number | null
+          program_day_label?: string | null
+          program_sequence?: number | null
         }
         Update: {
           id?: string
@@ -286,12 +340,22 @@ export interface Database {
           created_at?: string
           updated_at?: string
           user_id?: string
+          program_id?: string | null
+          program_week?: number | null
+          program_day_label?: string | null
+          program_sequence?: number | null
         }
         Relationships: [
           {
             foreignKeyName: "workouts_user_id_fkey"
             columns: ["user_id"]
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workouts_program_id_fkey"
+            columns: ["program_id"]
+            referencedRelation: "workout_programs"
             referencedColumns: ["id"]
           }
         ]
