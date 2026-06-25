@@ -13,6 +13,7 @@ const navItems = [
   { to: '/workout-planner/template-generator', label: 'Sablongenerátor', icon: CalendarDays },
   { to: '/workout-planner/periodized-generator', label: 'Ciklusgenerátor', icon: CalendarDays },
   { to: '/workout-planner/pwron-generator', label: 'Pwron generátor', icon: CalendarDays },
+  { to: '/workout-planner/longevity-generator', label: 'Longevity generátor', icon: CalendarDays },
   { to: '/calendar', label: 'Naptár', icon: Calendar },
   { to: '/my-workouts', label: 'Edzéseim', icon: Dumbbell },
   { to: '/log', label: 'Napló', icon: ClipboardList },

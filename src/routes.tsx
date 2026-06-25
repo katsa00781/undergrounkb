@@ -15,6 +15,7 @@ const WorkoutPlanner = lazy(() => import('./pages/WorkoutPlanner'));
 const TemplateWorkoutGeneratorPage = lazy(() => import('./pages/TemplateWorkoutGeneratorPage'));
 const PeriodizedWorkoutGeneratorPage = lazy(() => import('./pages/PeriodizedWorkoutGeneratorPage'));
 const PwronWorkoutGeneratorPage = lazy(() => import('./pages/PwronWorkoutGeneratorPage'));
+const LongevityWorkoutGeneratorPage = lazy(() => import('./pages/LongevityWorkoutGeneratorPage'));
 const ExerciseLibrary = lazy(() => import('./pages/ExerciseLibrary'));
 const ExerciseDetail = lazy(() => import('./pages/ExerciseDetail'));
 const FMSAssessment = lazy(() => import('./pages/FMSAssessment'));
@@ -86,6 +87,7 @@ export const AppRoutes = ({ userRole }: AppRoutesProps) => {
           <Route path="/workout-planner/template-generator" element={<TemplateWorkoutGeneratorPage />} />
           <Route path="/workout-planner/periodized-generator" element={<PeriodizedWorkoutGeneratorPage />} />
           <Route path="/workout-planner/pwron-generator" element={<PwronWorkoutGeneratorPage />} />
+          <Route path="/workout-planner/longevity-generator" element={<LongevityWorkoutGeneratorPage />} />
           
           {/* Admin-only routes */}
           <Route path="/planner" element={

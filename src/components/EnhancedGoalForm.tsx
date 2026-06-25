@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { X, Plus } from 'lucide-react';
 import { GoalType, GoalCategory, CreateGoalData } from '../lib/goals';
 import { addDays, addWeeks, addMonths, format } from 'date-fns';
@@ -99,12 +100,12 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
     e.preventDefault();
     
     if (!formData.title.trim()) {
-      alert('A cél címe kötelező!');
+      toast.error('A cél címe kötelező!');
       return;
     }
     
     if (!formData.target_value || formData.target_value <= 0) {
-      alert('A célérték kötelező és nagyobb kell legyen 0-nál!');
+      toast.error('A célérték kötelező és nagyobb kell legyen 0-nál!');
       return;
     }
     

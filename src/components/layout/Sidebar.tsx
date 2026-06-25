@@ -148,6 +148,17 @@ const Sidebar = ({ open, onClose, isMobile }: SidebarProps) => {
               <CalendarDays size={20} />
               <span>Pwron generátor</span>
             </NavLink>
+
+            <NavLink
+              to="/workout-planner/longevity-generator"
+              className={({ isActive }) =>
+                `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+              }
+              onClick={onClose}
+            >
+              <CalendarDays size={20} />
+              <span>Longevity generátor</span>
+            </NavLink>
           </>
         )}
 

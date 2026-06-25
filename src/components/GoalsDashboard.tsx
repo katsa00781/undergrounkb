@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { 
   Target, 
   Calendar, 
@@ -94,7 +95,7 @@ const GoalsDashboard: React.FC = () => {
       }));
     } catch (error) {
       console.error('Error marking goal complete:', error);
-      alert('Nem sikerült a cél teljesítését rögzíteni');
+      toast.error('Nem sikerült a cél teljesítését rögzíteni');
     } finally {
       setMarkingComplete(null);
     }
@@ -109,7 +110,7 @@ const GoalsDashboard: React.FC = () => {
       setEditingCurrentValue(null);
     } catch (error) {
       console.error('Error updating current value:', error);
-      alert('Nem sikerült frissíteni az aktuális értéket: ' + (error as Error).message);
+      toast.error('Nem sikerült frissíteni az aktuális értéket: ' + (error as Error).message);
     }
   };
 

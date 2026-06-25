@@ -29,6 +29,7 @@ import {
   CreateGoalData,
   GOAL_TEMPLATES
 } from '../lib/goals';
+import toast from 'react-hot-toast';
 import EnhancedGoalForm from './EnhancedGoalForm';
 import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React.FC = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -80,7 +81,7 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
       setGoalProgress(progressData);
     } catch (error) {
       console.error('Error loading goals:', error);
-      alert('Nem sikerült betölteni a célokat');
+      toast.error('Nem sikerült betölteni a célokat');
     } finally {
       setLoading(false);
     }
@@ -106,10 +107,10 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
       await loadGoals();
       await loadStats();
       setIsCreateDialogOpen(false);
-      alert('Cél sikeresen létrehozva');
+      toast.success('Cél sikeresen létrehozva');
     } catch (error) {
       console.error('Error creating goal:', error);
-      alert('Nem sikerült létrehozni a célt');
+      toast.error('Nem sikerült létrehozni a célt');
     }
   };
 
@@ -124,10 +125,10 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
       setIsTemplateDialogOpen(false);
       setSelectedTemplate('');
 
-      alert(`"${template.title}" cél létrehozva`);
+      toast.success(`"${template.title}" cél létrehozva`);
     } catch (error) {
       console.error('Error creating goal from template:', error);
-      alert('Nem sikerült létrehozni a célt a sablonból');
+      toast.error('Nem sikerült létrehozni a célt a sablonból');
     }
   };
 
@@ -141,10 +142,10 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
       await loadGoals();
       await loadStats();
 
-      alert('Cél teljesítés rögzítve');
+      toast.success('Cél teljesítés rögzítve');
     } catch (error) {
       console.error('Error completing goal:', error);
-      alert('Nem sikerült rögzíteni a teljesítést');
+      toast.error('Nem sikerült rögzíteni a teljesítést');
     }
   };
 
@@ -157,10 +158,10 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
       await deleteGoal(goalId);
       await loadGoals();
       await loadStats();
-      alert('Cél sikeresen törölve');
+      toast.success('Cél sikeresen törölve');
     } catch (error) {
       console.error('Error deleting goal:', error);
-      alert('Nem sikerült törölni a célt');
+      toast.error('Nem sikerült törölni a célt');
     }
   };
 
@@ -173,7 +174,7 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
       setEditingCurrentValue(null);
     } catch (error) {
       console.error('Error updating current value:', error);
-      alert('Nem sikerült frissíteni az aktuális értéket: ' + (error as Error).message);
+      toast.error('Nem sikerült frissíteni az aktuális értéket: ' + (error as Error).message);
     }
   };
 
@@ -224,10 +225,10 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
         end_date: ''
       });
 
-      alert('Cél sikeresen frissítve');
+      toast.success('Cél sikeresen frissítve');
     } catch (error) {
       console.error('Error updating goal:', error);
-      alert('Nem sikerült frissíteni a célt');
+      toast.error('Nem sikerült frissíteni a célt');
     }
   };
 

@@ -17,6 +17,12 @@ import {
   PwronSessionVariant,
   PwronWeekNumber,
 } from '../lib/pwronWorkoutGenerator';
+import {
+  generateLongevityWorkoutPlan,
+  LongevityAgtVariant,
+  LongevityModality,
+  LongevityWeekNumber,
+} from '../lib/longevityWorkoutGenerator';
 import { createManualGuest, deleteManualGuest, listManualGuests, ManualGuest, updateManualGuest } from '../lib/manualGuests';
 import {
   createDefaultExercise,
@@ -31,7 +37,7 @@ import { useSectionExerciseFilters } from '../hooks/useSectionExerciseFilters';
 import WorkoutSharingDialog from '../components/WorkoutSharingDialog';
 import KettlebellComplexBuilder from '../components/workouts/KettlebellComplexBuilder';
 import CardioSectionBuilder from '../components/workouts/CardioSectionBuilder';
-import { PeriodizedGeneratorPanel, PwronGeneratorPanel, TemplateGeneratorPanel } from '../components/workouts/WorkoutGeneratorPanels';
+import { LongevityGeneratorPanel, PeriodizedGeneratorPanel, PwronGeneratorPanel, TemplateGeneratorPanel } from '../components/workouts/WorkoutGeneratorPanels';
 import WorkoutSectionHeader from '../components/workouts/WorkoutSectionHeader';
 import ParticipantSelector from '../components/workouts/ParticipantSelector';
 import WorkoutSummaryCards from '../components/workouts/WorkoutSummaryCards';
@@ -73,6 +79,10 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
   const [selectedPwronPowerSetPattern, setSelectedPwronPowerSetPattern] = useState('');
   const [selectedPwronMainSetPattern, setSelectedPwronMainSetPattern] = useState('');
   const [pwronAthleteName, setPwronAthleteName] = useState('');
+  const [selectedLongevityWeek, setSelectedLongevityWeek] = useState<LongevityWeekNumber>(1);
+  const [selectedLongevityModality, setSelectedLongevityModality] = useState<LongevityModality>('STRENGTH');
+  const [selectedLongevityAgtVariant, setSelectedLongevityAgtVariant] = useState<LongevityAgtVariant>('KETTLEBELL_SWING');
+  const [longevityAthleteName, setLongevityAthleteName] = useState('');
   const [showGenerateForm, setShowGenerateForm] = useState(false);
   const [showComplexBuilder, setShowComplexBuilder] = useState(false);
   const [showCardioBuilder, setShowCardioBuilder] = useState(false);
@@ -124,6 +134,8 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
       ? 'periodized'
       : location.pathname.endsWith('/pwron-generator')
         ? 'pwron'
+      : location.pathname.endsWith('/longevity-generator')
+        ? 'longevity'
       : null);
   const isGenerateRoute = Boolean(generatorRouteMode);
   const selectedPlannerMode: PlannerMode = generatorRouteMode ?? 'template';
@@ -522,7 +534,15 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
       const fmsTargetUserId = selectedFmsGuest?.linkedFmsUserId || user.id;
       const shouldAdjustForFms = Boolean(selectedFmsGuest?.linkedFmsUserId);
 
-      const generatedWorkout = selectedPlannerMode === 'pwron'
+      const generatedWorkout = selectedPlannerMode === 'longevity'
+        ? await generateLongevityWorkoutPlan({
+            userId: user.id,
+            weekNumber: selectedLongevityWeek,
+            modality: selectedLongevityModality,
+            agtVariant: selectedLongevityAgtVariant,
+            athleteName: longevityAthleteName.trim() || undefined,
+          })
+        : selectedPlannerMode === 'pwron'
         ? await generatePwronWorkoutPlan({
             userId: user.id,
             programType: selectedPwronProgramType,
@@ -592,7 +612,8 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
       }
     } catch (error) {
       console.error('Failed to generate workout plan:', error);
-      toast.error('Nem sikerült legenerálni az edzéstervet');
+      const detail = error instanceof Error ? error.message : 'ismeretlen hiba';
+      toast.error(`Nem sikerült legenerálni az edzéstervet: ${detail}`);
     } finally {
       setIsGenerating(false);
     }
@@ -610,7 +631,9 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
       ? 'template-generator'
       : mode === 'periodized'
         ? 'periodized-generator'
-        : 'pwron-generator';
+        : mode === 'longevity'
+          ? 'longevity-generator'
+          : 'pwron-generator';
 
     navigate(`/workout-planner/${routeSuffix}`, {
       state: location.state,
@@ -715,6 +738,23 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
               isGenerating={isGenerating}
             />
           ) : (
+            selectedPlannerMode === 'longevity' ? (
+              <LongevityGeneratorPanel
+                message="A Longevity generátor a 4 hetes belépő protokollt adja vissza: a kiválasztott hét és modalitás (Hétfő erő, Szerda stato-dinamikus, Péntek AGT) egy edzés-session-jét."
+                selectedWeek={selectedLongevityWeek}
+                selectedModality={selectedLongevityModality}
+                selectedAgtVariant={selectedLongevityAgtVariant}
+                athleteName={longevityAthleteName}
+                onWeekChange={setSelectedLongevityWeek}
+                onModalityChange={setSelectedLongevityModality}
+                onAgtVariantChange={setSelectedLongevityAgtVariant}
+                onAthleteNameChange={setLongevityAthleteName}
+                onSwitchToTemplate={() => openGenerator('template')}
+                onClose={closeGenerateForm}
+                onGenerate={handleGenerateWorkout}
+                isGenerating={isGenerating}
+              />
+            ) : (
             selectedPlannerMode === 'pwron' ? (
               <PwronGeneratorPanel
                 message="A Pwron generátor külön rendszerként működik: a Program lap napi sablonját tölti fel a kiválasztott program és hét periodizációs paramétereivel. Jelenleg nem a 2/3/4 napos logikát használja."
@@ -761,6 +801,7 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
               onGenerate={handleGenerateWorkout}
               isGenerating={isGenerating}
             />
+            )
             )
           )}
         </div>

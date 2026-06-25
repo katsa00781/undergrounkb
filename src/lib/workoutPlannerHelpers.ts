@@ -46,7 +46,7 @@ export type Section = {
   exercises: SectionExercise[];
 };
 
-export type PlannerMode = 'template' | 'periodized' | 'pwron';
+export type PlannerMode = 'template' | 'periodized' | 'pwron' | 'longevity';
 
 export const createDefaultExercise = (id: string): SectionExercise => ({
   id,

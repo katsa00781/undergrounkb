@@ -3,7 +3,7 @@
 > Ez a fájl a projekt **jelenlegi állapotát** rögzíti, és ide gyűjtjük a **jövőbeni fejlesztéseket** is.
 > Frissítsd, amikor egy feladatot elkezdesz, befejezel, vagy új ötlet merül fel.
 >
-> Utolsó frissítés: **2026-06-25** (nagy fájlok refaktorálása befejezve)
+> Utolsó frissítés: **2026-06-25** (minőség/stabilitás: Vitest + 41 unit teszt, CI tesztlépés, toast-egységesítés, RLS audit)
 
 ---
 
@@ -26,6 +26,7 @@
   - Sablon (`/template-generator`)
   - Periodizált (`/periodized-generator`)
   - Pwron (`/pwron-generator`)
+  - Longevity (`/longevity-generator`)
 - Gyakorlatkönyvtár (`/exercises`, `/exercises/:id`)
 - FMS felmérés (`/assessment`)
 - Felhasználókezelés (`/users`, admin)
@@ -34,7 +35,8 @@
 - Edzésmegosztás (workout sharing)
 
 ### Tech állapot
-- Build: **zöld** (`npm run build` sikeres, 2026-06-24-i takarítás után ellenőrizve)
+- Build: **zöld** (`npm run build` sikeres); lint: **0 error** (22 örökölt warning); typecheck (`tsc --noEmit`): **zöld**
+- Tesztek: **Vitest, 41 unit teszt zöld** (`npm test`) — generátor + taxonómia tiszta logika
 - TODO/FIXME a kódban: 0 db (a `workouts.ts:473` gyakorlatnév-feloldás megoldva)
 - 22 Supabase migráció a `supabase/migrations/`-ban
 - A korábbi 100 SQL/shell fix-szkript a `scripts/legacy/`-ba archiválva; a gyökérben már csak `build.sh`, `deploy.sh` maradt
@@ -68,11 +70,18 @@
 
 ## 3. Minőség / stabilitás 🟡
 
-- [ ] Build + lint zöld állapot ellenőrzése és CI-ba kötése
-- [ ] Tesztlefedettség: jelenleg csak `src/lib/__tests__` van — kritikus generátor-logikára unit tesztek
-- [ ] RLS policy-k auditja minden táblán (CLAUDE.md konvenció szerint kötelező)
-- [ ] Hibakezelés egységesítése (toast/üzenetek magyarul, konzisztensen)
-- [ ] `.env.example` naprakészsége (Polar + EmailJS változók)
+- [x] **Build + lint zöld állapot ellenőrzése és CI-ba kötése** ✅ 2026-06-25: build + lint zöld (0 ESLint error, 22 örökölt warning). A meglévő `.github/workflows/build-test.yml` kiegészítve `npm test` lépéssel (lint → test → build sorrend).
+- [x] **Tesztlefedettség: kritikus generátor-logikára unit tesztek** ✅ 2026-06-25: Vitest 2 bevezetve (`vitest.config.ts`, `npm test` / `test:watch` / `test:coverage` szkriptek). 41 unit teszt 5 fájlban a tiszta üzleti logikára: `exerciseCategorizer` (kategorizálás, random/first választás), `fmsCorrections`, `focusPresets` (periodizáció + szekció-alkalmazás), taxonómia `filters` (szűrés, FMS-fókusz) és `metadata` (címkék). Közös `fixtures.ts` factory-k.
+- [x] **RLS policy-k auditja minden táblán** ✅ 2026-06-25: statikus (migrációk) + élő (Supabase advisor) audit. **Eredmény: tiszta** — mind a 21 UGKettlebell tábla RLS-enabled, és az élő biztonsági advisor 0 RLS-találatot ad rájuk (nincs hiányzó policy, nincs „always true" permisszív policy). A `polar_connections`/`cardio_sessions` szándékosan korlátozott (kliens csak DELETE/SELECT, írást a service-role Edge Function végzi — dokumentálva a migrációban). Lásd lentebb a kapcsolódó nyitott találatokat (függvény search_path, séma-drift).
+- [x] **Hibakezelés egységesítése (toast magyarul)** ✅ 2026-06-25: a 17 natív blokkoló `alert()` hívás (4 cél-/edzés-komponensben: `GoalsManagement`, `GoalsDashboard`, `EnhancedGoalForm`, `PersonalWorkoutTracker`) lecserélve a domináns `react-hot-toast` `toast.success()` / `toast.error()` hívásokra. Maradék: lásd a két párhuzamos toast-rendszer tételt lentebb.
+- [x] **`.env.example` naprakészsége (Polar + EmailJS változók)** ✅ 2026-06-25: ellenőrizve — minden használt `import.meta.env.VITE_*` változó szerepel benne (EmailJS×3, Polar×2, Supabase×2). Naprakész, módosítás nem kellett.
+
+### Nyitott biztonsági / konzisztencia találatok (audit melléktermék, 2026-06-25)
+
+- [ ] **Függvény `search_path` hardening** 🟡: ~30 saját `SECURITY DEFINER` Postgres-függvény (`is_admin`, `handle_new_user`, `get_polar_status`, `is_current_user_admin`, `create_user_invite`, `use_invite_token`, `validate_invite_token`, `join_appointment`/`leave_appointment`, `increment/decrement_participants`, `update_goal_*`, `sync_exercise_derived_taxonomy_assignments`, stb.) a Supabase advisor szerint `function_search_path_mutable` (privilégium-eszkaláció kockázat). Megoldás: külön migrációban `ALTER FUNCTION ... SET search_path = public, pg_temp`. (Megjegyzés: a Supabase projekt megosztott egy kosárlabda-statisztika alkalmazással — annak tábláit/függvényeit NE bántsuk.)
+- [ ] **Séma-drift: hiányzó migrációk** 🔴: a `goals`, `goal_completions` és `pending_invites` táblákat a kód használja (`.from('goals')` stb.) és az élő DB-ben léteznek (RLS-enabled), de **nincs hozzájuk migration a `supabase/migrations/`-ban**. Friss DB-felálláskor hiányoznának. Megoldás: a meglévő élő séma exportálása új migration fájlokba (CREATE TABLE + RLS policies).
+- [ ] **Két párhuzamos toast-rendszer** 🟢: a `react-hot-toast` (`<Toaster>` a `main.tsx`-ben, a komponensek többsége) mellett a shadcn `components/ui/use-toast` (`<Toaster>` az `App.tsx`-ben) is mountolva van, ezt csak a `supabaseUtils.ts` és `fmsService.ts` használja. Érdemes egy rendszerre konszolidálni (javasolt: react-hot-toast).
+- [ ] **Projektszintű Supabase warningok** 🟢: „Leaked Password Protection Disabled" (kapcsold be a Supabase Auth beállításoknál) és „vulnerable Postgres version" (frissítés elérhető) — megosztott infra, döntés a tulajdonossal.
 
 ---
 
@@ -86,6 +95,8 @@
 
 ## 5. Done (lezárt tételek)
 
+- [x] **Longevity generátor (4 hetes protokoll)** (2026-06-25): új `longevityWorkoutGenerator.ts` a „4 hetes Longevity edzésprotokoll" spec alapján — heti hármas sablon (Hétfő STRENGTH/HIGH CNS, Szerda STATO_DYNAMIC/LOW, Péntek AGT/LOW) hétről hétre progresszióval (erő: szett+terhelés, stato: idő+terhelés, AGT: körök +3/hét). Single-session kimenet (hét 1-4 + modalitás a UI-ban választva), mint a Pwronnál; AGT eszközváltozat (kettlebell swing alapértelmezett / Airdyne / dombfutás). Beépített invariáns-validáció (spec 9. fej.: CNS-sorrend, AGT 130 pulzusplafon, progresszió-korlát) figyelmeztetésként a notes-ban. Wiring: `PlannerMode` bővítve, `LongevityGeneratorPanel`, route `/workout-planner/longevity-generator` + page, nav (header + sidebar), WorkoutPlanner generálási ág. 11 új unit teszt a tiszta logikára (`buildLongevitySessionMeta`, `validateLongevitySession`) — 52 teszt zöld. A spec opcionális műszak-moduláció rétege (10. fej., `[S]`) szándékosan kimaradt. Build + lint + tsc zöld.
+- [x] **Minőség/stabilitás csomag** (2026-06-25): Vitest 2 + 41 unit teszt (generátor + taxonómia tiszta logika), CI `npm test` lépés, 17 natív `alert()` → `react-hot-toast` egységesítés (4 komponens), `.env.example` ellenőrzés, teljes RLS audit (migrációk + élő Supabase advisor — tiszta a 21 saját táblán). Új találatok rögzítve a 3. szekcióban: függvény `search_path` hardening, séma-drift (`goals`/`goal_completions`/`pending_invites` migráció nélkül), két párhuzamos toast-rendszer. Build + lint + tsc + teszt zöld.
 - [x] **`exerciseService.ts` modulokra bontása** (2026-06-25): a 869 soros service 225 sorra csökkent (-74%); a `.ts` továbbra is a belépési pont (megtartja a Supabase CRUD-ot — `getExercises`/`getExerciseById`/`createExercise`/`updateExercise`/`deleteExercise`/`listExerciseTaxonomyTags` + a `replaceManualTaxonomyAssignments` helpert — és re-exportál minden publikus típust/függvényt, így a 9 importáló fájl egyikét sem kellett módosítani). Kiszervezve a `src/lib/exerciseTaxonomy/` mappába: `types.ts` (összes `export type`), `constants.ts` (kategória/mozgásminta-opciók + FMS-fókusz nevek + taxonómia-slug map-ek + szűrhető slug-halmazok), `mapping.ts` (`mapExerciseWithTaxonomy` + derived-slug + tag-getterek), `metadata.ts` (label/option getterek), `filters.ts` (`filterExercisesList` + kategória/minta-szűrők + `getExerciseFMSFocuses`). Build + lint zöld.
 - [x] **`ProgressTracking.tsx` komponensekre bontása** (2026-06-25): a 748 soros oldal 141 sorra csökkent (-81%). A főkomponens megtartja az adatbetöltést (`loadWeights` + `useAutoRefresh`) és a kompozíciót. Kiszervezve: `lib/progressTrackingHelpers.ts` (`weightSchema` zod + `WeightFormData` + `CHART_METRICS` adatvezérelt metrika-konfiguráció + `buildChartData`/`buildChartOptions`/`getChartLabels` — az 5× ismételt `switch (activeChart)` egy config-tömbbé olvasztva), `components/progress/MeasurementForm.tsx` (saját `useForm`), `ProgressChartCard.tsx` (Chart.js + metrika-gombok), `ProgressStatsCard.tsx`, `RecentEntriesCard.tsx`. Build + lint zöld.
 - [x] **`workoutGenerator.fixed.ts` modulokra bontása** (2026-06-25): az 1620 soros generátor 242 sorra csökkent (-85%); a `.fixed.ts` továbbra is a belépési pont (re-exportál minden publikus típust/függvényt, így egyetlen importáló fájlt sem kellett módosítani). Kiszervezve a `src/lib/workoutGenerator/` mappába: `types.ts` (típusok + `TRAINING_FOCUS_OPTIONS` + `getTrainingFocusLabel`), `exerciseCategorizer.ts` (konstansok + `categorizeExercises` + `getRandomExercise`/`getFirstAvailableExercise`), `fmsCorrections.ts` (`FMS_CORRECTIONS` + `identifyFMSCorrections`), `focusPresets.ts` (periodizációs presetek + `getFocusPreset` + `applyFocusPresetToSections`), `dayPlans.ts` (`generate2DayPlan`/`generate3DayPlan`/`generateDay1-4Plan`). A két publikus függvény közti duplikáció (alapsúly-kiegészítés, FMS-lekérés) közös helperekbe (`applyDefaultWeights`, `fetchFMSCorrections`) emelve. Build + lint zöld.

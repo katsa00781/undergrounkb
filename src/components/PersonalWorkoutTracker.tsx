@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { 
   CheckCircle2, 
   Edit3, 
@@ -117,7 +118,7 @@ const PersonalWorkoutTracker: React.FC<PersonalWorkoutTrackerProps> = ({
       });
     } catch (error) {
       console.error('Error saving performance:', error);
-      alert('Nem sikerült menteni a teljesítményt');
+      toast.error('Nem sikerült menteni a teljesítményt');
     }
   };
 

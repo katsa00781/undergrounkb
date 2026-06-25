@@ -51,7 +51,11 @@ npm run dev          # Dev szerver (port 24678, HMR)
 npm run build        # Production build (dist/)
 npm run lint         # ESLint ellenőrzés
 npm run preview      # Production preview
+npm test             # Vitest unit tesztek (egyszeri futás)
+npm run test:watch   # Vitest watch módban
+npm run test:coverage # Lefedettségi riport
 ```
+Tesztek: `src/lib/__tests__/` (Vitest 2, `vitest.config.ts` — node környezet, `@` alias). A tiszta generátor- és taxonómia-logikát fedik; közös fixture factory-k a `fixtures.ts`-ben.
 `.env` szükséges változók: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_EMAILJS_*` (lásd [.env.example](.env.example))
 
 ## Conventions
@@ -74,6 +78,7 @@ Fő típusok helye: [src/types/supabase.ts](src/types/supabase.ts)
 ## Important Notes
 - **Generátor**: `workoutGenerator.fixed.ts` az egyetlen aktív edzésgenerátor (a korábbi `workoutGenerator.ts` 2026-06-24-én törölve)
 - **Pwron generátor**: `pwronWorkoutGenerator.ts` — speciális periodizált 4 napos split
+- **Longevity generátor**: `longevityWorkoutGenerator.ts` — 4 hetes Longevity belépő protokoll (heti hármas sablon: Hétfő erő / Szerda stato-dinamikus / Péntek AGT; hétről hétre progresszió). Single-session kimenet (hét + modalitás a UI-ban választva), mint a Pwronnál. Route: `/workout-planner/longevity-generator`, panel: `LongevityGeneratorPanel`. A tiszta logikát (`buildLongevitySessionMeta`, `validateLongevitySession`) unit teszt fedi. A spec opcionális műszak-moduláció rétege (10. fej.) szándékosan kimaradt.
 - **Supabase migrációk**: `supabase/migrations/` — sémaváltoztatáshoz mindig ide adjunk új migration fájlt
 - **Deployment**: Vercel-re (`vercel.json`) és Netlify-ra (`netlify.toml`) is konfigurálva
 - **DB fix szkriptek**: A korábbi séma/permission fix SQL/shell scriptek a `scripts/legacy/` mappában archiválva (2026-06-24); a gyökérben már csak `build.sh` és `deploy.sh` maradt
