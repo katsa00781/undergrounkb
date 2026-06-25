@@ -81,7 +81,7 @@
 > Ide írjuk az új ötleteket. Minden tételhez: rövid leírás + prioritás.
 
 - [ ] _(ide jönnek az új funkció-ötletek)_
-          k
+
 ---
 
 ## 5. Done (lezárt tételek)
