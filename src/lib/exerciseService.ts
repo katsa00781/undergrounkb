@@ -103,10 +103,22 @@ export async function getExercises(options?: {
   limit?: number;
   offset?: number;
   orderBy?: { column: keyof Exercise; ascending: boolean };
+  /**
+   * Inaktív (soft-deleted / edzésgenerálásból kivett) gyakorlatok is bekerüljenek-e.
+   * Alapból false: csak aktív gyakorlatok jönnek vissza, így az edzésgenerátorok
+   * nem ajánlanak inaktívvá tett gyakorlatot. A gyakorlatkönyvtár adja át true-val,
+   * mert ott (admin) az inaktívakat is meg kell jeleníteni.
+   */
+  includeInactive?: boolean;
 }) {
   let query = supabase
     .from('exercises')
     .select('*, exercise_taxonomy_assignments(source, is_primary, exercise_taxonomy_tags(*))');
+
+  // Csak aktív gyakorlatok, ha nem kérik explicit az inaktívakat is
+  if (!options?.includeInactive) {
+    query = query.eq('is_active', true);
+  }
 
   // Apply filters
   if (options?.category) {

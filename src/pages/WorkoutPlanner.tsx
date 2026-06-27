@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save, Sparkles, RotateCw, Share2, Users, ChevronRight } from 'lucide-react';
+import { Save, RotateCw, Share2, Users, ChevronRight } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Exercise, getExercises } from '../lib/exercises';
 import { createWorkout, updateWorkout, Workout } from '../lib/workouts';
@@ -788,26 +788,6 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
       <WorkoutSectionHeader
         title="Edzéstervező"
         description="Új edzést állíthatsz össze, meglévőt szerkeszthetsz, vagy egy korábbi tervből gyorsan új másolatot készíthetsz."
-        actions={(
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => openGenerator('template')}
-              className="btn btn-outline flex items-center gap-2"
-            >
-              <Sparkles size={16} />
-              Sablon generátor
-            </button>
-            <button
-              type="button"
-              onClick={() => openGenerator('periodized')}
-              className="btn btn-primary flex items-center gap-2"
-            >
-              <Sparkles size={16} />
-              Ciklus generátor
-            </button>
-          </div>
-        )}
       />
 
       <WorkoutSummaryCards

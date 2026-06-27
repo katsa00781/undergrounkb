@@ -56,7 +56,7 @@ const ExerciseLibrary = () => {
   const loadExercises = async () => {
     try {
       setIsLoading(true);
-      const data = await getExercises();
+      const data = await getExercises({ includeInactive: true });
       setExercises(data);
     } catch (error) {
       console.error('Failed to load exercises:', error);
