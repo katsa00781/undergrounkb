@@ -138,6 +138,122 @@ export async function getWorkouts(userId: string) {
   }
 }
 
+export interface LogSetLog {
+  reps: number;
+  weight: number;
+}
+
+export interface LogExercise {
+  id?: string;
+  name?: string;
+  exerciseId?: string;
+  sets?: number;
+  reps?: number | string;
+  weight?: number | null;
+  restPeriod?: number;
+  notes?: string;
+  completed?: boolean;
+  actualSets?: number;
+  actualReps?: number;
+  actualWeight?: number;
+  actualSetLogs?: LogSetLog[];
+}
+
+export interface LogSection {
+  id?: string;
+  name: string;
+  exercises: LogExercise[];
+}
+
+export interface WorkoutLog {
+  id: string;
+  user_id: string;
+  workout_id: string;
+  date: string;
+  started_at: string;
+  finished_at: string | null;
+  sections: LogSection[];
+  notes: string | null;
+  created_at: string;
+}
+
+export interface WorkoutWithLog extends Workout {
+  isCompleted: boolean;
+  latestLog: WorkoutLog | null;
+}
+
+export function computeLogDuration(log: WorkoutLog): number | null {
+  if (!log.finished_at) return null;
+  const ms = new Date(log.finished_at).getTime() - new Date(log.started_at).getTime();
+  return Math.round(ms / 60_000);
+}
+
+export function computeTotalVolume(sections: LogSection[]): number {
+  let total = 0;
+  for (const section of sections) {
+    for (const ex of section.exercises ?? []) {
+      for (const s of ex.actualSetLogs ?? []) {
+        if (s.weight > 0 && s.reps > 0) total += s.weight * s.reps;
+      }
+    }
+  }
+  return total;
+}
+
+export async function getWorkoutsWithLogs(userId: string): Promise<WorkoutWithLog[]> {
+  try {
+    const result = await supabase
+      .from('workouts')
+      .select(`
+        *,
+        workout_logs (
+          id,
+          date,
+          started_at,
+          finished_at,
+          sections,
+          notes
+        )
+      `)
+      .eq('user_id', userId)
+      .order('date', { ascending: false });
+
+    if (result.error) {
+      console.error('Error fetching workouts with logs:', result.error);
+      throw result.error;
+    }
+
+    type RawRow = Record<string, unknown> & { workout_logs?: WorkoutLog[] };
+    const rows = (result.data ?? []) as RawRow[];
+
+    return rows.map(row => {
+      if (row.sections && typeof row.sections === 'string') {
+        try {
+          row.sections = JSON.parse(row.sections as string);
+        } catch (e) {
+          console.error('Error parsing sections JSON:', e);
+        }
+      }
+
+      const logs = (row.workout_logs ?? []).slice().sort((a: WorkoutLog, b: WorkoutLog) => {
+        if (!a.finished_at) return 1;
+        if (!b.finished_at) return -1;
+        return new Date(b.finished_at).getTime() - new Date(a.finished_at).getTime();
+      });
+
+      const { workout_logs: _wl, ...workout } = row;
+      return {
+        ...workout,
+        isCompleted: logs.length > 0,
+        latestLog: logs[0] ?? null,
+      } as WorkoutWithLog;
+    });
+  } catch (error) {
+    console.error('Exception in getWorkoutsWithLogs:', error);
+    throw error;
+  }
+}
+
 export async function updateWorkout(id: string, workout: Partial<Workout>) {
   const { data, error } = await supabase
     .from('workouts')

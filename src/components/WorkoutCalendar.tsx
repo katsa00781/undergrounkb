@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Dumbbell, Clock, TrendingUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Dumbbell, Clock, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday } from 'date-fns';
 import { hu } from 'date-fns/locale';
-import { getWorkouts, Workout } from '../lib/workouts';
+import { getWorkoutsWithLogs, WorkoutWithLog } from '../lib/workouts';
 import { useAuth } from '../hooks/useAuth';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 interface WorkoutCalendarProps {
-  onDateSelect?: (date: Date, workouts: Workout[]) => void;
+  onDateSelect?: (date: Date, workouts: WorkoutWithLog[]) => void;
 }
 
 const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
   const { user, initialized } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [workouts, setWorkouts] = useState<WorkoutWithLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
@@ -22,7 +22,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
     
     try {
       setLoading(true);
-      const workoutsData = await getWorkouts(user.id);
+      const workoutsData = await getWorkoutsWithLogs(user.id);
       setWorkouts(workoutsData);
     } catch (error) {
       console.error('Failed to load workouts:', error);
@@ -52,8 +52,8 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
   // Get workouts for a specific date
-  const getWorkoutsForDate = (date: Date): Workout[] => {
-    return workouts.filter(workout => 
+  const getWorkoutsForDate = (date: Date): WorkoutWithLog[] => {
+    return workouts.filter(workout =>
       isSameDay(new Date(workout.date), date)
     );
   };
@@ -98,7 +98,10 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
     }
     
     if (hasWorkouts) {
-      classes += ' bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700';
+      const anyCompleted = dayWorkouts.some(w => w.isCompleted);
+      classes += anyCompleted
+        ? ' bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700'
+        : ' bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700';
     }
     
     if (isSelected) {
@@ -196,8 +199,14 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
                 </span>
                 {dayWorkouts.length > 0 && (
                   <div className="flex items-center gap-1 mt-1">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-xs text-blue-600 dark:text-blue-400">
+                    <div className={`w-2 h-2 rounded-full ${
+                      dayWorkouts.some(w => w.isCompleted) ? 'bg-green-500' : 'bg-blue-500'
+                    }`}></div>
+                    <span className={`text-xs ${
+                      dayWorkouts.some(w => w.isCompleted)
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-blue-600 dark:text-blue-400'
+                    }`}>
                       {dayWorkouts.length}
                     </span>
                   </div>
@@ -220,14 +229,21 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
           {getWorkoutsForDate(selectedDate).length > 0 ? (
             <div className="space-y-2">
               {getWorkoutsForDate(selectedDate).map((workout) => (
-                <div key={workout.id} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border">
+                <div key={workout.id} className={`flex items-center justify-between p-2 rounded border ${
+                  workout.isCompleted
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700'
+                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                }`}>
                   <div>
                     <span className="font-medium text-gray-900 dark:text-white">{workout.title}</span>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
                       {Math.round(workout.duration / 60)} perc
                     </div>
                   </div>
-                  <Dumbbell className="h-4 w-4 text-blue-500" />
+                  {workout.isCompleted
+                    ? <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    : <Dumbbell className="h-4 w-4 text-blue-500" />
+                  }
                 </div>
               ))}
             </div>

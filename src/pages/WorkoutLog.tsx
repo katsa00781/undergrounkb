@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Clock, Dumbbell, BarChart2, Trash2, Edit2, Filter, Copy, Heart, Flame, Activity } from 'lucide-react';
-import { getWorkouts, deleteWorkout, Workout } from '../lib/workouts';
+import { Calendar, Clock, Dumbbell, BarChart2, Trash2, Edit2, Filter, Copy, Heart, Flame, Activity, CheckCircle2, Eye, ArrowLeft, TrendingUp, Zap } from 'lucide-react';
+import { getWorkoutsWithLogs, deleteWorkout, WorkoutWithLog, computeLogDuration, computeTotalVolume } from '../lib/workouts';
 import { getExercises, Exercise } from '../lib/exercises';
 import { getCardioSessions, type CardioSession } from '../lib/polarService';
 import { useAuth } from '../hooks/useAuth';
@@ -13,16 +13,17 @@ import { formatWorkoutDate, formatWorkoutDuration } from '../lib/workoutDisplay'
 const WorkoutLog = () => {
   const { user, initialized } = useAuth();
   const navigate = useNavigate();
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [workouts, setWorkouts] = useState<WorkoutWithLog[]>([]);
   const [cardioSessions, setCardioSessions] = useState<CardioSession[]>([]);
   const [exercises, setExercises] = useState<{ [key: string]: Exercise }>({});
   const [isLoading, setIsLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState<string>('');
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{ show: boolean; workoutId: string; workoutTitle: string }>({ 
-    show: false, 
-    workoutId: '', 
-    workoutTitle: '' 
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ show: boolean; workoutId: string; workoutTitle: string }>({
+    show: false,
+    workoutId: '',
+    workoutTitle: ''
   });
+  const [selectedWorkout, setSelectedWorkout] = useState<WorkoutWithLog | null>(null);
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -30,7 +31,7 @@ const WorkoutLog = () => {
     try {
       setIsLoading(true);
       const [workoutsData, exercisesData, cardioData] = await Promise.all([
-        getWorkouts(user.id),
+        getWorkoutsWithLogs(user.id),
         getExercises(),
         getCardioSessions()
       ]);
@@ -71,7 +72,7 @@ const WorkoutLog = () => {
   const handleDeleteWorkout = async (id: string) => {
     try {
       await deleteWorkout(id);
-      setWorkouts(workouts.filter(workout => workout.id !== id));
+      setWorkouts(prev => prev.filter(workout => workout.id !== id));
       setDeleteConfirmation({ show: false, workoutId: '', workoutTitle: '' });
       toast.success('Edzés sikeresen törölve');
     } catch (error) {
@@ -80,16 +81,19 @@ const WorkoutLog = () => {
     }
   };
 
-  const handleEditWorkout = (workout: Workout) => {
-    // Navigate to workout planner with prefilled data
+  const handleViewWorkout = (workout: WorkoutWithLog) => {
+    setSelectedWorkout(workout);
+  };
+
+  const handleEditWorkout = (workout: WorkoutWithLog) => {
     navigate('/workout-planner', { state: { editWorkout: workout } });
   };
 
-  const handleCopyWorkout = (workout: Workout) => {
+  const handleCopyWorkout = (workout: WorkoutWithLog) => {
     navigate('/workout-planner', { state: { copyWorkout: workout } });
   };
 
-  const showDeleteConfirmation = (workout: Workout) => {
+  const showDeleteConfirmation = (workout: WorkoutWithLog) => {
     setDeleteConfirmation({
       show: true,
       workoutId: workout.id,
@@ -118,6 +122,234 @@ const WorkoutLog = () => {
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
           <p className="mt-2 text-gray-600 dark:text-gray-400">Edzések betöltése...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (selectedWorkout) {
+    const log = selectedWorkout.latestLog;
+    const logDur = log ? computeLogDuration(log) : null;
+    const logSections = log?.sections ?? [];
+    const completedExs = logSections.flatMap(s => s.exercises).filter(e => e.completed);
+    const volume = logSections.length > 0 ? computeTotalVolume(logSections) : 0;
+    const relatedPolar = cardioSessions.filter(
+      s => s.start_time?.slice(0, 10) === selectedWorkout.date
+    );
+
+    return (
+      <div className="space-y-6">
+        <button
+          onClick={() => setSelectedWorkout(null)}
+          className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+        >
+          <ArrowLeft size={16} />
+          Vissza az edzésnaplóhoz
+        </button>
+
+        {/* Fejléc */}
+        <div className="card">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{selectedWorkout.title}</h2>
+                {selectedWorkout.isCompleted && log && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-success-100 px-2.5 py-1 text-xs font-medium text-success-700 dark:bg-success-900/30 dark:text-success-400">
+                    <CheckCircle2 size={12} />
+                    Teljesítve {formatWorkoutDate(log.date)}
+                    {logDur !== null && ` · ${logDur} p`}
+                  </span>
+                )}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400">
+                <span className="flex items-center gap-1">
+                  <Calendar size={14} />
+                  Tervezett: {formatWorkoutDate(selectedWorkout.date)}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock size={14} />
+                  {formatWorkoutDuration(selectedWorkout.duration)}
+                </span>
+                {volume > 0 && (
+                  <span className="flex items-center gap-1">
+                    <TrendingUp size={14} />
+                    {volume.toLocaleString('hu-HU')} kg összes tömeg
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <button
+                onClick={() => handleEditWorkout(selectedWorkout)}
+                className="btn btn-outline text-sm"
+              >
+                <Edit2 size={14} />
+                Szerkesztés
+              </button>
+              <button
+                onClick={() => handleCopyWorkout(selectedWorkout)}
+                className="btn btn-outline text-sm"
+              >
+                <Copy size={14} />
+                Másolás
+              </button>
+            </div>
+          </div>
+          {selectedWorkout.notes && (
+            <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 italic border-t border-gray-100 dark:border-gray-700 pt-3">
+              {selectedWorkout.notes}
+            </p>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Bal oldal: tervezett edzés + napló */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Tervezett edzésterv */}
+            <div className="card">
+              <h3 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-4">
+                <Dumbbell size={18} className="text-primary-600 dark:text-primary-400" />
+                Tervezett edzésterv
+              </h3>
+              {selectedWorkout.sections.map((section, si) => (
+                <div key={si} className="mb-4 last:mb-0">
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-2">
+                    {section.name}
+                  </h4>
+                  <div className="space-y-1">
+                    {section.exercises.map((ex, ei) => {
+                      const exDetails = exercises[ex.exerciseId];
+                      return (
+                        <div key={ei} className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 text-sm">
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {exDetails?.name || 'Ismeretlen gyakorlat'}
+                          </span>
+                          <span className="text-gray-500 dark:text-gray-400">
+                            {ex.sets} × {ex.reps}{ex.weight ? ` @ ${ex.weight} kg` : ''}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Teljesítési napló (ha van) */}
+            {log && (
+              <div className="card border-success-200 dark:border-success-700">
+                <h3 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-4">
+                  <CheckCircle2 size={18} className="text-success-600 dark:text-success-400" />
+                  Teljesítési napló
+                  <span className="text-xs font-normal text-gray-500 dark:text-gray-400 ml-1">
+                    (mobilon rögzítve)
+                  </span>
+                </h3>
+                {log.notes && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 italic mb-3">{log.notes}</p>
+                )}
+                {completedExs.length > 0 ? (
+                  <div className="space-y-1">
+                    {completedExs.map((ex, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-success-50 dark:bg-success-900/20 text-sm"
+                      >
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {ex.name ?? 'Gyakorlat'}
+                        </span>
+                        <span className="text-gray-600 dark:text-gray-400">
+                          {ex.actualSets != null && ex.actualReps != null
+                            ? `${ex.actualSets}×${ex.actualReps}${ex.actualWeight ? ` @ ${ex.actualWeight} kg` : ''}`
+                            : '—'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    A mobilos napló nem tartalmaz részletes gyakorlatadatokat.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Jobb oldal: Polar adatok */}
+          <div className="space-y-4">
+            {relatedPolar.length > 0 ? (
+              <div className="card">
+                <h3 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-4">
+                  <Activity size={18} className="text-primary-600 dark:text-primary-400" />
+                  Polar edzésadatok
+                  <span className="ml-auto text-xs font-normal text-gray-500 dark:text-gray-400">
+                    {formatWorkoutDate(selectedWorkout.date)}
+                  </span>
+                </h3>
+                <div className="space-y-3">
+                  {relatedPolar.map((session) => (
+                    <div key={session.id} className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-gray-900 dark:text-white text-sm">
+                          {session.sport || 'Edzés'}
+                        </span>
+                        {session.start_time && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {new Date(session.start_time).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        {session.duration_seconds != null && (
+                          <span className="flex items-center gap-1">
+                            <Clock size={13} />
+                            {formatCardioDuration(session.duration_seconds)}
+                          </span>
+                        )}
+                        {session.calories != null && (
+                          <span className="flex items-center gap-1">
+                            <Flame size={13} />
+                            {session.calories} kcal
+                          </span>
+                        )}
+                        {session.hr_avg != null && (
+                          <span className="flex items-center gap-1">
+                            <Heart size={13} />
+                            Átlag {session.hr_avg} bpm
+                          </span>
+                        )}
+                        {session.hr_max != null && (
+                          <span className="flex items-center gap-1">
+                            <Heart size={13} className="text-error-400" />
+                            Max {session.hr_max} bpm
+                          </span>
+                        )}
+                        {session.training_load != null && (
+                          <span className="col-span-2 flex items-center gap-1">
+                            <Zap size={13} />
+                            Edzésterhelés: {Math.round(Number(session.training_load))}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="card">
+                <h3 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-3">
+                  <Activity size={18} className="text-gray-400" />
+                  Polar edzésadatok
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Nincs szinkronizált Polar edzés erre a napra ({formatWorkoutDate(selectedWorkout.date)}).
+                </p>
+                <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                  A Polar szinkronizálást a Profiloldalon találod.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -163,7 +395,16 @@ const WorkoutLog = () => {
                       <Dumbbell className="h-6 w-6 text-primary-600 dark:text-primary-400" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white">{workout.title}</h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-gray-900 dark:text-white">{workout.title}</h3>
+                        {workout.isCompleted && workout.latestLog && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-success-100 px-2 py-0.5 text-xs font-medium text-success-700 dark:bg-success-900/30 dark:text-success-400">
+                            <CheckCircle2 size={11} />
+                            Teljesítve {formatWorkoutDate(workout.latestLog.date)}
+                            {computeLogDuration(workout.latestLog) !== null && ` · ${computeLogDuration(workout.latestLog)} p`}
+                          </span>
+                        )}
+                      </div>
                       <div className="mt-1 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                         <span className="flex items-center gap-1">
                           <Calendar size={16} />
@@ -177,6 +418,16 @@ const WorkoutLog = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <button
+                      className="rounded-full p-2 text-gray-400 hover:bg-primary-50 hover:text-primary-600 dark:text-gray-500 dark:hover:bg-primary-900/30 dark:hover:text-primary-400"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewWorkout(workout);
+                      }}
+                      title="Edzés megnyitása"
+                    >
+                      <Eye size={18} />
+                    </button>
                     <button
                       className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-400"
                       onClick={(e) => {

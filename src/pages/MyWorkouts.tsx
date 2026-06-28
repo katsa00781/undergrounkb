@@ -10,8 +10,7 @@ import {
   Filter,
   RefreshCw
 } from 'lucide-react';
-import { Workout, getWorkoutProgressTrend } from '../lib/workouts';
-import { supabase } from '../config/supabase';
+import { Workout, WorkoutWithLog, getWorkoutsWithLogs, getWorkoutProgressTrend, computeLogDuration, computeTotalVolume } from '../lib/workouts';
 import { useAuth } from '../hooks/useAuth';
 import PersonalWorkoutTracker from '../components/PersonalWorkoutTracker';
 import WorkoutSectionHeader from '../components/workouts/WorkoutSectionHeader';
@@ -29,9 +28,9 @@ interface WorkoutProgressData {
 const MyWorkouts: React.FC = () => {
   const { user, initialized } = useAuth();
   const navigate = useNavigate();
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [workouts, setWorkouts] = useState<WorkoutWithLog[]>([]);
   const [progressData, setProgressData] = useState<WorkoutProgressData[]>([]);
-  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
+  const [selectedWorkout, setSelectedWorkout] = useState<WorkoutWithLog | null>(null);
   const [filter, setFilter] = useState<'all' | 'completed' | 'pending'>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,15 +40,8 @@ const MyWorkouts: React.FC = () => {
 
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('workouts')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false });
-
-      if (error) throw error;
-
-      setWorkouts(data || []);
+      const data = await getWorkoutsWithLogs(user.id);
+      setWorkouts(data);
     } catch (error) {
       console.error('Error loading workouts:', error);
       setError('Nem sikerült betölteni az edzéseket');
@@ -96,60 +88,38 @@ const MyWorkouts: React.FC = () => {
     scopes: ['workouts'],
   });
 
-  const handleWorkoutUpdate = (updatedWorkout: Workout) => {
-    setWorkouts(prev => 
-      prev.map(w => w.id === updatedWorkout.id ? updatedWorkout : w)
-    );
-    setSelectedWorkout(updatedWorkout);
-    
-    // Reload progress data after update
+  const handleWorkoutUpdate = (_updatedWorkout: Workout) => {
+    void loadWorkouts();
     loadProgressData();
+    setSelectedWorkout(null);
   };
 
-  const handleTrackWorkout = (workout: Workout) => {
+  const handleTrackWorkout = (workout: WorkoutWithLog) => {
     setSelectedWorkout(workout);
   };
 
-  const handleCopyWorkout = (workout: Workout) => {
+  const handleCopyWorkout = (workout: WorkoutWithLog) => {
     navigate('/workout-planner', { state: { copyWorkout: workout } });
   };
 
   const getFilteredWorkouts = () => {
     return workouts.filter(workout => {
       if (filter === 'all') return true;
-      
-      const completionRate = getWorkoutCompletionRate(workout);
-      
-      if (filter === 'completed') return completionRate === 100;
-      if (filter === 'pending') return completionRate < 100;
-      
+      if (filter === 'completed') return workout.isCompleted;
+      if (filter === 'pending') return !workout.isCompleted;
       return true;
     });
   };
 
-  const getWorkoutCompletionRate = (workout: Workout) => {
-    let total = 0;
-    let completed = 0;
-
-    workout.sections.forEach(section => {
-      section.exercises.forEach(exercise => {
-        total++;
-        if (exercise.completed) completed++;
-      });
-    });
-
-    return total > 0 ? (completed / total) * 100 : 0;
-  };
-
   const getProgressSummary = () => {
     const last7Days = progressData.slice(-7);
-    const avgCompletion = last7Days.length > 0 
-      ? last7Days.reduce((sum, day) => sum + day.completion_rate, 0) / last7Days.length 
+    const avgCompletion = last7Days.length > 0
+      ? last7Days.reduce((sum, day) => sum + day.completion_rate, 0) / last7Days.length
       : 0;
-    
+
     const totalWorkouts = workouts.length;
-    const completedWorkouts = workouts.filter(w => getWorkoutCompletionRate(w) === 100).length;
-    
+    const completedWorkouts = workouts.filter(w => w.isCompleted).length;
+
     return {
       avgCompletion,
       totalWorkouts,
@@ -170,6 +140,12 @@ const MyWorkouts: React.FC = () => {
   }
 
   if (selectedWorkout) {
+    const log = selectedWorkout.latestLog;
+    const logDur = log ? computeLogDuration(log) : null;
+    const logSections = log?.sections ?? [];
+    const completedExs = logSections.flatMap(s => s.exercises).filter(e => e.completed);
+    const volume = logSections.length > 0 ? computeTotalVolume(logSections) : 0;
+
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -180,11 +156,79 @@ const MyWorkouts: React.FC = () => {
             ← Vissza az edzésekhez
           </button>
         </div>
-        
-        <PersonalWorkoutTracker
-          workout={selectedWorkout}
-          onWorkoutUpdate={handleWorkoutUpdate}
-        />
+
+        {selectedWorkout.isCompleted && log ? (
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-green-200 dark:border-green-700 p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {selectedWorkout.title}
+              </h2>
+              <span className="ml-auto text-sm text-green-600 dark:text-green-400 font-medium">
+                Mobilon teljesítve
+              </span>
+            </div>
+
+            <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-1">
+                <Calendar className="h-4 w-4" />
+                <span>{formatWorkoutDate(log.date)}</span>
+              </div>
+              {logDur !== null && (
+                <div className="flex items-center gap-1">
+                  <Clock className="h-4 w-4" />
+                  <span>{logDur} perc</span>
+                </div>
+              )}
+              {volume > 0 && (
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>Összes tömeg: {volume.toLocaleString('hu-HU')} kg</span>
+                </div>
+              )}
+            </div>
+
+            {log.notes && (
+              <p className="text-sm text-gray-600 dark:text-gray-400 italic">{log.notes}</p>
+            )}
+
+            {completedExs.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-3">
+                  Teljesített gyakorlatok
+                </p>
+                <div className="space-y-2">
+                  {completedExs.map((ex, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg"
+                    >
+                      <span className="font-medium text-gray-900 dark:text-white text-sm">
+                        {ex.name ?? 'Gyakorlat'}
+                      </span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {ex.actualSets != null && ex.actualReps != null
+                          ? `${ex.actualSets}×${ex.actualReps}${ex.actualWeight ? ` @ ${ex.actualWeight} kg` : ''}`
+                          : '—'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {completedExs.length === 0 && logSections.length === 0 && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                A mobilos napló nem tartalmaz részletes gyakorlatadatokat.
+              </p>
+            )}
+          </div>
+        ) : (
+          <PersonalWorkoutTracker
+            workout={selectedWorkout}
+            onWorkoutUpdate={handleWorkoutUpdate}
+          />
+        )}
       </div>
     );
   }
@@ -315,27 +359,31 @@ const MyWorkouts: React.FC = () => {
           </div>
         ) : (
           filteredWorkouts.map(workout => {
-            const completionRate = getWorkoutCompletionRate(workout);
-            const isCompleted = completionRate === 100;
-            
+            const { isCompleted, latestLog } = workout;
+            const logDuration = latestLog ? computeLogDuration(latestLog) : null;
+
             return (
               <div
                 key={workout.id}
                 className={`p-6 rounded-lg border cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${
                   isCompleted
-                    ? 'bg-green-50 dark:bg-green-900 border-green-200 dark:border-green-700'
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700'
                     : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                 }`}
                 onClick={() => setSelectedWorkout(workout)}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                         {workout.title}
                       </h3>
                       {isCompleted && (
-                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Teljesítve{latestLog ? ` · ${formatWorkoutDate(latestLog.date)}` : ''}
+                          {logDuration !== null ? ` · ${logDuration} p` : ''}
+                        </span>
                       )}
                       {workout.shared_from && (
                         <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs rounded-full">
@@ -344,7 +392,7 @@ const MyWorkouts: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    
+
                     <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-3">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
@@ -366,43 +414,30 @@ const MyWorkouts: React.FC = () => {
                       <div className="text-sm text-gray-600 dark:text-gray-400">
                         {workout.sections.reduce((total, section) => total + section.exercises.length, 0)} gyakorlat
                       </div>
-                      
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleTrackWorkout(workout);
-                            }}
-                            className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
-                          >
-                            <Edit2 className="h-3.5 w-3.5" />
-                            Teljesítés rögzítése
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleCopyWorkout(workout);
-                            }}
-                            className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
-                          >
-                            <Copy className="h-3.5 w-3.5" />
-                            Másolás
-                          </button>
-                        </div>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {completionRate.toFixed(0)}%
-                        </span>
-                        <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full transition-all duration-300 ${
-                              isCompleted ? 'bg-green-500' : 'bg-blue-500'
-                            }`}
-                            style={{ width: `${completionRate}%` }}
-                          />
-                        </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleTrackWorkout(workout);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                          Részletek
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleCopyWorkout(workout);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                          Másolás
+                        </button>
                       </div>
                     </div>
                   </div>

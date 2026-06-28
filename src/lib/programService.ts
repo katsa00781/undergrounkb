@@ -1,6 +1,6 @@
 import { supabase } from '../config/supabase';
 import { notifyDataChanged } from '../utils/dataRefresh';
-import { getWorkouts, Workout } from './workouts';
+import { getWorkoutsWithLogs, WorkoutWithLog } from './workouts';
 import type { MicrocycleMode, MicrocycleParams } from './microcycle/types';
 
 export interface WorkoutProgram {
@@ -66,13 +66,13 @@ export async function getProgramById(programId: string): Promise<WorkoutProgram 
 export async function getProgramWithWorkouts(
   programId: string,
   userId: string,
-): Promise<{ program: WorkoutProgram | null; workouts: Workout[] }> {
+): Promise<{ program: WorkoutProgram | null; workouts: WorkoutWithLog[] }> {
   const program = await getProgramById(programId);
   if (!program) {
     return { program: null, workouts: [] };
   }
 
-  const allWorkouts = await getWorkouts(userId);
+  const allWorkouts = await getWorkoutsWithLogs(userId);
   const workouts = allWorkouts
     .filter((workout) => workout.program_id === programId)
     .sort((a, b) => (a.program_sequence ?? 0) - (b.program_sequence ?? 0));

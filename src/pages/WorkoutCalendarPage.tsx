@@ -1,26 +1,26 @@
 import React, { useState } from 'react';
 import WorkoutCalendar from '../components/WorkoutCalendar';
-import { Workout } from '../lib/workouts';
-import { Calendar, Clock, Copy, Dumbbell, Edit2 } from 'lucide-react';
+import { WorkoutWithLog, computeLogDuration, computeTotalVolume } from '../lib/workouts';
+import { Calendar, CheckCircle2, Clock, Copy, Dumbbell, Edit2 } from 'lucide-react';
 import WorkoutSectionHeader from '../components/workouts/WorkoutSectionHeader';
 import { useNavigate } from 'react-router-dom';
 import { formatWorkoutDate, formatWorkoutDuration } from '../lib/workoutDisplay';
 
 const WorkoutCalendarPage: React.FC = () => {
   const navigate = useNavigate();
-  const [selectedWorkouts, setSelectedWorkouts] = useState<Workout[]>([]);
+  const [selectedWorkouts, setSelectedWorkouts] = useState<WorkoutWithLog[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  const handleDateSelect = (date: Date, workouts: Workout[]) => {
+  const handleDateSelect = (date: Date, workouts: WorkoutWithLog[]) => {
     setSelectedDate(date);
     setSelectedWorkouts(workouts);
   };
 
-  const handleEditWorkout = (workout: Workout) => {
+  const handleEditWorkout = (workout: WorkoutWithLog) => {
     navigate('/workout-planner', { state: { editWorkout: workout } });
   };
 
-  const handleCopyWorkout = (workout: Workout) => {
+  const handleCopyWorkout = (workout: WorkoutWithLog) => {
     navigate('/workout-planner', { state: { copyWorkout: workout } });
   };
 
@@ -49,16 +49,34 @@ const WorkoutCalendarPage: React.FC = () => {
 
                 {selectedWorkouts.length > 0 ? (
                   <div className="space-y-4">
-                    {selectedWorkouts.map((workout) => (
+                    {selectedWorkouts.map((workout) => {
+                      const logDuration = workout.latestLog ? computeLogDuration(workout.latestLog) : null;
+                      return (
                       <div
                         key={workout.id}
-                        className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
+                        className={`p-4 rounded-lg border ${
+                          workout.isCompleted
+                            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700'
+                            : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
+                        }`}
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-medium text-gray-900 dark:text-white">
-                            {workout.title}
-                          </h4>
-                          <Dumbbell className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                          <div>
+                            <h4 className="font-medium text-gray-900 dark:text-white">
+                              {workout.title}
+                            </h4>
+                            {workout.isCompleted && (
+                              <span className="inline-flex items-center gap-1 mt-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                                <CheckCircle2 className="h-3 w-3" />
+                                Teljesítve{workout.latestLog ? ` · ${formatWorkoutDate(workout.latestLog.date)}` : ''}
+                                {logDuration !== null ? ` · ${logDuration} p` : ''}
+                              </span>
+                            )}
+                          </div>
+                          {workout.isCompleted
+                            ? <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                            : <Dumbbell className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                          }
                         </div>
 
                         <div className="mb-3 flex flex-wrap gap-2">
@@ -94,28 +112,68 @@ const WorkoutCalendarPage: React.FC = () => {
                             </div>
                           )}
 
-                          {workout.sections && workout.sections.length > 0 && (
+                          {workout.isCompleted && workout.latestLog?.sections && workout.latestLog.sections.length > 0 ? (
                             <div className="mt-3">
-                              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                                GYAKORLATOK:
+                              <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-2">
+                                TELJESÍTETT GYAKORLATOK:
                               </p>
-                              <div className="space-y-1">
-                                {workout.sections.slice(0, 3).map((section, idx) => (
-                                  <div key={idx} className="text-xs text-gray-600 dark:text-gray-400">
-                                    • {section.name}
-                                  </div>
-                                ))}
-                                {workout.sections.length > 3 && (
-                                  <div className="text-xs text-gray-500 dark:text-gray-500">
-                                    és még {workout.sections.length - 3} gyakorlat...
-                                  </div>
-                                )}
-                              </div>
+                              {(() => {
+                                const logSections = workout.latestLog!.sections;
+                                const completedExercises = logSections
+                                  .flatMap(s => s.exercises)
+                                  .filter(e => e.completed);
+                                const volume = computeTotalVolume(logSections);
+                                return (
+                                  <>
+                                    <div className="space-y-1">
+                                      {completedExercises.slice(0, 5).map((ex, idx) => (
+                                        <div key={idx} className="text-xs text-gray-600 dark:text-gray-400">
+                                          • {ex.name ?? 'Gyakorlat'}
+                                          {ex.actualSets != null && ex.actualReps != null
+                                            ? `: ${ex.actualSets}×${ex.actualReps}${ex.actualWeight ? ` @ ${ex.actualWeight} kg` : ''}`
+                                            : ''}
+                                        </div>
+                                      ))}
+                                      {completedExercises.length > 5 && (
+                                        <div className="text-xs text-gray-500 dark:text-gray-500">
+                                          és még {completedExercises.length - 5} gyakorlat...
+                                        </div>
+                                      )}
+                                    </div>
+                                    {volume > 0 && (
+                                      <div className="mt-2 text-xs font-medium text-green-700 dark:text-green-400">
+                                        Összes tömeg: {volume.toLocaleString('hu-HU')} kg
+                                      </div>
+                                    )}
+                                  </>
+                                );
+                              })()}
                             </div>
+                          ) : (
+                            workout.sections && workout.sections.length > 0 && (
+                              <div className="mt-3">
+                                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+                                  TERVEZETT GYAKORLATOK:
+                                </p>
+                                <div className="space-y-1">
+                                  {workout.sections.slice(0, 3).map((section, idx) => (
+                                    <div key={idx} className="text-xs text-gray-600 dark:text-gray-400">
+                                      • {section.name}
+                                    </div>
+                                  ))}
+                                  {workout.sections.length > 3 && (
+                                    <div className="text-xs text-gray-500 dark:text-gray-500">
+                                      és még {workout.sections.length - 3} szekció...
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )
                           )}
                         </div>
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-8">

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CalendarRange, Edit2, Calendar } from 'lucide-react';
+import { ArrowLeft, CalendarRange, Edit2, Calendar, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
 import { getProgramWithWorkouts, WorkoutProgram } from '../lib/programService';
-import { Workout } from '../lib/workouts';
+import { WorkoutWithLog, computeLogDuration } from '../lib/workouts';
 import WorkoutSectionHeader from '../components/workouts/WorkoutSectionHeader';
 import { formatWorkoutDate } from '../lib/workoutDisplay';
 
@@ -20,7 +20,7 @@ const ProgramDetailPage = () => {
   const { user, initialized } = useAuth();
   const navigate = useNavigate();
   const [program, setProgram] = useState<WorkoutProgram | null>(null);
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [workouts, setWorkouts] = useState<WorkoutWithLog[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadProgram = useCallback(async () => {
@@ -51,7 +51,7 @@ const ProgramDetailPage = () => {
   useAutoRefresh(loadProgram, { enabled: Boolean(user?.id), scopes: ['workouts'] });
 
   const weekGroups = useMemo(() => {
-    const groups = new Map<number, Workout[]>();
+    const groups = new Map<number, WorkoutWithLog[]>();
     workouts.forEach((workout) => {
       const week = workout.program_week ?? 0;
       if (!groups.has(week)) groups.set(week, []);
@@ -60,7 +60,7 @@ const ProgramDetailPage = () => {
     return Array.from(groups.entries()).sort((a, b) => a[0] - b[0]);
   }, [workouts]);
 
-  const handleOpenSession = (workout: Workout) => {
+  const handleOpenSession = (workout: WorkoutWithLog) => {
     navigate('/workout-planner', { state: { editWorkout: workout } });
   };
 
@@ -124,15 +124,28 @@ const ProgramDetailPage = () => {
                   (total, section) => total + section.exercises.length,
                   0,
                 );
+                const logDuration = workout.latestLog ? computeLogDuration(workout.latestLog) : null;
                 return (
                   <div
                     key={workout.id}
-                    className="flex items-center justify-between rounded-md border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-700/40"
+                    className={`flex items-center justify-between rounded-md border px-4 py-3 ${
+                      workout.isCompleted
+                        ? 'border-green-200 bg-green-50 dark:border-green-700 dark:bg-green-900/20'
+                        : 'border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-700/40'
+                    }`}
                   >
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {workout.program_day_label ?? workout.title}
-                      </p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium text-gray-900 dark:text-white">
+                          {workout.program_day_label ?? workout.title}
+                        </p>
+                        {workout.isCompleted && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Teljesítve{logDuration !== null ? ` · ${logDuration} p` : ''}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
                         {formatWorkoutDate(workout.date)} • {exerciseCount} gyakorlat
                       </p>
