@@ -193,7 +193,7 @@ export default function KettlebellComplexBuilder({
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-gray-200 p-4 dark:border-gray-700">
           <div className="flex items-center gap-2">
-            <Link size={18} className="text-amber-600 dark:text-amber-400" />
+            <Link size={18} className="text-warning-600 dark:text-warning-400" />
             <h2 className="text-base font-semibold text-gray-900 dark:text-white">
               Kettlebell Komplex
             </h2>
@@ -214,7 +214,7 @@ export default function KettlebellComplexBuilder({
             onClick={() => setTab('build')}
             className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
               tab === 'build'
-                ? 'border-amber-500 text-amber-700 dark:text-amber-400'
+                ? 'border-warning-500 text-warning-700 dark:text-warning-400'
                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
             }`}
           >
@@ -226,7 +226,7 @@ export default function KettlebellComplexBuilder({
             onClick={() => setTab('saved')}
             className={`flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
               tab === 'saved'
-                ? 'border-amber-500 text-amber-700 dark:text-amber-400'
+                ? 'border-warning-500 text-warning-700 dark:text-warning-400'
                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
             }`}
           >
@@ -249,7 +249,7 @@ export default function KettlebellComplexBuilder({
                   value={complexName}
                   onChange={(e) => setComplexName(e.target.value)}
                   placeholder="pl. Reggeli komplex A"
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-warning-500 focus:outline-none focus:ring-1 focus:ring-warning-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                 />
               </div>
 
@@ -266,7 +266,7 @@ export default function KettlebellComplexBuilder({
                     value={rounds}
                     onFocus={(e) => e.target.select()}
                     onChange={(e) => setRounds(Math.max(1, Number(e.target.value)))}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-warning-500 focus:outline-none focus:ring-1 focus:ring-warning-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                   />
                 </div>
                 <div>
@@ -280,7 +280,7 @@ export default function KettlebellComplexBuilder({
                     value={restBetweenRounds}
                     onFocus={(e) => e.target.select()}
                     onChange={(e) => setRestBetweenRounds(Math.max(0, Number(e.target.value)))}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-warning-500 focus:outline-none focus:ring-1 focus:ring-warning-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                   />
                 </div>
               </div>
@@ -304,7 +304,7 @@ export default function KettlebellComplexBuilder({
                         type="button"
                         onClick={() => removeSlot(slot.id)}
                         disabled={slots.length <= 2}
-                        className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                        className="rounded p-1 text-gray-400 hover:bg-error-50 hover:text-error-600 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-error-900/20 dark:hover:text-error-400"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -312,15 +312,15 @@ export default function KettlebellComplexBuilder({
 
                     {/* Selected exercise display */}
                     {slot.exerciseId && (
-                      <div className="mb-2 flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 dark:border-amber-700 dark:bg-amber-900/20">
-                        <Check size={14} className="shrink-0 text-amber-600 dark:text-amber-400" />
-                        <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                      <div className="mb-2 flex items-center gap-2 rounded-md border border-warning-300 bg-warning-50 px-3 py-1.5 dark:border-warning-700 dark:bg-warning-900/20">
+                        <Check size={14} className="shrink-0 text-warning-600 dark:text-warning-400" />
+                        <span className="text-sm font-medium text-warning-900 dark:text-warning-100">
                           {slot.exerciseName}
                         </span>
                         <button
                           type="button"
                           onClick={() => updateSlot(slot.id, { exerciseId: '', exerciseName: '' })}
-                          className="ml-auto text-amber-500 hover:text-amber-700 dark:hover:text-amber-300"
+                          className="ml-auto text-warning-500 hover:text-warning-700 dark:hover:text-warning-300"
                         >
                           <X size={12} />
                         </button>
@@ -337,7 +337,7 @@ export default function KettlebellComplexBuilder({
                             setSearches((prev) => ({ ...prev, [slot.id]: e.target.value }))
                           }
                           placeholder={slot.exerciseId ? 'Csere keresése...' : 'Keresés...'}
-                          className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                          className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-warning-500 focus:outline-none focus:ring-1 focus:ring-warning-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                         />
                         <select
                           value=""
@@ -350,7 +350,7 @@ export default function KettlebellComplexBuilder({
                             });
                             setSearches((prev) => ({ ...prev, [slot.id]: '' }));
                           }}
-                          className="block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                          className="block w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-warning-500 focus:outline-none focus:ring-1 focus:ring-warning-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                         >
                           <option value="">
                             {getFiltered(slot.id).length === 0
@@ -373,7 +373,7 @@ export default function KettlebellComplexBuilder({
                           value={slot.reps}
                           onFocus={(e) => e.target.select()}
                           onChange={(e) => updateSlot(slot.id, { reps: e.target.value })}
-                          className="mt-1 block w-full rounded-md border border-gray-300 px-2 py-2.5 text-center text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                          className="mt-1 block w-full rounded-md border border-gray-300 px-2 py-2.5 text-center text-sm shadow-sm focus:border-warning-500 focus:outline-none focus:ring-1 focus:ring-warning-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                         />
                       </div>
                     </div>
@@ -384,7 +384,7 @@ export default function KettlebellComplexBuilder({
                   <button
                     type="button"
                     onClick={addSlot}
-                    className="flex items-center gap-1.5 rounded-md px-3 py-2 text-sm text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                    className="flex items-center gap-1.5 rounded-md px-3 py-2 text-sm text-warning-600 hover:bg-warning-50 dark:text-warning-400 dark:hover:bg-warning-900/20"
                   >
                     <Plus size={14} />
                     Gyakorlat hozzáadása
@@ -394,21 +394,21 @@ export default function KettlebellComplexBuilder({
 
               {/* Preview */}
               {filledSlots.length >= 2 && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
-                  <p className="text-xs font-medium text-amber-700 dark:text-amber-300">Előnézet</p>
-                  <div className="mt-1 flex flex-wrap items-center gap-1 text-sm font-medium text-amber-900 dark:text-amber-100">
+                <div className="rounded-lg border border-warning-200 bg-warning-50 p-3 dark:border-warning-800 dark:bg-warning-950/30">
+                  <p className="text-xs font-medium text-warning-700 dark:text-warning-300">Előnézet</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-1 text-sm font-medium text-warning-900 dark:text-warning-100">
                     {filledSlots.map((s, i) => (
                       <span key={s.id} className="flex items-center gap-1">
                         <span>
                           {s.exerciseName} <span className="font-bold">×{s.reps}</span>
                         </span>
                         {i < filledSlots.length - 1 && (
-                          <ArrowRight size={13} className="text-amber-500" />
+                          <ArrowRight size={13} className="text-warning-500" />
                         )}
                       </span>
                     ))}
                   </div>
-                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                  <p className="mt-1 text-xs text-warning-600 dark:text-warning-400">
                     {rounds} kör · {restBetweenRounds} mp pihenő körök közt
                   </p>
                 </div>
@@ -454,7 +454,7 @@ export default function KettlebellComplexBuilder({
                         <button
                           type="button"
                           onClick={() => handleDeleteSaved(complex.id)}
-                          className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                          className="rounded p-1.5 text-gray-400 hover:bg-error-50 hover:text-error-600 dark:hover:bg-error-900/20 dark:hover:text-error-400"
                           title="Törlés"
                         >
                           <Trash2 size={14} />
@@ -464,14 +464,14 @@ export default function KettlebellComplexBuilder({
                         <button
                           type="button"
                           onClick={() => handleLoadSaved(complex)}
-                          className="flex-1 rounded-md border border-amber-300 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-900/20"
+                          className="flex-1 rounded-md border border-warning-300 py-1.5 text-xs font-medium text-warning-700 hover:bg-warning-50 dark:border-warning-700 dark:text-warning-300 dark:hover:bg-warning-900/20"
                         >
                           Szerkesztés
                         </button>
                         <button
                           type="button"
                           onClick={() => handleAddSavedDirectly(complex)}
-                          className="flex-1 rounded-md bg-amber-500 py-1.5 text-xs font-medium text-white hover:bg-amber-600"
+                          className="flex-1 rounded-md bg-warning-500 py-1.5 text-xs font-medium text-white dark:text-gray-900 hover:bg-warning-600"
                         >
                           Hozzáadás az edzéshez
                         </button>
@@ -499,7 +499,7 @@ export default function KettlebellComplexBuilder({
                 type="button"
                 onClick={handleSaveToDb}
                 disabled={!canAdd || isSaving}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-amber-300 px-4 py-2.5 text-sm font-medium text-amber-700 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-900/20 sm:w-auto"
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-warning-300 px-4 py-2.5 text-sm font-medium text-warning-700 hover:bg-warning-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-warning-700 dark:text-warning-300 dark:hover:bg-warning-900/20 sm:w-auto"
               >
                 <Save size={14} />
                 {isSaving ? 'Mentés...' : 'Mentés könyvtárba'}

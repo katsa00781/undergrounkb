@@ -108,7 +108,7 @@ export default function CardioSectionBuilder({ onAdd, onClose }: CardioSectionBu
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Időtartam (perc) <span className="text-red-500">*</span>
+                Időtartam (perc) <span className="text-error-500">*</span>
               </label>
               <input
                 type="number"

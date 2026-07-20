@@ -27,7 +27,7 @@ const ConfirmDialog = ({
     if (confirmButtonStyle === 'danger') {
       return "bg-error-600 text-white hover:bg-error-700 focus:ring-error-500";
     }
-    return "bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500";
+    return "bg-primary-600 text-white dark:text-gray-900 hover:bg-primary-700 focus:ring-primary-500";
   };
   
   return (

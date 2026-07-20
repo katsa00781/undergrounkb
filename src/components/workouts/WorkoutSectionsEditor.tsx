@@ -139,7 +139,7 @@ const WorkoutSectionsEditor = ({
           <button
             type="button"
             onClick={onOpenComplexBuilder}
-            className="btn btn-outline flex items-center gap-2 border-amber-400 text-amber-700 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-400 dark:hover:bg-amber-900/20"
+            className="btn btn-outline flex items-center gap-2 border-warning-400 text-warning-700 hover:bg-warning-50 dark:border-warning-600 dark:text-warning-400 dark:hover:bg-warning-900/20"
           >
             <Link size={15} />
             KB Komplex
@@ -215,15 +215,15 @@ const WorkoutSectionsEditor = ({
         </div>
       ) : isComplexSection(section) ? (
         /* ── Kettlebell Komplex szekció ── */
-        <div key={section.id} className="rounded-lg border border-amber-300 bg-amber-50 p-4 shadow-sm dark:border-amber-700 dark:bg-amber-950/20 md:p-5">
+        <div key={section.id} className="rounded-lg border border-warning-300 bg-warning-50 p-4 shadow-sm dark:border-warning-700 dark:bg-warning-950/20 md:p-5">
           <div className="mb-3 flex items-start justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Link size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
+              <Link size={16} className="shrink-0 text-warning-600 dark:text-warning-400" />
               <div>
                 <input
                   {...register(`sections.${sectionIndex}.name`)}
                   type="text"
-                  className="block rounded-md border border-amber-300 bg-transparent px-2 py-1 text-base font-semibold text-amber-900 shadow-sm focus:border-amber-500 focus:outline-none dark:border-amber-700 dark:text-amber-100"
+                  className="block rounded-md border border-warning-300 bg-transparent px-2 py-1 text-base font-semibold text-warning-900 shadow-sm focus:border-warning-500 focus:outline-none dark:border-warning-700 dark:text-warning-100"
                   value={section.name}
                   onChange={(e) => {
                     const ns = [...sections];
@@ -232,7 +232,7 @@ const WorkoutSectionsEditor = ({
                   }}
                 />
                 {section.exercises.length > 0 && (
-                  <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">
+                  <p className="mt-0.5 text-xs text-warning-700 dark:text-warning-400">
                     {section.exercises[0]?.sets ?? '?'} kör
                     {section.exercises[section.exercises.length - 1]?.restPeriod
                       ? ` · ${section.exercises[section.exercises.length - 1].restPeriod} mp pihenő`
@@ -245,7 +245,7 @@ const WorkoutSectionsEditor = ({
               <button
                 type="button"
                 onClick={() => onRemoveSection(sectionIndex)}
-                className="rounded-md p-2.5 text-amber-500 hover:bg-amber-100 hover:text-amber-700 dark:hover:bg-amber-900/30"
+                className="rounded-md p-2.5 text-warning-500 hover:bg-warning-100 hover:text-warning-700 dark:hover:bg-warning-900/30"
                 title="Komplex törlése"
               >
                 <Trash2 size={16} />
@@ -260,16 +260,16 @@ const WorkoutSectionsEditor = ({
               const name = exerciseData?.name || ex.name || ex.exerciseName || '—';
               return (
                 <span key={ex.id} className="flex items-center gap-1.5">
-                  <span className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 shadow-sm dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-100">
+                  <span className="rounded-lg border border-warning-300 bg-white px-3 py-1.5 text-sm font-medium text-warning-900 shadow-sm dark:border-warning-700 dark:bg-warning-900/30 dark:text-warning-100">
                     {name}
                     {ex.reps ? (
-                      <span className="ml-1.5 font-bold text-amber-600 dark:text-amber-400">
+                      <span className="ml-1.5 font-bold text-warning-600 dark:text-warning-400">
                         ×{ex.reps}
                       </span>
                     ) : null}
                   </span>
                   {exIdx < section.exercises.length - 1 && (
-                    <ArrowRight size={14} className="text-amber-500" />
+                    <ArrowRight size={14} className="text-warning-500" />
                   )}
                 </span>
               );
@@ -302,7 +302,7 @@ const WorkoutSectionsEditor = ({
                 }}
               />
               {errors.sections?.[sectionIndex]?.name && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                <p className="mt-1 text-sm text-error-600 dark:text-error-400">
                   {errors.sections[sectionIndex]?.name?.message}
                 </p>
               )}
@@ -322,7 +322,7 @@ const WorkoutSectionsEditor = ({
                 <button
                   type="button"
                   onClick={() => onRemoveSection(sectionIndex)}
-                  className="rounded-md p-2.5 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+                  className="rounded-md p-2.5 text-error-500 transition-colors hover:bg-error-50 hover:text-error-700 dark:text-error-400 dark:hover:bg-error-900/20 dark:hover:text-error-300"
                   title="Szekció törlése"
                 >
                   <Trash2 size={18} />
@@ -402,7 +402,7 @@ const WorkoutSectionsEditor = ({
                       <button
                         type="button"
                         onClick={() => onRemoveExercise(sectionIndex, exerciseIndex)}
-                        className="rounded-md p-2.5 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+                        className="rounded-md p-2.5 text-error-500 transition-colors hover:bg-error-50 hover:text-error-700 dark:text-error-400 dark:hover:bg-error-900/20 dark:hover:text-error-300"
                         title="Gyakorlat törlése"
                       >
                         <Trash2 size={15} />
@@ -598,41 +598,41 @@ const WorkoutSectionsEditor = ({
                     )}
 
                     {selectedExercise && (
-                      <div className="mt-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-950/30">
-                        <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">{selectedExercise.name}</p>
-                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-emerald-800 dark:text-emerald-200">
-                          <span className="rounded-full bg-white/80 px-2 py-1 dark:bg-emerald-900/60">{getExerciseCategoryLabel(selectedExercise.category)}</span>
+                      <div className="mt-2 rounded-md border border-success-200 bg-success-50 p-3 dark:border-success-800 dark:bg-success-950/30">
+                        <p className="text-sm font-medium text-success-900 dark:text-success-100">{selectedExercise.name}</p>
+                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-success-800 dark:text-success-200">
+                          <span className="rounded-full bg-white/80 px-2 py-1 dark:bg-success-900/60">{getExerciseCategoryLabel(selectedExercise.category)}</span>
                           {selectedMovementPatternLabel && (
-                            <span className="rounded-full bg-white/80 px-2 py-1 dark:bg-emerald-900/60">{selectedMovementPatternLabel}</span>
+                            <span className="rounded-full bg-white/80 px-2 py-1 dark:bg-success-900/60">{selectedMovementPatternLabel}</span>
                           )}
                           {selectedExerciseFMSFocuses.map((focusId) => (
-                            <span key={focusId} className="rounded-full bg-white/80 px-2 py-1 dark:bg-emerald-900/60">
+                            <span key={focusId} className="rounded-full bg-white/80 px-2 py-1 dark:bg-success-900/60">
                               FMS: {getFMSFocusLabel(focusId)}
                             </span>
                           ))}
-                          <span className="rounded-full bg-white/80 px-2 py-1 dark:bg-emerald-900/60">Nehézség: {getDifficultyLabel(selectedExercise.difficulty)}</span>
+                          <span className="rounded-full bg-white/80 px-2 py-1 dark:bg-success-900/60">Nehézség: {getDifficultyLabel(selectedExercise.difficulty)}</span>
                         </div>
                         {selectedExercise.description && (
-                          <p className="mt-2 text-xs text-emerald-800 dark:text-emerald-200">{selectedExercise.description}</p>
+                          <p className="mt-2 text-xs text-success-800 dark:text-success-200">{selectedExercise.description}</p>
                         )}
                       </div>
                     )}
 
                     {placeholderMeta && (
-                      <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
-                        <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                      <div className="mt-2 rounded-md border border-warning-200 bg-warning-50 p-3 dark:border-warning-800 dark:bg-warning-950/30">
+                        <p className="text-sm font-medium text-warning-900 dark:text-warning-100">
                           Generált helykitöltő: {placeholderMeta.title}
                         </p>
-                        <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">
+                        <p className="mt-1 text-xs text-warning-800 dark:text-warning-200">
                           {placeholderMeta.description}
                         </p>
                         {placeholderMeta.movementPatternLabel && (
-                          <p className="mt-2 text-xs font-medium text-amber-900 dark:text-amber-100">
+                          <p className="mt-2 text-xs font-medium text-warning-900 dark:text-warning-100">
                             Ajánlott mozgásminta: {placeholderMeta.movementPatternLabel}
                           </p>
                         )}
                         {placeholderMeta.categoryLabel && (
-                          <p className="mt-1 text-xs font-medium text-amber-900 dark:text-amber-100">
+                          <p className="mt-1 text-xs font-medium text-warning-900 dark:text-warning-100">
                             Ajánlott kategória: {placeholderMeta.categoryLabel}
                           </p>
                         )}

@@ -14,23 +14,23 @@ export interface ExerciseRating {
 const STATUS_META: Record<ExerciseRatingStatus, { label: string; className: string; dotClassName: string }> = {
   red: {
     label: 'Nem végezhető',
-    className: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200',
-    dotClassName: 'bg-red-500',
+    className: 'bg-error-100 text-error-800 dark:bg-error-900/40 dark:text-error-200',
+    dotClassName: 'bg-error-500',
   },
   yellow: {
     label: 'Limitációval',
-    className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200',
-    dotClassName: 'bg-amber-500',
+    className: 'bg-warning-100 text-warning-800 dark:bg-warning-900/40 dark:text-warning-200',
+    dotClassName: 'bg-warning-500',
   },
   green: {
     label: 'Végezhető',
-    className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200',
-    dotClassName: 'bg-emerald-500',
+    className: 'bg-success-100 text-success-800 dark:bg-success-900/40 dark:text-success-200',
+    dotClassName: 'bg-success-500',
   },
   unknown: {
     label: 'Nincs FMS adat',
-    className: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200',
-    dotClassName: 'bg-slate-400',
+    className: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
+    dotClassName: 'bg-gray-400',
   },
 };
 

@@ -64,6 +64,7 @@ Tesztek: `src/lib/__tests__/` (Vitest 2, `vitest.config.ts` — node környezet,
 - **Adatbázis**: RLS policy-k minden táblán, service rétegen keresztül érintkezz a DB-vel
 - **UI szöveg**: Magyar — minden label, hibaüzenet, felhasználói szöveg magyar
 - **Stílus**: Tailwind utility class-ok, custom color token-ek (`primary-500`, `error-400`, stb.), dark mode `class` alapú
+- **Design tokenek**: Csak szemantikus színskálák használhatók (`primary`/`secondary`/`accent`/`success`/`warning`/`error`/`gray`) — nyers Tailwind-színt (red/amber/emerald/…) ne írj komponensbe. Kivétel a hűvös kiegészítők: `blue` (info/„tervezett"), `sky` (kardió-szekció), `purple`/`pink` (metrika-azonosítók). Világos téma = Daylight (smaragd+korall), sötét = Volt (lime); a skálák a [src/index.css](src/index.css) CSS-változóiból jönnek. Sötét módban a primary/secondary/success/warning 400–700 árnyalatai világosak — ilyen háttéren `dark:text-gray-900` felirat kell (a `.btn-primary`/`.btn-secondary` receptek ezt már kezelik).
 - **Komponens méret**: WorkoutPlanner.tsx és workoutGenerator.fixed.ts nagyon nagy — refaktorálásra jelölve
 - **Útvonalak**: Path alias `@/*` → `./src/*` (tsconfig-ban konfigurálva)
 

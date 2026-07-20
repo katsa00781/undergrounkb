@@ -330,7 +330,7 @@ const Profile = () => {
                       >
                         <div className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-all ${
                           isChecked 
-                            ? 'bg-primary-600 border-primary-600 text-white' 
+                            ? 'bg-primary-600 border-primary-600 text-white dark:text-gray-900' 
                             : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-primary-400'
                         }`}>
                           {isChecked && (

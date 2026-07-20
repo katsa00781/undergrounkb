@@ -1,10 +1,33 @@
 /** @type {import('tailwindcss').Config} */
+// A semantic színek (primary/secondary/accent/success/warning/error) továbbra is
+// a CSS változókból olvasnak (lásd src/index.css). Ez a fájl beállítja a
+// felszín-neutrálisokat (gray), a naptár nyers színeit (green/orange), a
+// betűtípusokat és a kártya-árnyékokat, hogy az EGÉSZ app egyszerre váltson témát.
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   darkMode: 'class',
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Manrope', 'system-ui', 'sans-serif'],
+        display: ['Space Grotesk', 'Manrope', 'sans-serif'],
+      },
       colors: {
+        // Felszín-neutrálisok — meleg, enyhén zöldes-szürke.
+        // Egy skála mindkét módra: világosban a 50–200, sötétben a 800–950 a háttér.
+        gray: {
+          50: '#f6f7f2',
+          100: '#eef0ea',
+          200: '#e5e8de',
+          300: '#ccd1c7',
+          400: '#a8b0a8',
+          500: '#7c857d',
+          600: '#525c53',
+          700: '#2b3440',
+          800: '#161c25',
+          900: '#0e1116',
+          950: '#090b0f',
+        },
         primary: {
           50: 'rgb(var(--color-primary-50) / <alpha-value>)',
           100: 'rgb(var(--color-primary-100) / <alpha-value>)',
@@ -83,6 +106,44 @@ export default {
           900: 'rgb(var(--color-error-900) / <alpha-value>)',
           950: 'rgb(var(--color-error-950) / <alpha-value>)',
         },
+        // A naptár nyers Tailwind-színeket használ — ezeket a semantic skálákra
+        // irányítjuk, hogy témát váltsanak: green→success, orange→accent.
+        green: {
+          50: 'rgb(var(--color-success-50) / <alpha-value>)',
+          100: 'rgb(var(--color-success-100) / <alpha-value>)',
+          200: 'rgb(var(--color-success-200) / <alpha-value>)',
+          300: 'rgb(var(--color-success-300) / <alpha-value>)',
+          400: 'rgb(var(--color-success-400) / <alpha-value>)',
+          500: 'rgb(var(--color-success-500) / <alpha-value>)',
+          600: 'rgb(var(--color-success-600) / <alpha-value>)',
+          700: 'rgb(var(--color-success-700) / <alpha-value>)',
+          800: 'rgb(var(--color-success-800) / <alpha-value>)',
+          900: 'rgb(var(--color-success-900) / <alpha-value>)',
+          950: 'rgb(var(--color-success-950) / <alpha-value>)',
+        },
+        orange: {
+          50: 'rgb(var(--color-accent-50) / <alpha-value>)',
+          100: 'rgb(var(--color-accent-100) / <alpha-value>)',
+          200: 'rgb(var(--color-accent-200) / <alpha-value>)',
+          300: 'rgb(var(--color-accent-300) / <alpha-value>)',
+          400: 'rgb(var(--color-accent-400) / <alpha-value>)',
+          500: 'rgb(var(--color-accent-500) / <alpha-value>)',
+          600: 'rgb(var(--color-accent-600) / <alpha-value>)',
+          700: 'rgb(var(--color-accent-700) / <alpha-value>)',
+          800: 'rgb(var(--color-accent-800) / <alpha-value>)',
+          900: 'rgb(var(--color-accent-900) / <alpha-value>)',
+          950: 'rgb(var(--color-accent-950) / <alpha-value>)',
+        },
+        // blue / purple: a Tailwind alapértelmezett hűvös kiegészítők maradnak.
+      },
+      borderRadius: {
+        xl: '0.75rem',
+        '2xl': '1rem',
+        '3xl': '1.5rem',
+      },
+      boxShadow: {
+        card: 'var(--shadow-card)',
+        'card-hover': 'var(--shadow-card-hover)',
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',
@@ -93,30 +154,12 @@ export default {
         'scale-in': 'scaleIn 0.3s ease-in-out',
       },
       keyframes: {
-        fadeIn: {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        slideUp: {
-          '0%': { transform: 'translateY(10px)', opacity: '0' },
-          '100%': { transform: 'translateY(0)', opacity: '1' },
-        },
-        slideDown: {
-          '0%': { transform: 'translateY(-10px)', opacity: '0' },
-          '100%': { transform: 'translateY(0)', opacity: '1' },
-        },
-        slideLeft: {
-          '0%': { transform: 'translateX(10px)', opacity: '0' },
-          '100%': { transform: 'translateX(0)', opacity: '1' },
-        },
-        slideRight: {
-          '0%': { transform: 'translateX(-10px)', opacity: '0' },
-          '100%': { transform: 'translateX(0)', opacity: '1' },
-        },
-        scaleIn: {
-          '0%': { transform: 'scale(0.95)', opacity: '0' },
-          '100%': { transform: 'scale(1)', opacity: '1' },
-        },
+        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+        slideUp: { '0%': { transform: 'translateY(10px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
+        slideDown: { '0%': { transform: 'translateY(-10px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
+        slideLeft: { '0%': { transform: 'translateX(10px)', opacity: '0' }, '100%': { transform: 'translateX(0)', opacity: '1' } },
+        slideRight: { '0%': { transform: 'translateX(-10px)', opacity: '0' }, '100%': { transform: 'translateX(0)', opacity: '1' } },
+        scaleIn: { '0%': { transform: 'scale(0.95)', opacity: '0' }, '100%': { transform: 'scale(1)', opacity: '1' } },
       },
     },
   },

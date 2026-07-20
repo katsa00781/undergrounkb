@@ -168,7 +168,7 @@ export const ExerciseFilter = ({
           <Filter size={18} />
           <span>Filter</span>
           {(selectedCategory || selectedMovementPattern || selectedPatternFamily || selectedLaterality || selectedDifficulty || showInactive) && (
-            <span className="ml-1 rounded-full bg-primary-500 px-2 py-0.5 text-xs text-white">
+            <span className="ml-1 rounded-full bg-primary-500 px-2 py-0.5 text-xs text-white dark:text-gray-900">
               {[
                 selectedCategory ? 1 : 0,
                 selectedMovementPattern ? 1 : 0,

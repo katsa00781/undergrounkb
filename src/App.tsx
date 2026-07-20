@@ -5,6 +5,12 @@ import { Toaster } from './components/ui/toaster';
 import { supabase, connectionManager } from './config/supabase';
 import { useNavigate } from 'react-router-dom';
 import { AppRoutes } from './routes';
+import { notifyDataChanged } from './utils/dataRefresh';
+
+// If the tab was hidden/idle for longer than this, treat it as a "wake" and
+// proactively re-check the DB connection + refresh data, instead of leaving
+// stale/hung views for the user to notice.
+const WAKE_AFTER_HIDDEN_MS = 15000;
 
 // Connection error component
 function ConnectionError() {
@@ -25,7 +31,7 @@ function ConnectionError() {
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:bg-primary-500 dark:hover:bg-primary-600"
+            className="mt-4 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white dark:text-gray-900 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:bg-primary-500 dark:hover:bg-primary-600"
           >
             Újrapróbálkozás
           </button>
@@ -49,6 +55,30 @@ function App() {
     };
 
     checkConnection();
+  }, []);
+
+  useEffect(() => {
+    let hiddenAt: number | null = null;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        hiddenAt = Date.now();
+        return;
+      }
+
+      if (document.visibilityState === 'visible' && hiddenAt !== null) {
+        const hiddenDuration = Date.now() - hiddenAt;
+        hiddenAt = null;
+
+        if (hiddenDuration >= WAKE_AFTER_HIDDEN_MS) {
+          connectionManager.checkConnection().then(isConnected => setConnectionError(!isConnected));
+          notifyDataChanged('all');
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
   useEffect(() => {

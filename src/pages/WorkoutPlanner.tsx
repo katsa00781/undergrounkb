@@ -947,7 +947,7 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
               placeholder="Add meg az edzés címét"
             />
             {errors.title && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.title.message}</p>
+              <p className="mt-1 text-sm text-error-600 dark:text-error-400">{errors.title.message}</p>
             )}
           </div>
 
@@ -963,7 +963,7 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
               />
               {errors.date && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.date.message}</p>
+                <p className="mt-1 text-sm text-error-600 dark:text-error-400">{errors.date.message}</p>
               )}
             </div>
 
@@ -980,7 +980,7 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
                 placeholder="45"
               />
               {errors.duration && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.duration.message}</p>
+                <p className="mt-1 text-sm text-error-600 dark:text-error-400">{errors.duration.message}</p>
               )}
             </div>
           </div>
@@ -1047,7 +1047,7 @@ const WorkoutPlanner = ({ forcedGeneratorMode }: WorkoutPlannerProps) => {
             <button
               type="button"
               onClick={() => setShowSharingDialog(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-3 text-white hover:bg-green-700 sm:w-auto"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-success-600 px-6 py-3 text-white dark:text-gray-900 hover:bg-success-700 sm:w-auto"
             >
               <Share2 size={16} />
               Edzés megosztása

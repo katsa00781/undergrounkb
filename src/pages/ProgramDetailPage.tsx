@@ -130,7 +130,7 @@ const ProgramDetailPage = () => {
                     key={workout.id}
                     className={`flex items-center justify-between rounded-md border px-4 py-3 ${
                       workout.isCompleted
-                        ? 'border-green-200 bg-green-50 dark:border-green-700 dark:bg-green-900/20'
+                        ? 'border-success-200 bg-success-50 dark:border-success-700 dark:bg-success-900/20'
                         : 'border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-700/40'
                     }`}
                   >
@@ -140,7 +140,7 @@ const ProgramDetailPage = () => {
                           {workout.program_day_label ?? workout.title}
                         </p>
                         {workout.isCompleted && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-success-100 px-2 py-0.5 text-xs font-medium text-success-700 dark:bg-success-900/40 dark:text-success-400">
                             <CheckCircle2 className="h-3 w-3" />
                             Teljesítve{logDuration !== null ? ` · ${logDuration} p` : ''}
                           </span>

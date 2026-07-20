@@ -45,7 +45,7 @@ const WorkoutSectionHeader: React.FC<WorkoutSectionHeaderProps> = ({ title, desc
               className={({ isActive }) =>
                 `inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
                   isActive
-                    ? 'bg-primary-500 text-white shadow-sm'
+                    ? 'bg-primary-500 text-white dark:text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white'
                 }`
               }

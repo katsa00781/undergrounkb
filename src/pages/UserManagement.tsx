@@ -117,7 +117,7 @@ const UserManagement = () => {
                   copyToClipboard();
                   toast.dismiss(t.id);
                 }}
-                className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                className="bg-primary-500 text-white dark:text-gray-900 px-3 py-1 rounded text-sm hover:bg-primary-600"
               >
                 📋 Link másolása
               </button>
@@ -413,7 +413,7 @@ const UserManagement = () => {
                             user.role === 'admin'
                               ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400'
                               : user.role === 'disabled'
-                              ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                              ? 'bg-error-100 text-error-800 dark:bg-error-900/30 dark:text-error-400'
                               : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                           }`}>
                             {user.role}
@@ -444,7 +444,7 @@ const UserManagement = () => {
                             ) : (
                               <button
                                 onClick={() => handleRestoreUser(user.id)}
-                                className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-green-500 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-green-400"
+                                className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-success-500 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-success-400"
                                 title="Felhasználó visszaállítása"
                               >
                                 <UserIcon size={18} />
@@ -485,7 +485,7 @@ const UserManagement = () => {
                             user.role === 'admin'
                               ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400'
                               : user.role === 'disabled'
-                              ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                              ? 'bg-error-100 text-error-800 dark:bg-error-900/30 dark:text-error-400'
                               : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                           }`}>
                             {user.role}
@@ -504,14 +504,14 @@ const UserManagement = () => {
                           <>
                             <button
                               onClick={() => setEditingUser(user)}
-                              className="flex-1 flex items-center justify-center gap-2 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 px-3 py-2 rounded-md transition-colors text-sm font-medium"
+                              className="flex-1 flex items-center justify-center gap-2 text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 bg-primary-50 hover:bg-primary-100 dark:bg-primary-900/30 dark:hover:bg-primary-900/50 px-3 py-2 rounded-md transition-colors text-sm font-medium"
                             >
                               <Edit2 size={16} />
                               Szerkesztés
                             </button>
                             <button
                               onClick={() => handleDeleteUser(user.id)}
-                              className="flex-1 sm:flex-initial flex items-center justify-center gap-2 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 px-3 py-2 rounded-md transition-colors text-sm font-medium"
+                              className="flex-1 sm:flex-initial flex items-center justify-center gap-2 text-error-600 hover:text-error-900 dark:text-error-400 dark:hover:text-error-300 bg-error-50 hover:bg-error-100 dark:bg-error-900/30 dark:hover:bg-error-900/50 px-3 py-2 rounded-md transition-colors text-sm font-medium"
                             >
                               <Trash2 size={16} />
                               Letiltás
@@ -520,7 +520,7 @@ const UserManagement = () => {
                         ) : (
                           <button
                             onClick={() => handleRestoreUser(user.id)}
-                            className="flex-1 flex items-center justify-center gap-2 text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/50 px-3 py-2 rounded-md transition-colors text-sm font-medium"
+                            className="flex-1 flex items-center justify-center gap-2 text-success-600 hover:text-success-900 dark:text-success-400 dark:hover:text-success-300 bg-success-50 hover:bg-success-100 dark:bg-success-900/30 dark:hover:bg-success-900/50 px-3 py-2 rounded-md transition-colors text-sm font-medium"
                           >
                             <UserIcon size={16} />
                             Visszaállítás

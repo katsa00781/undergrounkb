@@ -1,176 +1,252 @@
+/* =============================================================
+   UGKettlebell Pro — Design tokens (Daylight = light, Volt = dark)
+   Semantic színskálák CSS változókban; a Tailwind
+   rgb(var(--color-x) / <alpha>) formában olvassa őket.
+   Világos mód = "Daylight" (smaragd + korall), sötét mód = "Volt" (lime).
+   Betűtípusok az index.html-ben töltődnek (Manrope + Space Grotesk).
+   ============================================================= */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  /* ---------- VILÁGOS MÓD — Daylight ---------- */
   :root {
-    --color-primary-50: 239 246 255;
-    --color-primary-100: 219 234 254;
-    --color-primary-200: 191 219 254;
-    --color-primary-300: 147 197 253;
-    --color-primary-400: 96 165 250;
-    --color-primary-500: 59 130 246;
-    --color-primary-600: 37 99 235;
-    --color-primary-700: 29 78 216;
-    --color-primary-800: 30 64 175;
-    --color-primary-900: 30 58 138;
-    --color-primary-950: 23 37 84;
-    
-    --color-secondary-50: 240 253 250;
-    --color-secondary-100: 204 251 241;
-    --color-secondary-200: 153 246 228;
-    --color-secondary-300: 94 234 212;
-    --color-secondary-400: 45 212 191;
-    --color-secondary-500: 20 184 166;
-    --color-secondary-600: 13 148 136;
-    --color-secondary-700: 15 118 110;
-    --color-secondary-800: 17 94 89;
-    --color-secondary-900: 19 78 74;
-    --color-secondary-950: 4 47 46;
-    
-    --color-accent-50: 255 247 237;
-    --color-accent-100: 255 237 213;
-    --color-accent-200: 254 215 170;
-    --color-accent-300: 253 186 116;
-    --color-accent-400: 251 146 60;
-    --color-accent-500: 249 115 22;
-    --color-accent-600: 234 88 12;
-    --color-accent-700: 194 65 12;
-    --color-accent-800: 154 52 18;
-    --color-accent-900: 124 45 18;
-    --color-accent-950: 67 20 7;
-    
-    --color-success-50: 240 253 244;
-    --color-success-100: 220 252 231;
-    --color-success-200: 187 247 208;
-    --color-success-300: 134 239 172;
-    --color-success-400: 74 222 128;
-    --color-success-500: 34 197 94;
-    --color-success-600: 22 163 74;
-    --color-success-700: 21 128 61;
-    --color-success-800: 22 101 52;
-    --color-success-900: 20 83 45;
-    --color-success-950: 5 46 22;
-    
-    --color-warning-50: 254 252 232;
-    --color-warning-100: 254 249 195;
-    --color-warning-200: 254 240 138;
-    --color-warning-300: 253 224 71;
-    --color-warning-400: 250 204 21;
-    --color-warning-500: 234 179 8;
-    --color-warning-600: 202 138 4;
-    --color-warning-700: 161 98 7;
-    --color-warning-800: 133 77 14;
-    --color-warning-900: 113 63 18;
-    --color-warning-950: 66 32 6;
-    
-    --color-error-50: 254 242 242;
-    --color-error-100: 254 226 226;
-    --color-error-200: 254 202 202;
-    --color-error-300: 252 165 165;
-    --color-error-400: 248 113 113;
-    --color-error-500: 239 68 68;
-    --color-error-600: 220 38 38;
-    --color-error-700: 185 28 28;
-    --color-error-800: 153 27 27;
-    --color-error-900: 127 29 29;
-    --color-error-950: 69 10 10;
+    /* primary — smaragd (márka) */
+    --color-primary-50: 236 250 244;
+    --color-primary-100: 207 240 226;
+    --color-primary-200: 162 226 201;
+    --color-primary-300: 104 208 168;
+    --color-primary-400: 62 190 143;
+    --color-primary-500: 24 150 110;
+    --color-primary-600: 14 110 84;
+    --color-primary-700: 13 90 69;
+    --color-primary-800: 15 72 57;
+    --color-primary-900: 14 59 47;
+    --color-primary-950: 5 36 28;
+
+    /* secondary — fenyő teal (támogató) */
+    --color-secondary-50: 236 247 245;
+    --color-secondary-100: 203 235 230;
+    --color-secondary-200: 155 216 207;
+    --color-secondary-300: 100 192 180;
+    --color-secondary-400: 52 162 150;
+    --color-secondary-500: 25 129 119;
+    --color-secondary-600: 16 102 94;
+    --color-secondary-700: 16 81 75;
+    --color-secondary-800: 16 65 60;
+    --color-secondary-900: 15 53 49;
+    --color-secondary-950: 5 32 30;
+
+    /* accent — korall (CTA / kiemelés) */
+    --color-accent-50: 254 240 234;
+    --color-accent-100: 253 223 212;
+    --color-accent-200: 250 194 172;
+    --color-accent-300: 246 157 127;
+    --color-accent-400: 243 127 91;
+    --color-accent-500: 240 105 58;
+    --color-accent-600: 219 83 39;
+    --color-accent-700: 182 65 30;
+    --color-accent-800: 146 54 27;
+    --color-accent-900: 120 46 24;
+    --color-accent-950: 66 22 10;
+
+    /* success — zöld / menta */
+    --color-success-50: 240 251 244;
+    --color-success-100: 216 245 225;
+    --color-success-200: 178 234 195;
+    --color-success-300: 123 216 143;
+    --color-success-400: 74 198 114;
+    --color-success-500: 33 168 89;
+    --color-success-600: 22 136 71;
+    --color-success-700: 20 108 58;
+    --color-success-800: 19 85 47;
+    --color-success-900: 17 69 40;
+    --color-success-950: 5 39 22;
+
+    /* warning — borostyán */
+    --color-warning-50: 254 250 232;
+    --color-warning-100: 253 242 189;
+    --color-warning-200: 251 229 128;
+    --color-warning-300: 250 204 68;
+    --color-warning-400: 241 183 26;
+    --color-warning-500: 226 169 11;
+    --color-warning-600: 193 133 6;
+    --color-warning-700: 153 100 8;
+    --color-warning-800: 126 82 13;
+    --color-warning-900: 106 68 16;
+    --color-warning-950: 61 37 6;
+
+    /* error — rózsa / piros */
+    --color-error-50: 254 242 243;
+    --color-error-100: 253 225 228;
+    --color-error-200: 251 199 205;
+    --color-error-300: 250 160 172;
+    --color-error-400: 251 113 133;
+    --color-error-500: 240 68 94;
+    --color-error-600: 216 44 72;
+    --color-error-700: 182 33 58;
+    --color-error-800: 151 29 51;
+    --color-error-900: 128 28 47;
+    --color-error-950: 70 10 22;
+
+    /* felszín / sugár / árnyék referencia (Tailwind gray + config kezeli) */
+    --radius-card: 1rem;      /* 16px — .card */
+    --radius-control: 0.75rem;/* 12px — gomb / input / sidebar-link */
+    --shadow-card: 0 1px 2px rgb(26 43 38 / 0.04), 0 8px 24px -12px rgb(26 43 38 / 0.14);
+    --shadow-card-hover: 0 2px 4px rgb(26 43 38 / 0.05), 0 16px 40px -16px rgb(26 43 38 / 0.20);
   }
 
+  /* ---------- SÖTÉT MÓD — Volt (elektromos lime) ---------- */
   .dark {
-    --color-primary-50: 23 37 84;
-    --color-primary-100: 30 58 138;
-    --color-primary-200: 30 64 175;
-    --color-primary-300: 29 78 216;
-    --color-primary-400: 37 99 235;
-    --color-primary-500: 59 130 246;
-    --color-primary-600: 96 165 250;
-    --color-primary-700: 147 197 253;
-    --color-primary-800: 191 219 254;
-    --color-primary-900: 219 234 254;
-    --color-primary-950: 239 246 255;
-    
-    --color-secondary-950: 240 253 250;
-    --color-secondary-900: 204 251 241;
-    --color-secondary-800: 153 246 228;
-    --color-secondary-700: 94 234 212;
-    --color-secondary-600: 45 212 191;
-    --color-secondary-500: 20 184 166;
-    --color-secondary-400: 13 148 136;
-    --color-secondary-300: 15 118 110;
-    --color-secondary-200: 17 94 89;
-    --color-secondary-100: 19 78 74;
-    --color-secondary-50: 4 47 46;
+    /* primary — lime (a sötét téma jelzőszíne) */
+    --color-primary-50: 26 34 10;
+    --color-primary-100: 38 50 14;
+    --color-primary-200: 58 76 20;
+    --color-primary-300: 92 122 30;
+    --color-primary-400: 198 242 78;
+    --color-primary-500: 198 242 78;
+    --color-primary-600: 176 226 58;
+    --color-primary-700: 205 244 104;
+    --color-primary-800: 60 80 22;
+    --color-primary-900: 46 60 16;
+    --color-primary-950: 24 32 8;
+
+    /* secondary — világító teal */
+    --color-secondary-50: 6 34 32;
+    --color-secondary-100: 14 52 48;
+    --color-secondary-200: 16 66 61;
+    --color-secondary-300: 40 150 140;
+    --color-secondary-400: 45 200 184;
+    --color-secondary-500: 60 220 200;
+    --color-secondary-600: 40 200 182;
+    --color-secondary-700: 90 230 210;
+    --color-secondary-800: 20 80 74;
+    --color-secondary-900: 14 54 50;
+    --color-secondary-950: 6 34 32;
+
+    /* accent — korall (világosabb sötét háttéren) */
+    --color-accent-50: 66 22 10;
+    --color-accent-100: 96 34 18;
+    --color-accent-200: 140 52 28;
+    --color-accent-300: 190 72 42;
+    --color-accent-400: 249 140 96;
+    --color-accent-500: 244 118 68;
+    --color-accent-600: 240 105 58;
+    --color-accent-700: 249 150 108;
+    --color-accent-800: 120 46 24;
+    --color-accent-900: 90 34 18;
+    --color-accent-950: 50 18 8;
+
+    /* success — menta */
+    --color-success-50: 5 39 22;
+    --color-success-100: 15 60 36;
+    --color-success-200: 20 90 52;
+    --color-success-300: 40 150 88;
+    --color-success-400: 123 216 143;
+    --color-success-500: 96 205 128;
+    --color-success-600: 60 185 106;
+    --color-success-700: 140 224 160;
+    --color-success-800: 20 86 50;
+    --color-success-900: 16 66 40;
+    --color-success-950: 6 38 22;
+
+    /* warning — borostyán */
+    --color-warning-50: 61 37 6;
+    --color-warning-100: 90 58 12;
+    --color-warning-200: 128 84 14;
+    --color-warning-300: 180 130 20;
+    --color-warning-400: 250 204 68;
+    --color-warning-500: 240 190 40;
+    --color-warning-600: 226 169 11;
+    --color-warning-700: 250 214 96;
+    --color-warning-800: 120 80 14;
+    --color-warning-900: 92 60 14;
+    --color-warning-950: 50 32 6;
+
+    /* error — rózsa */
+    --color-error-50: 70 10 22;
+    --color-error-100: 100 20 36;
+    --color-error-200: 140 30 52;
+    --color-error-300: 190 44 70;
+    --color-error-400: 251 113 133;
+    --color-error-500: 244 84 108;
+    --color-error-600: 240 68 94;
+    --color-error-700: 251 140 158;
+    --color-error-800: 130 30 50;
+    --color-error-900: 100 24 40;
+    --color-error-950: 56 12 24;
+
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -14px rgb(0 0 0 / 0.6);
+    --shadow-card-hover: 0 2px 4px rgb(0 0 0 / 0.5), 0 20px 44px -16px rgb(0 0 0 / 0.7);
   }
 
   body {
     @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Manrope', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold leading-tight;
+    font-family: 'Space Grotesk', 'Manrope', sans-serif;
+    letter-spacing: -0.01em;
   }
 
-  h1 {
-    @apply text-3xl md:text-4xl;
-  }
-
-  h2 {
-    @apply text-2xl md:text-3xl;
-  }
-
-  h3 {
-    @apply text-xl md:text-2xl;
-  }
-
-  h4 {
-    @apply text-lg md:text-xl;
-  }
-
-  p {
-    @apply leading-relaxed;
-  }
+  h1 { @apply text-3xl md:text-4xl; }
+  h2 { @apply text-2xl md:text-3xl; }
+  h3 { @apply text-xl md:text-2xl; }
+  h4 { @apply text-lg md:text-xl; }
+  p  { @apply leading-relaxed; }
 }
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
   }
 
   .btn-primary {
     @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
   }
+  /* Volt: a lime gombhoz sötét felirat kell a kontraszt miatt */
+  .dark .btn-primary {
+    @apply text-gray-900 hover:text-gray-900;
+  }
 
   .btn-secondary {
     @apply bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500;
   }
+  .dark .btn-secondary { @apply text-gray-900 hover:text-gray-900; }
 
   .btn-accent {
-    @apply bg-accent-600 text-white hover:bg-accent-700 focus:ring-accent-500;
+    @apply bg-accent-500 text-white hover:bg-accent-600 focus:ring-accent-500;
   }
 
   .btn-outline {
-    @apply border border-gray-300 bg-transparent hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800 focus:ring-gray-500;
+    @apply border border-gray-200 bg-transparent text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 focus:ring-gray-400;
   }
 
   .input {
-    @apply block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-500 focus:border-primary-500 focus:outline-none focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400;
+    @apply block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500;
   }
 
   .card {
-    @apply rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-gray-800;
+    @apply rounded-2xl border border-gray-200 bg-white p-6 transition-shadow dark:border-gray-700 dark:bg-gray-800;
+    box-shadow: var(--shadow-card);
   }
+  .card:hover { box-shadow: var(--shadow-card-hover); }
 
   .sidebar-link {
-    @apply flex items-center gap-3 rounded-md px-3 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800;
+    @apply flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100;
   }
 
   .sidebar-link-active {
-    @apply bg-primary-50 text-primary-700 dark:bg-gray-800 dark:text-primary-400;
+    @apply bg-primary-50 text-primary-700 hover:bg-primary-50 hover:text-primary-700 dark:bg-primary-900/60 dark:text-primary-400 dark:hover:bg-primary-900/60 dark:hover:text-primary-400;
   }
 
   .mobile-tab {
-    @apply flex flex-1 flex-col items-center justify-center py-2 text-xs font-medium;
+    @apply flex flex-1 flex-col items-center justify-center py-2 text-xs font-medium text-gray-500 dark:text-gray-400;
   }
+  .mobile-tab.active { @apply text-primary-600 dark:text-primary-400; }
 }

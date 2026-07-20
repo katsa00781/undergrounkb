@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Dumbbell, Clock, TrendingUp, CheckCircle2 } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { getWorkoutsWithLogs, WorkoutWithLog } from '../lib/workouts';
 import { useAuth } from '../hooks/useAuth';
@@ -49,7 +49,9 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
-  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+  const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   // Get workouts for a specific date
   const getWorkoutsForDate = (date: Date): WorkoutWithLog[] => {
@@ -100,7 +102,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
     if (hasWorkouts) {
       const anyCompleted = dayWorkouts.some(w => w.isCompleted);
       classes += anyCompleted
-        ? ' bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700'
+        ? ' bg-success-50 dark:bg-success-900/20 border-success-200 dark:border-success-700'
         : ' bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700';
     }
     
@@ -109,7 +111,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
     }
     
     if (isTodayDate) {
-      classes += ' ring-2 ring-orange-400 dark:ring-orange-500';
+      classes += ' ring-2 ring-accent-400 dark:ring-accent-500';
     }
     
     return classes;
@@ -120,7 +122,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 dark:border-primary-400"></div>
       </div>
     );
   }
@@ -161,7 +163,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
             <span className="text-xs text-gray-600 dark:text-gray-400">Edzések</span>
           </div>
           <div className="flex flex-col items-center">
-            <Clock className="h-5 w-5 text-green-500 mb-1" />
+            <Clock className="h-5 w-5 text-success-500 mb-1" />
             <span className="text-2xl font-bold text-gray-900 dark:text-white">{Math.round(monthStats.totalDuration / 60)}h</span>
             <span className="text-xs text-gray-600 dark:text-gray-400">Össz idő</span>
           </div>
@@ -200,11 +202,11 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
                 {dayWorkouts.length > 0 && (
                   <div className="flex items-center gap-1 mt-1">
                     <div className={`w-2 h-2 rounded-full ${
-                      dayWorkouts.some(w => w.isCompleted) ? 'bg-green-500' : 'bg-blue-500'
+                      dayWorkouts.some(w => w.isCompleted) ? 'bg-success-500' : 'bg-blue-500'
                     }`}></div>
                     <span className={`text-xs ${
                       dayWorkouts.some(w => w.isCompleted)
-                        ? 'text-green-600 dark:text-green-400'
+                        ? 'text-success-600 dark:text-success-400'
                         : 'text-blue-600 dark:text-blue-400'
                     }`}>
                       {dayWorkouts.length}
@@ -212,7 +214,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
                   </div>
                 )}
                 {isToday(date) && (
-                  <div className="absolute top-1 right-1 w-2 h-2 bg-orange-400 rounded-full"></div>
+                  <div className="absolute top-1 right-1 w-2 h-2 bg-accent-400 rounded-full"></div>
                 )}
               </div>
             );
@@ -231,7 +233,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
               {getWorkoutsForDate(selectedDate).map((workout) => (
                 <div key={workout.id} className={`flex items-center justify-between p-2 rounded border ${
                   workout.isCompleted
-                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700'
+                    ? 'bg-success-50 dark:bg-success-900/20 border-success-200 dark:border-success-700'
                     : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                 }`}>
                   <div>
@@ -241,7 +243,7 @@ const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({ onDateSelect }) => {
                     </div>
                   </div>
                   {workout.isCompleted
-                    ? <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    ? <CheckCircle2 className="h-4 w-4 text-success-500" />
                     : <Dumbbell className="h-4 w-4 text-blue-500" />
                   }
                 </div>

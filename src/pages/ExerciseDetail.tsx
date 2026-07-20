@@ -188,7 +188,7 @@ const ExerciseDetail = () => {
             <div className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
               <div className="aspect-video bg-gray-100 dark:bg-gray-700">
                 <div className="flex h-full items-center justify-center">
-                  <button className="flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-white hover:bg-primary-700">
+                  <button className="flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-white dark:text-gray-900 hover:bg-primary-700">
                     <Play size={20} />
                     <span>Watch Tutorial</span>
                   </button>

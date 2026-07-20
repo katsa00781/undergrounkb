@@ -80,7 +80,7 @@ const ParticipantSelector = ({
             A résztvevőket most külön, kézzel karbantartott vendéglistából választod ki. Ez a lista független az auth felhasználóktól, így nem keveredik más appok profiljaival.
           </p>
           {isEditMode && (
-            <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
+            <p className="mt-2 text-xs text-warning-700 dark:text-warning-300">
               Meglévő edzés szerkesztésekor a résztvevők kijelölése továbbra is csak a generálási célbeállításokat befolyásolja.
             </p>
           )}
@@ -175,7 +175,7 @@ const ParticipantSelector = ({
                       <button
                         type="button"
                         onClick={() => onRemoveGuest(guestUser.id)}
-                        className="rounded-md p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+                        className="rounded-md p-2 text-gray-400 hover:bg-error-50 hover:text-error-600 dark:hover:bg-error-900/20 dark:hover:text-error-300"
                         aria-label={`${guestUser.name} törlése`}
                       >
                         <Trash2 size={16} />
@@ -200,7 +200,7 @@ const ParticipantSelector = ({
                   </div>
 
                   {linkedFmsSubject && (
-                    <div className="mt-3 grid gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-100 md:grid-cols-2">
+                    <div className="mt-3 grid gap-2 rounded-md border border-success-200 bg-success-50 p-3 text-xs text-success-900 dark:border-success-800 dark:bg-success-950/30 dark:text-success-100 md:grid-cols-2">
                       <p>Kapcsolt alany: {linkedFmsSubject.displayName}</p>
                       <p>Utolsó mérés: {linkedFmsSubject.latestAssessmentDate || 'nincs dátum'}</p>
                       <p>Összpontszám: {linkedFmsSubject.latestTotalScore ?? 'n/a'}</p>
@@ -224,7 +224,7 @@ const ParticipantSelector = ({
             )}
 
             {!isLoadingGuests && !isLoadingFmsSubjects && fmsSubjects.length === 0 && guestUsers.length > 0 && (
-              <div className="rounded-lg border border-dashed border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+              <div className="rounded-lg border border-dashed border-warning-200 bg-warning-50 px-4 py-4 text-sm text-warning-800 dark:border-warning-800 dark:bg-warning-950/30 dark:text-warning-200">
                 Nem találtam adatbázisban FMS felméréssel rendelkező alanyt, ezért a vendégekhez még nem rendelhető mérés.
               </div>
             )}

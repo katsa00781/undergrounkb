@@ -103,7 +103,7 @@ const AppointmentBookingPage = () => {
                   navigate('/workout-log');
                   toast.dismiss(t.id);
                 }} 
-                className="rounded-md bg-primary-600 px-3 py-1 text-xs text-white hover:bg-primary-700"
+                className="rounded-md bg-primary-600 px-3 py-1 text-xs text-white dark:text-gray-900 hover:bg-primary-700"
               >
                 Edzés Napló
               </button>
@@ -164,7 +164,7 @@ const AppointmentBookingPage = () => {
           <p className="text-gray-600 dark:text-gray-400">{accessError}</p>
           <button 
             onClick={() => navigate('/dashboard')}
-            className="mt-4 rounded-md bg-primary-600 px-4 py-2 text-white hover:bg-primary-700"
+            className="mt-4 rounded-md bg-primary-600 px-4 py-2 text-white dark:text-gray-900 hover:bg-primary-700"
           >
             Return to Dashboard
           </button>
@@ -192,7 +192,7 @@ const AppointmentBookingPage = () => {
       </div>
 
       {bookingWarning && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-200">
+        <div className="rounded-lg border border-warning-200 bg-warning-50 p-4 text-warning-800 dark:border-warning-700 dark:bg-warning-900/30 dark:text-warning-200">
           {bookingWarning}
         </div>
       )}

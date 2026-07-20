@@ -134,7 +134,7 @@ const MyWorkouts: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 dark:border-primary-400"></div>
       </div>
     );
   }
@@ -158,13 +158,13 @@ const MyWorkouts: React.FC = () => {
         </div>
 
         {selectedWorkout.isCompleted && log ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-green-200 dark:border-green-700 p-6 space-y-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-success-200 dark:border-success-700 p-6 space-y-4">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <CheckCircle2 className="h-5 w-5 text-success-500" />
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 {selectedWorkout.title}
               </h2>
-              <span className="ml-auto text-sm text-green-600 dark:text-green-400 font-medium">
+              <span className="ml-auto text-sm text-success-600 dark:text-success-400 font-medium">
                 Mobilon teljesítve
               </span>
             </div>
@@ -201,7 +201,7 @@ const MyWorkouts: React.FC = () => {
                   {completedExs.map((ex, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg"
+                      className="flex items-center justify-between p-3 bg-success-50 dark:bg-success-900/20 rounded-lg"
                     >
                       <span className="font-medium text-gray-900 dark:text-white text-sm">
                         {ex.name ?? 'Gyakorlat'}
@@ -250,8 +250,8 @@ const MyWorkouts: React.FC = () => {
       />
 
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg">
-          <p className="text-red-700 dark:text-red-300">{error}</p>
+        <div className="p-4 bg-error-50 dark:bg-error-900 border border-error-200 dark:border-error-700 rounded-lg">
+          <p className="text-error-700 dark:text-error-300">{error}</p>
         </div>
       )}
 
@@ -259,7 +259,7 @@ const MyWorkouts: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <TrendingUp className="h-8 w-8 text-blue-600" />
+            <TrendingUp className="h-8 w-8 text-primary-600 dark:text-primary-400" />
             <div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {summary.avgCompletion.toFixed(0)}%
@@ -273,7 +273,7 @@ const MyWorkouts: React.FC = () => {
 
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <Calendar className="h-8 w-8 text-green-600" />
+            <Calendar className="h-8 w-8 text-success-600" />
             <div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {summary.totalWorkouts}
@@ -287,7 +287,7 @@ const MyWorkouts: React.FC = () => {
 
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <CheckCircle2 className="h-8 w-8 text-green-600" />
+            <CheckCircle2 className="h-8 w-8 text-success-600" />
             <div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {summary.completedWorkouts}
@@ -301,7 +301,7 @@ const MyWorkouts: React.FC = () => {
 
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <Clock className="h-8 w-8 text-orange-600" />
+            <Clock className="h-8 w-8 text-accent-600" />
             <div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {summary.pendingWorkouts}
@@ -332,7 +332,7 @@ const MyWorkouts: React.FC = () => {
               onClick={() => setFilter(option.key as typeof filter)}
               className={`px-3 py-1 rounded-full text-sm transition-colors ${
                 filter === option.key
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-primary-600 text-white dark:text-gray-900'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
@@ -367,7 +367,7 @@ const MyWorkouts: React.FC = () => {
                 key={workout.id}
                 className={`p-6 rounded-lg border cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${
                   isCompleted
-                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700'
+                    ? 'bg-success-50 dark:bg-success-900/20 border-success-200 dark:border-success-700'
                     : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                 }`}
                 onClick={() => setSelectedWorkout(workout)}
@@ -379,7 +379,7 @@ const MyWorkouts: React.FC = () => {
                         {workout.title}
                       </h3>
                       {isCompleted && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-success-100 px-2 py-0.5 text-xs font-medium text-success-700 dark:bg-success-900/40 dark:text-success-400">
                           <CheckCircle2 className="h-3 w-3" />
                           Teljesítve{latestLog ? ` · ${formatWorkoutDate(latestLog.date)}` : ''}
                           {logDuration !== null ? ` · ${logDuration} p` : ''}

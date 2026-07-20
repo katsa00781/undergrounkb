@@ -46,7 +46,7 @@ export const ExerciseCard = ({ exercise, onEdit, onDelete, isAdmin = false }: Ex
               {getMovementPatternLabel(exercise.movement_pattern)}
             </span>
             {exerciseFMSFocuses.map(focusId => (
-              <span key={focusId} className="inline-flex items-center rounded-md bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+              <span key={focusId} className="inline-flex items-center rounded-md bg-warning-100 px-2 py-1 text-xs font-medium text-warning-800 dark:bg-warning-900 dark:text-warning-200">
                 FMS: {getFMSFocusLabel(focusId)}
               </span>
             ))}

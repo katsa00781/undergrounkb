@@ -56,7 +56,7 @@ const WorkoutCalendarPage: React.FC = () => {
                         key={workout.id}
                         className={`p-4 rounded-lg border ${
                           workout.isCompleted
-                            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700'
+                            ? 'bg-success-50 dark:bg-success-900/20 border-success-200 dark:border-success-700'
                             : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
                         }`}
                       >
@@ -66,7 +66,7 @@ const WorkoutCalendarPage: React.FC = () => {
                               {workout.title}
                             </h4>
                             {workout.isCompleted && (
-                              <span className="inline-flex items-center gap-1 mt-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                              <span className="inline-flex items-center gap-1 mt-1 rounded-full bg-success-100 px-2 py-0.5 text-xs font-medium text-success-700 dark:bg-success-900/40 dark:text-success-400">
                                 <CheckCircle2 className="h-3 w-3" />
                                 Teljesítve{workout.latestLog ? ` · ${formatWorkoutDate(workout.latestLog.date)}` : ''}
                                 {logDuration !== null ? ` · ${logDuration} p` : ''}
@@ -74,7 +74,7 @@ const WorkoutCalendarPage: React.FC = () => {
                             )}
                           </div>
                           {workout.isCompleted
-                            ? <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                            ? <CheckCircle2 className="h-5 w-5 text-success-500 flex-shrink-0" />
                             : <Dumbbell className="h-5 w-5 text-blue-500 flex-shrink-0" />
                           }
                         </div>
@@ -114,7 +114,7 @@ const WorkoutCalendarPage: React.FC = () => {
 
                           {workout.isCompleted && workout.latestLog?.sections && workout.latestLog.sections.length > 0 ? (
                             <div className="mt-3">
-                              <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-2">
+                              <p className="text-xs font-medium text-success-600 dark:text-success-400 mb-2">
                                 TELJESÍTETT GYAKORLATOK:
                               </p>
                               {(() => {
@@ -141,7 +141,7 @@ const WorkoutCalendarPage: React.FC = () => {
                                       )}
                                     </div>
                                     {volume > 0 && (
-                                      <div className="mt-2 text-xs font-medium text-green-700 dark:text-green-400">
+                                      <div className="mt-2 text-xs font-medium text-success-700 dark:text-success-400">
                                         Összes tömeg: {volume.toLocaleString('hu-HU')} kg
                                       </div>
                                     )}

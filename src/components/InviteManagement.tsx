@@ -160,7 +160,7 @@ UG KettleBell Pro csapat`;
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                         invite.role === 'admin' 
                           ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' 
-                          : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                          : 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400'
                       }`}>
                         {invite.role === 'admin' ? 'Admin' : 'Felhasználó'}
                       </span>
@@ -175,21 +175,21 @@ UG KettleBell Pro csapat`;
                       <div className="flex justify-end space-x-2">
                         <button
                           onClick={() => copyInviteLink(invite.invite_token)}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 px-3 py-1 rounded-md transition-colors text-xs"
+                          className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 bg-primary-50 hover:bg-primary-100 dark:bg-primary-900/30 dark:hover:bg-primary-900/50 px-3 py-1 rounded-md transition-colors text-xs"
                           title="Meghívó link másolása"
                         >
                           📋 Link
                         </button>
                         <button
                           onClick={() => copyEmailText(invite.email, invite.invite_token)}
-                          className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/50 px-3 py-1 rounded-md transition-colors text-xs"
+                          className="text-success-600 hover:text-success-900 dark:text-success-400 dark:hover:text-success-300 bg-success-50 hover:bg-success-100 dark:bg-success-900/30 dark:hover:bg-success-900/50 px-3 py-1 rounded-md transition-colors text-xs"
                           title="Email szöveg másolása"
                         >
                           ✉️ Email
                         </button>
                         <button
                           onClick={() => handleCancelInvite(invite.id)}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 px-3 py-1 rounded-md transition-colors text-xs"
+                          className="text-error-600 hover:text-error-900 dark:text-error-400 dark:hover:text-error-300 bg-error-50 hover:bg-error-100 dark:bg-error-900/30 dark:hover:bg-error-900/50 px-3 py-1 rounded-md transition-colors text-xs"
                           title="Meghívó törlése"
                         >
                           🗑️ Törlés
@@ -216,7 +216,7 @@ UG KettleBell Pro csapat`;
                       <span className={`inline-flex mt-1 px-2 py-1 text-xs font-semibold rounded-full ${
                         invite.role === 'admin' 
                           ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' 
-                          : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                          : 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400'
                       }`}>
                         {invite.role === 'admin' ? 'Admin' : 'Felhasználó'}
                       </span>
@@ -241,19 +241,19 @@ UG KettleBell Pro csapat`;
                   <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-gray-200 dark:border-gray-600">
                     <button
                       onClick={() => copyInviteLink(invite.invite_token)}
-                      className="flex-1 flex items-center justify-center gap-2 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 px-3 py-2 rounded-md transition-colors text-sm font-medium"
+                      className="flex-1 flex items-center justify-center gap-2 text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 bg-primary-50 hover:bg-primary-100 dark:bg-primary-900/30 dark:hover:bg-primary-900/50 px-3 py-2 rounded-md transition-colors text-sm font-medium"
                     >
                       📋 Link másolása
                     </button>
                     <button
                       onClick={() => copyEmailText(invite.email, invite.invite_token)}
-                      className="flex-1 flex items-center justify-center gap-2 text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 bg-green-50 hover:bg-green-100 dark:bg-green-900/30 dark:hover:bg-green-900/50 px-3 py-2 rounded-md transition-colors text-sm font-medium"
+                      className="flex-1 flex items-center justify-center gap-2 text-success-600 hover:text-success-900 dark:text-success-400 dark:hover:text-success-300 bg-success-50 hover:bg-success-100 dark:bg-success-900/30 dark:hover:bg-success-900/50 px-3 py-2 rounded-md transition-colors text-sm font-medium"
                     >
                       ✉️ Email szöveg
                     </button>
                     <button
                       onClick={() => handleCancelInvite(invite.id)}
-                      className="flex-1 sm:flex-initial flex items-center justify-center gap-2 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-900/50 px-3 py-2 rounded-md transition-colors text-sm font-medium"
+                      className="flex-1 sm:flex-initial flex items-center justify-center gap-2 text-error-600 hover:text-error-900 dark:text-error-400 dark:hover:text-error-300 bg-error-50 hover:bg-error-100 dark:bg-error-900/30 dark:hover:bg-error-900/50 px-3 py-2 rounded-md transition-colors text-sm font-medium"
                     >
                       🗑️ Törlés
                     </button>

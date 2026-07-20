@@ -104,7 +104,7 @@ export const InviteAccept: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Meghívó ellenőrzése...</p>
         </div>
       </div>
@@ -115,11 +115,11 @@ export const InviteAccept: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Érvénytelen meghívó</h1>
+          <h1 className="text-2xl font-bold text-error-600 mb-4">Érvénytelen meghívó</h1>
           <p className="text-gray-600 mb-6">A meghívó érvénytelen vagy lejárt.</p>
           <button
             onClick={() => navigate('/')}
-            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
+            className="bg-primary-600 text-white dark:text-gray-900 px-6 py-2 rounded-md hover:bg-primary-700"
           >
             Vissza a főoldalra
           </button>
@@ -138,7 +138,7 @@ export const InviteAccept: React.FC = () => {
           <p className="mt-2 text-center text-sm text-gray-600">
             Meghívást kaptál a következő email címre:
           </p>
-          <p className="text-center text-lg font-medium text-blue-600">
+          <p className="text-center text-lg font-medium text-primary-600">
             {invite.email}
           </p>
           <p className="text-center text-sm text-gray-500">
@@ -158,7 +158,7 @@ export const InviteAccept: React.FC = () => {
                 type="text"
                 value={formData.displayName}
                 onChange={handleInputChange}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
                 placeholder="Adj meg egy megjelenítési nevet"
               />
             </div>
@@ -174,7 +174,7 @@ export const InviteAccept: React.FC = () => {
                 required
                 value={formData.password}
                 onChange={handleInputChange}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
                 placeholder="Minimum 6 karakter"
               />
             </div>
@@ -190,7 +190,7 @@ export const InviteAccept: React.FC = () => {
                 required
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
                 placeholder="Jelszó ismétlése"
               />
             </div>
@@ -200,7 +200,7 @@ export const InviteAccept: React.FC = () => {
             <button
               type="submit"
               disabled={submitting}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white dark:text-gray-900 bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <>

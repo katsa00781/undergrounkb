@@ -186,7 +186,7 @@ const PersonalWorkoutTracker: React.FC<PersonalWorkoutTrackerProps> = ({
             </div>
             <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-1">
               <div
-                className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                className="bg-success-500 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${stats.percentage}%` }}
               />
             </div>
@@ -219,7 +219,7 @@ const PersonalWorkoutTracker: React.FC<PersonalWorkoutTrackerProps> = ({
                     key={exerciseIndex}
                     className={`border rounded-lg p-4 transition-colors ${
                       exercise.completed 
-                        ? 'border-green-200 bg-green-50 dark:border-green-700 dark:bg-green-900'
+                        ? 'border-success-200 bg-success-50 dark:border-success-700 dark:bg-success-900'
                         : 'border-gray-200 dark:border-gray-700'
                     }`}
                   >
@@ -230,7 +230,7 @@ const PersonalWorkoutTracker: React.FC<PersonalWorkoutTrackerProps> = ({
                             {exerciseData?.name || exercise.exerciseId}
                           </h4>
                           {exercise.completed && (
-                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                            <CheckCircle2 className="h-5 w-5 text-success-500" />
                           )}
                         </div>
 
@@ -332,7 +332,7 @@ const PersonalWorkoutTracker: React.FC<PersonalWorkoutTrackerProps> = ({
                               type="checkbox"
                               checked={performanceData.completed}
                               onChange={(e) => setPerformanceData(prev => ({ ...prev, completed: e.target.checked }))}
-                              className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                              className="rounded border-gray-300 text-success-600 focus:ring-success-500"
                             />
                             <span className="text-sm text-gray-700 dark:text-gray-300">Gyakorlat befejezve</span>
                           </label>
@@ -346,7 +346,7 @@ const PersonalWorkoutTracker: React.FC<PersonalWorkoutTrackerProps> = ({
                             </button>
                             <button
                               onClick={handleSavePerformance}
-                              className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm flex items-center gap-1"
+                              className="px-3 py-1 bg-primary-600 text-white dark:text-gray-900 rounded hover:bg-primary-700 text-sm flex items-center gap-1"
                             >
                               <Save className="h-4 w-4" />
                               Mentés

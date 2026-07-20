@@ -143,7 +143,7 @@ const MicrocycleSection = ({
                   onClick={() => onWeekCountChange(weeks)}
                   className={`rounded-md px-3 py-2 text-sm ${
                     weekCount === weeks
-                      ? 'bg-primary-500 text-white'
+                      ? 'bg-primary-500 text-white dark:text-gray-900'
                       : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                   }`}
                 >
@@ -195,7 +195,7 @@ const ProgramTypeSelector = ({
           onClick={() => onProgramTypeChange(programType)}
           className={`rounded-md px-4 py-2 ${
             selectedProgramType === programType
-              ? 'bg-primary-500 text-white'
+              ? 'bg-primary-500 text-white dark:text-gray-900'
               : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
           }`}
         >
@@ -227,7 +227,7 @@ const DaySelector = ({
           onClick={() => onWorkoutDayChange(day)}
           className={`rounded-md px-4 py-2 ${
             selectedWorkoutDay === day
-              ? 'bg-primary-500 text-white'
+              ? 'bg-primary-500 text-white dark:text-gray-900'
               : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
           }`}
         >
@@ -385,7 +385,7 @@ export const PeriodizedGeneratorPanel = ({
               onClick={() => onCycleWeekChange(week)}
               className={`rounded-md px-3 py-2 text-sm ${
                 selectedCycleWeek === week
-                  ? 'bg-primary-500 text-white'
+                  ? 'bg-primary-500 text-white dark:text-gray-900'
                   : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
               }`}
             >
@@ -542,7 +542,7 @@ export const PwronGeneratorPanel = ({
               onClick={() => onProgramTypeChange(option.value)}
               className={`rounded-md px-3 py-2 text-sm ${
                 selectedProgramType === option.value
-                  ? 'bg-primary-500 text-white'
+                  ? 'bg-primary-500 text-white dark:text-gray-900'
                   : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
               }`}
             >
@@ -578,7 +578,7 @@ export const PwronGeneratorPanel = ({
               onClick={() => onWeekChange(week)}
               className={`rounded-md px-3 py-2 text-sm ${
                 selectedWeek === week
-                  ? 'bg-primary-500 text-white'
+                  ? 'bg-primary-500 text-white dark:text-gray-900'
                   : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
               }`}
             >
@@ -598,7 +598,7 @@ export const PwronGeneratorPanel = ({
               onClick={() => onVariantChange(variant)}
               className={`rounded-md px-4 py-2 text-sm ${
                 selectedVariant === variant
-                  ? 'bg-primary-500 text-white'
+                  ? 'bg-primary-500 text-white dark:text-gray-900'
                   : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
               }`}
             >
@@ -617,7 +617,7 @@ export const PwronGeneratorPanel = ({
           onClick={() => onPrescriptionModeChange('auto')}
           className={`rounded-md px-4 py-2 text-sm ${
             selectedPrescriptionMode === 'auto'
-              ? 'bg-primary-500 text-white'
+              ? 'bg-primary-500 text-white dark:text-gray-900'
               : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
           }`}
         >
@@ -628,7 +628,7 @@ export const PwronGeneratorPanel = ({
           onClick={() => onPrescriptionModeChange('manual')}
           className={`rounded-md px-4 py-2 text-sm ${
             selectedPrescriptionMode === 'manual'
-              ? 'bg-primary-500 text-white'
+              ? 'bg-primary-500 text-white dark:text-gray-900'
               : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
           }`}
         >
@@ -774,7 +774,7 @@ export const LongevityGeneratorPanel = ({
               onClick={() => onWeekChange(week)}
               className={`rounded-md px-3 py-2 text-sm ${
                 selectedWeek === week
-                  ? 'bg-primary-500 text-white'
+                  ? 'bg-primary-500 text-white dark:text-gray-900'
                   : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
               }`}
             >
@@ -812,7 +812,7 @@ export const LongevityGeneratorPanel = ({
             onClick={() => onModalityChange(option.value)}
             className={`rounded-md px-3 py-2 text-sm ${
               selectedModality === option.value
-                ? 'bg-primary-500 text-white'
+                ? 'bg-primary-500 text-white dark:text-gray-900'
                 : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
             }`}
           >

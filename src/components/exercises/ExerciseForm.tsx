@@ -220,7 +220,7 @@ export const ExerciseForm = ({
               taxonomyTags
                 .filter((tag) => derivedTaxonomySlugs.includes(tag.slug))
                 .map((tag) => (
-                  <span key={tag.slug} className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                  <span key={tag.slug} className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-200">
                     {tag.label}
                   </span>
                 ))
@@ -263,7 +263,7 @@ export const ExerciseForm = ({
               {taxonomyTags
                 .filter((tag) => selectedTaxonomyTagSlugs.includes(tag.slug))
                 .map((tag) => (
-                  <span key={tag.slug} className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200">
+                  <span key={tag.slug} className="inline-flex items-center rounded-full bg-success-100 px-3 py-1 text-xs font-medium text-success-800 dark:bg-success-900/50 dark:text-success-200">
                     {tag.label}
                   </span>
                 ))}

@@ -75,7 +75,7 @@ export const CHART_METRICS: ChartMetricConfig[] = [
     titleLabel: 'Body Fat Progress',
     borderColor: 'rgb(249, 115, 22)', // orange
     backgroundColor: 'rgba(249, 115, 22, 0.5)',
-    activeButtonClass: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+    activeButtonClass: 'bg-accent-100 text-accent-800 dark:bg-accent-900/30 dark:text-accent-400',
     beginAtZero: false,
     getValue: (m) => m.bodyfat,
     formatTick: (value) => `${value}%`,
@@ -88,7 +88,7 @@ export const CHART_METRICS: ChartMetricConfig[] = [
     titleLabel: 'Muscle Mass Progress',
     borderColor: 'rgb(16, 185, 129)', // green
     backgroundColor: 'rgba(16, 185, 129, 0.5)',
-    activeButtonClass: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+    activeButtonClass: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400',
     beginAtZero: false,
     getValue: (m) => m.muscle,
     formatTick: (value) => `${value}%`,

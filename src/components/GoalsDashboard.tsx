@@ -195,10 +195,10 @@ const GoalsDashboard: React.FC = () => {
   };
 
   const getProgressColor = (completionRate: number) => {
-    if (completionRate >= 80) return 'bg-green-500';
-    if (completionRate >= 60) return 'bg-yellow-500';
-    if (completionRate >= 30) return 'bg-orange-500';
-    return 'bg-red-500';
+    if (completionRate >= 80) return 'bg-success-500';
+    if (completionRate >= 60) return 'bg-warning-500';
+    if (completionRate >= 30) return 'bg-accent-500';
+    return 'bg-error-500';
   };
 
   const isTodayCompleted = (goalId: string) => {
@@ -284,7 +284,7 @@ const GoalsDashboard: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Target className="h-6 w-6 text-blue-500" />
+              <Target className="h-6 w-6 text-primary-500" />
               Céljaim
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
@@ -293,7 +293,7 @@ const GoalsDashboard: React.FC = () => {
           </div>
           <Link
             to="/goals"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white dark:text-gray-900 rounded-lg transition-colors"
           >
             <Plus className="h-4 w-4" />
             Új cél
@@ -313,7 +313,7 @@ const GoalsDashboard: React.FC = () => {
           </p>
           <Link
             to="/goals"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white dark:text-gray-900 rounded-lg transition-colors"
           >
             <Plus className="h-4 w-4" />
             Első cél létrehozása
@@ -332,7 +332,7 @@ const GoalsDashboard: React.FC = () => {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-start gap-3">
-                    <div className="rounded-full bg-blue-100 dark:bg-blue-900 p-2">
+                    <div className="rounded-full bg-primary-100 dark:bg-primary-900 p-2">
                       {getGoalCategoryIcon(goal.category)}
                     </div>
                     <div>
@@ -341,12 +341,12 @@ const GoalsDashboard: React.FC = () => {
                           {goal.title}
                         </h3>
                         {goal.status === 'completed' && (
-                          <span className="px-2 py-0.5 text-xs rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                          <span className="px-2 py-0.5 text-xs rounded bg-success-100 text-success-700 dark:bg-success-900 dark:text-success-300">
                             Teljesítve
                           </span>
                         )}
                         {goal.status === 'paused' && (
-                          <span className="px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300">
+                          <span className="px-2 py-0.5 text-xs rounded bg-warning-100 text-warning-700 dark:bg-warning-900 dark:text-warning-300">
                             Szünetel
                           </span>
                         )}
@@ -369,8 +369,8 @@ const GoalsDashboard: React.FC = () => {
                       disabled={todayCompleted || markingComplete === goal.id}
                       className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
                         todayCompleted
-                          ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 cursor-not-allowed'
-                          : 'bg-blue-100 hover:bg-blue-200 text-blue-700 dark:bg-blue-900 dark:hover:bg-blue-800 dark:text-blue-300'
+                          ? 'bg-success-100 text-success-700 dark:bg-success-900 dark:text-success-300 cursor-not-allowed'
+                          : 'bg-primary-100 hover:bg-primary-200 text-primary-700 dark:bg-primary-900 dark:hover:bg-primary-800 dark:text-primary-300'
                       }`}
                     >
                       {markingComplete === goal.id ? (
@@ -399,7 +399,7 @@ const GoalsDashboard: React.FC = () => {
                             className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
                               !canComplete || todayCompletedPeriodic
                                 ? 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed'
-                                : 'bg-blue-100 hover:bg-blue-200 text-blue-700 dark:bg-blue-900 dark:hover:bg-blue-800 dark:text-blue-300'
+                                : 'bg-primary-100 hover:bg-primary-200 text-primary-700 dark:bg-primary-900 dark:hover:bg-primary-800 dark:text-primary-300'
                             }`}
                           >
                             {markingComplete === goal.id ? (
@@ -434,7 +434,7 @@ const GoalsDashboard: React.FC = () => {
                     />
                     
                     {/* Aktuális érték módosítása - mindig látható input */}
-                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800">
                       <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Aktuális érték
                       </label>
@@ -464,7 +464,7 @@ const GoalsDashboard: React.FC = () => {
                               setTempCurrentValue(goal.current_value);
                             }
                           }}
-                          className="flex-1 p-2 border border-blue-300 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                          className="flex-1 p-2 border border-primary-300 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500"
                           placeholder="0"
                         />
                         <span className="text-sm text-gray-600 dark:text-gray-400 min-w-fit">
@@ -473,7 +473,7 @@ const GoalsDashboard: React.FC = () => {
                         {editingCurrentValue === goal.id && (
                           <button
                             onClick={() => handleUpdateCurrentValue(goal.id, tempCurrentValue)}
-                            className="px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                            className="px-3 py-2 bg-success-600 text-white dark:text-gray-900 text-sm rounded hover:bg-success-700 transition-colors"
                           >
                             ✓
                           </button>
@@ -498,7 +498,7 @@ const GoalsDashboard: React.FC = () => {
                       <div className="flex items-center gap-4">
                         {progress.streak > 0 && (
                           <div className="flex items-center gap-1">
-                            <Flame className="h-4 w-4 text-orange-500" />
+                            <Flame className="h-4 w-4 text-accent-500" />
                             <span>{progress.streak} napos sorozat</span>
                           </div>
                         )}
@@ -509,7 +509,7 @@ const GoalsDashboard: React.FC = () => {
                       </div>
                       <button
                         onClick={() => setSelectedGoal(selectedGoal?.id === goal.id ? null : goal)}
-                        className="flex items-center gap-1 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                        className="flex items-center gap-1 text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
                       >
                         <BarChart3 className="h-4 w-4" />
                         Részletek
@@ -536,9 +536,9 @@ const GoalsDashboard: React.FC = () => {
                                   key={dateStr}
                                   className={`aspect-square flex items-center justify-center text-xs rounded ${
                                     isCompleted
-                                      ? 'bg-green-500 text-white'
+                                      ? 'bg-success-500 text-white dark:text-gray-900'
                                       : isToday_
-                                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 ring-2 ring-blue-500'
+                                      ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300 ring-2 ring-primary-500'
                                       : 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400'
                                   }`}
                                 >
@@ -564,15 +564,15 @@ const GoalsDashboard: React.FC = () => {
                                   key={dateStr}
                                   className={`aspect-square flex items-center justify-center text-xs rounded relative ${
                                     completions > 0
-                                      ? 'bg-green-500 text-white'
+                                      ? 'bg-success-500 text-white dark:text-gray-900'
                                       : isToday_
-                                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 ring-2 ring-blue-500'
+                                      ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300 ring-2 ring-primary-500'
                                       : 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400'
                                   }`}
                                 >
                                   {format(date, 'd')}
                                   {completions > 1 && (
-                                    <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                                    <span className="absolute -top-1 -right-1 bg-accent-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
                                       {completions}
                                     </span>
                                   )}
@@ -597,9 +597,9 @@ const GoalsDashboard: React.FC = () => {
                                   key={dateStr}
                                   className={`aspect-square flex items-center justify-center text-xs rounded ${
                                     isCompleted
-                                      ? 'bg-green-500 text-white'
+                                      ? 'bg-success-500 text-white dark:text-gray-900'
                                       : isToday_
-                                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 ring-2 ring-blue-500'
+                                      ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300 ring-2 ring-primary-500'
                                       : 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-400'
                                   }`}
                                 >

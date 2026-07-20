@@ -166,7 +166,7 @@ const Dashboard = () => {
               {!latestWeight && (
                 <Link 
                   to="/progress" 
-                  className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                  className="text-xs text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300"
                 >
                   Súly hozzáadása →
                 </Link>
@@ -198,8 +198,8 @@ const Dashboard = () => {
         {/* Goals statisztika */}
         <div className="card animate-fade-in" style={{ animationDelay: '0.3s' }}>
           <div className="flex items-center">
-            <div className="rounded-full bg-blue-100 p-3 dark:bg-blue-900">
-              <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            <div className="rounded-full bg-primary-100 p-3 dark:bg-primary-900">
+              <Target className="h-6 w-6 text-primary-600 dark:text-primary-400" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Aktív célok</p>
@@ -207,14 +207,14 @@ const Dashboard = () => {
                 {goals.length > 0 ? goals.length : (goalStats?.activeGoals || 0)}
               </p>
               {goalStats && goalStats.todayCompletions > 0 && (
-                <p className="text-xs text-green-600 dark:text-green-400">
+                <p className="text-xs text-success-600 dark:text-success-400">
                   +{goalStats.todayCompletions} ma teljesítve
                 </p>
               )}
               {goals.length === 0 && (
                 <Link 
                   to="/goals" 
-                  className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                  className="text-xs text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300"
                 >
                   Cél hozzáadása →
                 </Link>
@@ -479,7 +479,7 @@ const Dashboard = () => {
           to="/goals"
           className="flex flex-col items-center justify-center rounded-lg border border-gray-200 bg-white p-6 text-center shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
         >
-          <Target className="mb-2 h-8 w-8 text-blue-600 dark:text-blue-400" />
+          <Target className="mb-2 h-8 w-8 text-primary-600 dark:text-primary-400" />
           <h3 className="font-semibold text-gray-900 dark:text-white">Célok</h3>
         </Link>
 

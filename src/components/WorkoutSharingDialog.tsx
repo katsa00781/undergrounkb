@@ -292,7 +292,7 @@ const WorkoutSharingDialog: React.FC<WorkoutSharingDialogProps> = ({
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Share2 className="h-5 w-5 text-blue-600" />
+              <Share2 className="h-5 w-5 text-primary-600" />
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Edzés megosztása
               </h2>
@@ -309,9 +309,9 @@ const WorkoutSharingDialog: React.FC<WorkoutSharingDialogProps> = ({
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[60vh]">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-              <span className="text-sm text-red-700 dark:text-red-300">{error}</span>
+            <div className="mb-4 p-3 bg-error-50 dark:bg-error-900 border border-error-200 dark:border-error-700 rounded-lg flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-error-600 dark:text-error-400" />
+              <span className="text-sm text-error-700 dark:text-error-300">{error}</span>
             </div>
           )}
 
@@ -366,7 +366,7 @@ const WorkoutSharingDialog: React.FC<WorkoutSharingDialogProps> = ({
                     
                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                       selectedParticipants.includes(booking.user_id)
-                        ? 'bg-blue-600 border-blue-600'
+                        ? 'bg-primary-600 border-primary-600'
                         : 'border-gray-300 dark:border-gray-600'
                     }`}>
                       {selectedParticipants.includes(booking.user_id) && (
@@ -387,14 +387,14 @@ const WorkoutSharingDialog: React.FC<WorkoutSharingDialogProps> = ({
 
           {/* Summary */}
           {selectedAppointment && selectedParticipants.length > 0 && (
-            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
+            <div className="mb-6 p-4 bg-primary-50 dark:bg-primary-900 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
-                <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                <Users className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+                <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
                   Megosztás összefoglalója
                 </span>
               </div>
-              <div className="text-sm text-blue-600 dark:text-blue-300">
+              <div className="text-sm text-primary-600 dark:text-primary-300">
                 Az edzés meg lesz osztva {selectedParticipants.length} résztvevővel az "{selectedAppointmentData?.title}" időpontból.
               </div>
             </div>
@@ -449,7 +449,7 @@ const WorkoutSharingDialog: React.FC<WorkoutSharingDialogProps> = ({
                           })}
                         </div>
                       ) : (
-                        <div className="rounded-md bg-slate-100 px-3 py-2 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        <div className="rounded-md bg-gray-100 px-3 py-2 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-200">
                           Nincs elérhető FMS felmérés
                         </div>
                       )}
@@ -515,7 +515,7 @@ const WorkoutSharingDialog: React.FC<WorkoutSharingDialogProps> = ({
             <button
               onClick={handleShare}
               disabled={loading || !selectedAppointment || selectedParticipants.length === 0}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2 bg-primary-600 text-white dark:text-gray-900 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>

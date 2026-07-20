@@ -49,23 +49,23 @@ const GoalProgressScale: React.FC<GoalProgressScaleProps> = ({
   const getTrendIcon = () => {
     if (isCompleted) return null;
     if (valueProgress > timeProgress) {
-      return <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />;
+      return <TrendingUp className="h-4 w-4 text-success-600 dark:text-success-400" />;
     } else if (valueProgress < timeProgress * 0.8) {
-      return <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />;
+      return <TrendingDown className="h-4 w-4 text-error-600 dark:text-error-400" />;
     }
-    return <Minus className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />;
+    return <Minus className="h-4 w-4 text-warning-600 dark:text-warning-400" />;
   };
   
   // Színek
   const getProgressColor = () => {
-    if (isCompleted) return 'bg-green-500 dark:bg-green-600';
+    if (isCompleted) return 'bg-success-500 dark:bg-success-600';
     if (isOnTrack) return 'bg-blue-500 dark:bg-blue-600';
-    if (valueProgress < timeProgress * 0.8) return 'bg-red-500 dark:bg-red-600';
-    return 'bg-yellow-500 dark:bg-yellow-600';
+    if (valueProgress < timeProgress * 0.8) return 'bg-error-500 dark:bg-error-600';
+    return 'bg-warning-500 dark:bg-warning-600';
   };
   
   const getTrackColor = () => {
-    if (isCompleted) return 'bg-green-100 dark:bg-green-900/30';
+    if (isCompleted) return 'bg-success-100 dark:bg-success-900/30';
     return 'bg-gray-200 dark:bg-gray-700';
   };
 
@@ -78,7 +78,7 @@ const GoalProgressScale: React.FC<GoalProgressScaleProps> = ({
             <span className="font-medium text-gray-700 dark:text-gray-300">Haladás</span>
             {getTrendIcon()}
           </div>
-          <span className={`font-semibold ${isOnTrack ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+          <span className={`font-semibold ${isOnTrack ? 'text-success-600 dark:text-success-400' : 'text-error-600 dark:text-error-400'}`}>
             {Math.round(valueProgress)}%
           </span>
         </div>
@@ -148,10 +148,10 @@ const GoalProgressScale: React.FC<GoalProgressScaleProps> = ({
       {/* Státusz üzenet */}
       <div className={`text-xs p-2 rounded-lg ${
         isCompleted 
-          ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800' 
+          ? 'bg-success-50 dark:bg-success-900/30 text-success-700 dark:text-success-300 border border-success-200 dark:border-success-800' 
           : isOnTrack 
             ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
-            : 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800'
+            : 'bg-warning-50 dark:bg-warning-900/30 text-warning-700 dark:text-warning-300 border border-warning-200 dark:border-warning-800'
       }`}>
         {isCompleted && '🎉 Célod elérted! Gratulálunk!'}
         {!isCompleted && isOnTrack && '✅ Jó ütemben haladsz a cél felé!'}

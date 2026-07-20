@@ -31,7 +31,10 @@ import {
 } from '../lib/goals';
 import toast from 'react-hot-toast';
 import EnhancedGoalForm from './EnhancedGoalForm';
-import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React.FC = () => {
+import GoalProgressScale from './GoalProgressScale';
+import ConfirmDialog from './ui/ConfirmDialog';
+
+const GoalsManagement: React.FC = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [stats, setStats] = useState<GoalStats | null>(null);
   const [goalProgress, setGoalProgress] = useState<Record<string, GoalProgress>>({});
@@ -41,6 +44,7 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [goalToDelete, setGoalToDelete] = useState<Goal | null>(null);
   const [editingCurrentValue, setEditingCurrentValue] = useState<string | null>(null);
   const [tempCurrentValue, setTempCurrentValue] = useState<number>(0);
 
@@ -149,19 +153,19 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
     }
   };
 
-  const handleDeleteGoal = async (goalId: string) => {
-    if (!confirm('Biztosan törölni szeretnéd ezt a célt?')) {
-      return;
-    }
+  const confirmDeleteGoal = async () => {
+    if (!goalToDelete) return;
 
     try {
-      await deleteGoal(goalId);
+      await deleteGoal(goalToDelete.id);
       await loadGoals();
       await loadStats();
       toast.success('Cél sikeresen törölve');
     } catch (error) {
       console.error('Error deleting goal:', error);
       toast.error('Nem sikerült törölni a célt');
+    } finally {
+      setGoalToDelete(null);
     }
   };
 
@@ -234,11 +238,11 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
 
   const getTypeColor = (type: GoalType): string => {
     switch (type) {
-      case 'daily': return 'bg-blue-500 text-white';
-      case 'weekly': return 'bg-green-500 text-white';
-      case 'monthly': return 'bg-yellow-500 text-white';
-      case 'quarterly': return 'bg-orange-500 text-white';
-      case 'yearly': return 'bg-purple-500 text-white';
+      case 'daily': return 'bg-primary-500 text-white dark:text-gray-900';
+      case 'weekly': return 'bg-success-500 text-white dark:text-gray-900';
+      case 'monthly': return 'bg-warning-500 text-white dark:text-gray-900';
+      case 'quarterly': return 'bg-secondary-500 text-white dark:text-gray-900';
+      case 'yearly': return 'bg-accent-500 text-white';
       default: return 'bg-gray-500 text-white';
     }
   };
@@ -267,31 +271,34 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">Betöltés...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-6 bg-gray-50 min-h-screen">
+    <div className="space-y-6">
       {/* Fejléc és gombok */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-2">
-          <Target className="h-6 w-6 text-blue-600" />
-          <h2 className="text-2xl font-bold text-gray-900">Célok kezelése</h2>
+          <Target className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Célok kezelése</h1>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <button
             onClick={() => setIsTemplateDialogOpen(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white text-gray-700 transition-colors"
+            className="btn btn-outline gap-2"
           >
             <Star className="h-4 w-4" />
             Sablonból
           </button>
           <button
             onClick={() => setIsCreateDialogOpen(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="btn btn-primary gap-2"
           >
             <Plus className="h-4 w-4" />
             Új cél
@@ -302,62 +309,62 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
       {/* Statisztikák */}
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <div className="bg-white p-4 rounded-lg border shadow-sm">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="flex items-center gap-2">
-              <Target className="h-4 w-4 text-blue-500" />
+              <Target className="h-4 w-4 text-primary-500 dark:text-primary-400" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalGoals}</p>
-                <p className="text-sm text-gray-600">Összes cél</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalGoals}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Összes cél</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-lg border shadow-sm">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-orange-500" />
+              <Clock className="h-4 w-4 text-warning-500 dark:text-warning-400" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.activeGoals}</p>
-                <p className="text-sm text-gray-600">Aktív</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.activeGoals}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Aktív</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-lg border shadow-sm">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              <CheckCircle2 className="h-4 w-4 text-success-500 dark:text-success-400" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.completedGoals}</p>
-                <p className="text-sm text-gray-600">Befejezett</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.completedGoals}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Befejezett</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-lg border shadow-sm">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="flex items-center gap-2">
-              <Trophy className="h-4 w-4 text-yellow-500" />
+              <Trophy className="h-4 w-4 text-accent-500 dark:text-accent-400" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.todayCompletions}</p>
-                <p className="text-sm text-gray-600">Mai teljesítés</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.todayCompletions}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Mai teljesítés</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-lg border shadow-sm">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-purple-500" />
+              <TrendingUp className="h-4 w-4 text-secondary-500 dark:text-secondary-400" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">{Math.round(stats.weeklyCompletionRate)}%</p>
-                <p className="text-sm text-gray-600">Heti ráta</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{Math.round(stats.weeklyCompletionRate)}%</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Heti ráta</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-lg border shadow-sm">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="flex items-center gap-2">
-              <Flame className="h-4 w-4 text-red-500" />
+              <Flame className="h-4 w-4 text-error-500 dark:text-error-400" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.longestStreak}</p>
-                <p className="text-sm text-gray-600">Leghosszabb sorozat</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.longestStreak}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Leghosszabb sorozat</p>
               </div>
             </div>
           </div>
@@ -370,12 +377,12 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
           const progress = goalProgress[goal.id];
           
           return (
-            <div key={goal.id} className="bg-white rounded-lg border shadow-sm p-4 md:p-6">
+            <div key={goal.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 md:p-6">
               <div className="flex flex-col sm:flex-row items-start justify-between mb-4 gap-3">
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900">{goal.title}</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{goal.title}</h3>
                   {goal.description && (
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                       {goal.description}
                     </p>
                   )}
@@ -384,7 +391,7 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
                   <span className={`px-2 py-1 text-xs rounded ${getTypeColor(goal.type)}`}>
                     {getTypeLabel(goal.type)}
                   </span>
-                  <span className="px-2 py-1 text-xs border rounded bg-gray-50 text-gray-700">
+                  <span className="px-2 py-1 text-xs border border-gray-200 rounded bg-gray-50 text-gray-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300">
                     {getCategoryLabel(goal.category)}
                   </span>
                 </div>
@@ -404,7 +411,7 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
                   />
                   
                   {/* Aktuális érték módosítása - mindig látható input */}
-                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800">
                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Aktuális érték frissítése
                     </label>
@@ -434,7 +441,7 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
                             setTempCurrentValue(goal.current_value);
                           }
                         }}
-                        className="flex-1 p-2 border border-blue-300 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 p-2 border border-primary-300 dark:border-primary-700 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500"
                         placeholder="0"
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400 min-w-fit">
@@ -443,7 +450,7 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
                       {editingCurrentValue === goal.id && (
                         <button
                           onClick={() => handleUpdateCurrentValue(goal.id, tempCurrentValue)}
-                          className="px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                          className="px-3 py-2 bg-success-600 text-white dark:text-gray-900 text-sm rounded hover:bg-success-700 transition-colors"
                         >
                           Mentés
                         </button>
@@ -458,46 +465,46 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
 
               {/* Cél részletek és műveletek */}
               <div className="flex flex-col gap-3">
-                <div className="text-sm text-gray-600">
-                  <p className="font-medium text-gray-900">Cél: {goal.target_value || 0} {goal.target_unit}</p>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="font-medium text-gray-900 dark:text-white">Cél: {goal.target_value || 0} {goal.target_unit}</p>
                   <p>
-                    {new Date(goal.start_date).toLocaleDateString()} - 
+                    {new Date(goal.start_date).toLocaleDateString()} -
                     {new Date(goal.end_date).toLocaleDateString()}
                   </p>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-2">
                   {goal.status === 'active' && goal.type === 'daily' && (
-                    <button 
+                    <button
                       onClick={() => handleCompleteGoal(goal.id)}
-                      className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                      className="flex items-center gap-1 px-3 py-2 bg-success-600 text-white dark:text-gray-900 text-sm rounded hover:bg-success-700 transition-colors"
                     >
                       <CheckCircle2 className="h-4 w-4" />
                       Mai napi cél teljesítve
                     </button>
                   )}
-                  
+
                   {goal.status === 'active' && goal.type !== 'daily' && (
-                    <button 
+                    <button
                       onClick={() => handleCompleteGoal(goal.id)}
-                      className="flex items-center gap-1 px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                      className="flex items-center gap-1 px-3 py-2 bg-success-600 text-white dark:text-gray-900 text-sm rounded hover:bg-success-700 transition-colors"
                     >
                       <CheckCircle2 className="h-4 w-4" />
                       Cél teljesítve
                     </button>
                   )}
-                  
-                  <button 
+
+                  <button
                     onClick={() => handleEditGoal(goal)}
-                    className="flex items-center gap-1 px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                    className="flex items-center gap-1 px-3 py-2 bg-primary-600 text-white dark:text-gray-900 text-sm rounded hover:bg-primary-700 transition-colors"
                   >
                     <Edit className="h-4 w-4" />
                     Szerkesztés
                   </button>
-                  
-                  <button 
-                    onClick={() => handleDeleteGoal(goal.id)}
-                    className="flex items-center gap-1 px-3 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+
+                  <button
+                    onClick={() => setGoalToDelete(goal)}
+                    className="flex items-center gap-1 px-3 py-2 bg-error-600 text-white text-sm rounded hover:bg-error-700 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                     Törlés
@@ -510,15 +517,15 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
       </div>
 
       {goals.length === 0 && (
-        <div className="bg-white rounded-lg border shadow-sm p-8 text-center">
-          <Target className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-semibold mb-2 text-gray-900">Még nincsenek célok</h3>
-          <p className="text-gray-600 mb-4">
+        <div className="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <Target className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
+          <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Még nincsenek célok</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
             Kezdj el célokat kitűzni magadnak a fejlődésed érdekében!
           </p>
-          <button 
+          <button
             onClick={() => setIsCreateDialogOpen(true)}
-            className="flex items-center gap-2 mx-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="btn btn-primary gap-2 mx-auto"
           >
             <Plus className="h-4 w-4" />
             Első cél létrehozása
@@ -532,7 +539,7 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Cél létrehozása sablonból</h3>
-              <button 
+              <button
                 onClick={() => setIsTemplateDialogOpen(false)}
                 className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
               >
@@ -540,11 +547,11 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
               </button>
             </div>
             <p className="text-gray-600 dark:text-gray-300 mb-4">Válassz egy előre definiált célt a listából</p>
-            
-            <select 
-              value={selectedTemplate} 
+
+            <select
+              value={selectedTemplate}
               onChange={(e) => setSelectedTemplate(e.target.value)}
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg mb-4 text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="input mb-4"
             >
               <option value="">Válassz sablont...</option>
               {GOAL_TEMPLATES.map((template) => (
@@ -553,7 +560,7 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
                 </option>
               ))}
             </select>
-            
+
             {selectedTemplate && (
               <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg mb-4">
                 <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -561,11 +568,11 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
                 </p>
               </div>
             )}
-            
-            <button 
-              onClick={handleCreateFromTemplate} 
+
+            <button
+              onClick={handleCreateFromTemplate}
               disabled={!selectedTemplate}
-              className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="btn btn-primary w-full disabled:bg-gray-300"
             >
               Cél létrehozása
             </button>
@@ -608,7 +615,7 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="pl. Napi 10,000 lépés"
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="input"
                 />
               </div>
               
@@ -618,7 +625,7 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Részletek a célról..."
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg h-20 text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="input h-20"
                 />
               </div>
 
@@ -628,7 +635,7 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
                   <select 
                     value={formData.category} 
                     onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as GoalCategory }))}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="input"
                   >
                     <option value="fitness">Fitness</option>
                     <option value="nutrition">Táplálkozás</option>
@@ -643,7 +650,7 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
                   <select 
                     value={formData.type} 
                     onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as GoalType }))}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="input"
                   >
                     <option value="daily">Napi</option>
                     <option value="weekly">Heti</option>
@@ -669,7 +676,7 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
                       }));
                     }}
                     placeholder="Célérték"
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="input"
                   />
                 </div>
                 <div>
@@ -679,7 +686,7 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
                     value={formData.target_unit}
                     onChange={(e) => setFormData(prev => ({ ...prev, target_unit: e.target.value }))}
                     placeholder="pl. lépés, liter, perc"
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="input"
                   />
                 </div>
               </div>
@@ -691,7 +698,7 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
                     type="date"
                     value={formData.start_date}
                     onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="input"
                   />
                 </div>
                 <div>
@@ -700,24 +707,24 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
                     type="date"
                     value={formData.end_date}
                     onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="input"
                   />
                 </div>
               </div>
 
               <div className="flex gap-3">
-                <button 
+                <button
                   onClick={() => {
                     setIsEditDialogOpen(false);
                     setEditingGoal(null);
                   }}
-                  className="flex-1 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="btn btn-outline flex-1"
                 >
                   Mégse
                 </button>
-                <button 
-                  onClick={handleUpdateGoal} 
-                  className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                <button
+                  onClick={handleUpdateGoal}
+                  className="btn btn-primary flex-1"
                 >
                   Frissítés
                 </button>
@@ -726,6 +733,18 @@ import GoalProgressScale from './GoalProgressScale';const GoalsManagement: React
           </div>
         </div>
       )}
+
+      {/* Törlés megerősítése */}
+      <ConfirmDialog
+        isOpen={goalToDelete !== null}
+        title="Cél törlése"
+        message={`Biztosan törölni szeretnéd a(z) "${goalToDelete?.title}" célt?`}
+        confirmLabel="Törlés"
+        cancelLabel="Mégse"
+        onConfirm={confirmDeleteGoal}
+        onCancel={() => setGoalToDelete(null)}
+        confirmButtonStyle="danger"
+      />
     </div>
   );
 };

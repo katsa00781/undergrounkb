@@ -55,6 +55,26 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing or invalid Supabase environment variables');
 }
 
+// After a long idle/backgrounded tab, the browser can silently kill the
+// underlying TCP connection without ever surfacing an error to `fetch`.
+// Without a timeout, the resulting request (and any `finally { setLoading(false) }`
+// that depends on it) hangs forever, so pages spin indefinitely instead of
+// erroring out and letting the user retry.
+const FETCH_TIMEOUT_MS = 20000;
+
+const fetchWithTimeout: typeof fetch = (input, init) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  if (init?.signal) {
+    init.signal.addEventListener('abort', () => controller.abort());
+  }
+
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => {
+    clearTimeout(timeoutId);
+  });
+};
+
 // Initialize Supabase client with additional options
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -67,7 +87,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   global: {
     headers: {
       'Content-Type': 'application/json'
-    }
+    },
+    fetch: fetchWithTimeout
   },
   realtime: {
     params: {

@@ -170,7 +170,7 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
                 value={formData.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
                 placeholder="pl. Napi 8 pohár víz"
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 required
               />
             </div>
@@ -185,7 +185,7 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 placeholder="Részletes leírás a célról..."
                 rows={3}
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
 
@@ -198,7 +198,7 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
                 <select
                   value={formData.category}
                   onChange={(e) => handleInputChange('category', e.target.value as GoalCategory)}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
                   <option value="fitness">Fitnesz</option>
                   <option value="health">Egészség</option>
@@ -215,7 +215,7 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
                 <select
                   value={formData.type}
                   onChange={(e) => handleInputChange('type', e.target.value as GoalType)}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
                   <option value="daily">Napi</option>
                   <option value="weekly">Heti</option>
@@ -242,7 +242,7 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
                   onChange={(e) => handleNumberInputChange('starting_value', e.target.value)}
                   onFocus={(e) => e.target.select()}
                   placeholder="Start"
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Honnan indulsz
@@ -260,7 +260,7 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
                   onChange={(e) => handleNumberInputChange('current_value', e.target.value)}
                   onFocus={(e) => e.target.select()}
                   placeholder="Most"
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Hol tartasz most
@@ -278,7 +278,7 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
                   onChange={(e) => handleNumberInputChange('target_value', e.target.value)}
                   onFocus={(e) => e.target.select()}
                   placeholder="Cél"
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   required
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -297,7 +297,7 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
                 onChange={(e) => handleInputChange('target_unit', e.target.value)}
                 placeholder="pl. kg, pohár, km, perc"
                 list="unit-suggestions"
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
               <datalist id="unit-suggestions">
                 {getUnitSuggestions(formData.category).map(unit => (
@@ -316,7 +316,7 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
                   type="button"
                   onClick={() => handleDurationChange('days', 30)}
                   className={`p-2 text-sm rounded-lg border ${
-                    durationType === 'days' ? 'bg-blue-100 border-blue-500 text-blue-700' : 'bg-gray-50 border-gray-300 text-gray-700'
+                    durationType === 'days' ? 'bg-primary-100 border-primary-500 text-primary-700' : 'bg-gray-50 border-gray-300 text-gray-700'
                   }`}
                 >
                   Napban
@@ -325,7 +325,7 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
                   type="button"
                   onClick={() => handleDurationChange('weeks', 4)}
                   className={`p-2 text-sm rounded-lg border ${
-                    durationType === 'weeks' ? 'bg-blue-100 border-blue-500 text-blue-700' : 'bg-gray-50 border-gray-300 text-gray-700'
+                    durationType === 'weeks' ? 'bg-primary-100 border-primary-500 text-primary-700' : 'bg-gray-50 border-gray-300 text-gray-700'
                   }`}
                 >
                   Hetekben
@@ -334,7 +334,7 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
                   type="button"
                   onClick={() => handleDurationChange('months', 1)}
                   className={`p-2 text-sm rounded-lg border ${
-                    durationType === 'months' ? 'bg-blue-100 border-blue-500 text-blue-700' : 'bg-gray-50 border-gray-300 text-gray-700'
+                    durationType === 'months' ? 'bg-primary-100 border-primary-500 text-primary-700' : 'bg-gray-50 border-gray-300 text-gray-700'
                   }`}
                 >
                   Hónapokban
@@ -370,7 +370,7 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
                   type="date"
                   value={formData.start_date}
                   onChange={(e) => handleInputChange('start_date', e.target.value)}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
 
@@ -382,7 +382,7 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
                   type="date"
                   value={formData.end_date}
                   onChange={(e) => handleInputChange('end_date', e.target.value)}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -398,7 +398,7 @@ const EnhancedGoalForm: React.FC<EnhancedGoalFormProps> = ({
               </button>
               <button
                 type="submit"
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white dark:text-gray-900 rounded-lg transition-colors flex items-center justify-center gap-2"
               >
                 <Plus className="h-4 w-4" />
                 {isEditing ? 'Frissítés' : 'Létrehozás'}
