@@ -6,6 +6,11 @@ export interface FMSAssessment {
   user_id: string;
   /** A felmérés napja (DATE oszlop, DB default CURRENT_DATE). */
   date: string;
+  /**
+   * A 7 **beszámított** pontszám. Az oldalanként mért teszteknél ez a gyengébb
+   * oldal pontja, pozitív clearing teszt esetén pedig 0 — a levezetést a
+   * `lib/fmsScoring.ts` végzi. A `total_score` generált oszlop ezekre épül.
+   */
   deep_squat: number;
   hurdle_step: number;
   inline_lunge: number;
@@ -13,6 +18,25 @@ export interface FMSAssessment {
   active_straight_leg_raise: number;
   trunk_stability_pushup: number;
   rotary_stability: number;
+  /**
+   * Nyers oldalankénti pontok. A 2026-08-01 előtti felméréseknél `null`:
+   * a beszámított pontból nem következik visszamenőleg, melyik oldal volt a
+   * gyengébb, ezért nem találjuk ki.
+   */
+  hurdle_step_left?: number | null;
+  hurdle_step_right?: number | null;
+  inline_lunge_left?: number | null;
+  inline_lunge_right?: number | null;
+  shoulder_mobility_left?: number | null;
+  shoulder_mobility_right?: number | null;
+  active_straight_leg_raise_left?: number | null;
+  active_straight_leg_raise_right?: number | null;
+  rotary_stability_left?: number | null;
+  rotary_stability_right?: number | null;
+  /** Clearing (fájdalom-provokációs) tesztek: true = fájdalom. */
+  sm_clearing?: boolean;
+  tspu_clearing?: boolean;
+  rs_clearing?: boolean;
   /** A DB generált oszlopa (a 7 pontszám összege). */
   total_score?: number;
   notes?: string;
@@ -28,6 +52,12 @@ export interface FMSAssessmentSubject {
   latestAssessmentDate: string | null;
   latestAssessmentCreatedAt: string | null;
   latestTotalScore: number | null;
+  /**
+   * A legutóbbi felmérés teljes sora. A lista kártyáján az értékelés nem
+   * származtatható az összpontszámból (egy 1 pontos vagy aszimmetrikus minta 18
+   * pont mellett is korrekciót indokol), ezért a nyers pontszámok is kellenek.
+   */
+  latestAssessment: FMSAssessment | null;
 }
 
 /** A `date` és a `total_score` a DB-ből jön (default, illetve generált oszlop). */
@@ -127,9 +157,6 @@ export async function getFMSAssessments(userId: string) {
 
 export async function getAllUsers() {
   try {
-
-    // First, log the Supabase connection status
-
     const { data, error } = await supabase
       .from('profiles')
       .select('id, email, full_name, role')
@@ -140,27 +167,15 @@ export async function getAllUsers() {
       throw error;
     }
 
-    // Format the data to include a display name
-    const formattedData = data.map(user => {
-      // Log each user for debugging
-
-      // Create a name with available information
-      let displayName;
-      if (user.full_name) {
-        displayName = user.full_name;
-      } else if (user.email) {
-        displayName = user.email;
-      } else {
-        displayName = `User ${user.id.slice(0, 8)}...`;
-      }
-
-      return {
-        id: user.id,
-        email: user.email,
-        full_name: displayName,
-        name: displayName // A kompatibilitás miatt megtartjuk
-      };
-    });
+    // A `full_name` szándékosan nyersen (akár null-ként) jön vissza: a hívónak
+    // tudnia kell, van-e valódi neve az alanynak, vagy csak e-mail címünk van.
+    // A megjelenítéshez a `name` mezőben adjuk a visszaesésekkel képzett nevet.
+    const formattedData = data.map(user => ({
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      name: user.full_name || user.email || `User ${user.id.slice(0, 8)}...`,
+    }));
 
     return formattedData;
   } catch (error) {
@@ -173,7 +188,9 @@ export async function listFMSAssessmentSubjects(): Promise<FMSAssessmentSubject[
   try {
     const { data: assessments, error: assessmentsError } = await supabase
       .from('fms_assessments')
-      .select('user_id, date, created_at, total_score')
+      // Teljes sor: a lista kártyáján megjelenő értékeléshez a nyers
+      // oldalankénti pontok és a clearing tesztek is kellenek.
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (assessmentsError) {
@@ -181,22 +198,14 @@ export async function listFMSAssessmentSubjects(): Promise<FMSAssessmentSubject[
       throw assessmentsError;
     }
 
-    const latestByUserId = new Map<string, {
-      date: string | null;
-      created_at: string | null;
-      total_score: number | null;
-    }>();
+    const latestByUserId = new Map<string, FMSAssessment>();
 
     for (const assessment of assessments || []) {
       if (!assessment.user_id || latestByUserId.has(assessment.user_id)) {
         continue;
       }
 
-      latestByUserId.set(assessment.user_id, {
-        date: assessment.date ?? null,
-        created_at: assessment.created_at ?? null,
-        total_score: assessment.total_score ?? null,
-      });
+      latestByUserId.set(assessment.user_id, assessment as FMSAssessment);
     }
 
     const userIds = Array.from(latestByUserId.keys());
@@ -219,7 +228,7 @@ export async function listFMSAssessmentSubjects(): Promise<FMSAssessmentSubject[
     return userIds
       .map((userId) => {
         const profile = profileMap.get(userId);
-        const latestAssessment = latestByUserId.get(userId);
+        const latestAssessment = latestByUserId.get(userId) ?? null;
         const displayName = profile?.full_name || profile?.email || `FMS alany ${userId.slice(0, 8)}`;
 
         return {
@@ -231,6 +240,7 @@ export async function listFMSAssessmentSubjects(): Promise<FMSAssessmentSubject[
           latestAssessmentCreatedAt: latestAssessment?.created_at || null,
           // ?? és nem ||: a 0 összpontszám (minden teszt fájdalmas) érvényes érték.
           latestTotalScore: latestAssessment?.total_score ?? null,
+          latestAssessment,
         } satisfies FMSAssessmentSubject;
       })
       .sort((left, right) => left.displayName.localeCompare(right.displayName, 'hu'));
@@ -271,6 +281,7 @@ export async function getFMSAssessmentSubject(userId: string): Promise<FMSAssess
       latestAssessmentDate: latest?.date ?? null,
       latestAssessmentCreatedAt: latest?.created_at ?? null,
       latestTotalScore: latest?.total_score ?? null,
+      latestAssessment: latest ?? null,
     };
   } catch (error) {
     console.error('Exception in getFMSAssessmentSubject:', error);

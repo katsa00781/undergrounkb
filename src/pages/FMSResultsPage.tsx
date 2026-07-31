@@ -3,15 +3,10 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ChevronRight, ClipboardList, Plus } from 'lucide-react';
 import { listFMSAssessmentSubjects, type FMSAssessmentSubject } from '../lib/fms';
-import { resolveScoreBand } from '../lib/fmsReport/buildReportModel';
+import { buildFMSReportRows, resolveScoreBand } from '../lib/fmsReport/buildReportModel';
 import { FMS_MAX_SCORE } from '../lib/fmsReport/constants';
-import type { FMSScoreBandId } from '../lib/fmsReport/types';
-
-const BAND_BADGE: Record<FMSScoreBandId, string> = {
-  good: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400',
-  acceptable: 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400',
-  poor: 'bg-error-100 text-error-800 dark:bg-error-900/30 dark:text-error-400',
-};
+import { resolveFMSRisk } from '../lib/fmsReport/risk';
+import { FMS_RISK_BADGE } from '../components/fms/riskStyles';
 
 function formatDate(isoDate: string | null): string {
   if (!isoDate) return 'Nincs dátum';
@@ -82,7 +77,15 @@ export function FMSResultsPage() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {subjects.map(subject => {
             const totalScore = subject.latestTotalScore;
-            const band = totalScore !== null ? resolveScoreBand(totalScore) : null;
+            // Az értékelés nem csak a pontsávból jön: egy 1 pontos vagy
+            // aszimmetrikus mozgásminta 18/21 mellett is korrekciót indokol.
+            const risk = subject.latestAssessment && totalScore !== null
+              ? resolveFMSRisk(
+                buildFMSReportRows(subject.latestAssessment),
+                totalScore,
+                resolveScoreBand(totalScore),
+              )
+              : null;
 
             return (
               <Link
@@ -110,15 +113,17 @@ export function FMSResultsPage() {
                     </p>
                   </div>
 
-                  {totalScore !== null && band && (
+                  {totalScore !== null && (
                     <div className="text-right">
                       <p className="text-xl font-bold text-primary-600 dark:text-primary-400">
                         {totalScore}
                         <span className="text-sm font-normal text-gray-400"> / {FMS_MAX_SCORE}</span>
                       </p>
-                      <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${BAND_BADGE[band.id]}`}>
-                        {band.label}
-                      </span>
+                      {risk && (
+                        <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${FMS_RISK_BADGE[risk.id]}`}>
+                          {risk.label}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>

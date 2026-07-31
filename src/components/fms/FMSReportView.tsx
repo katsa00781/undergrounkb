@@ -1,26 +1,12 @@
-import { AlertTriangle, ClipboardList, Info, Target } from 'lucide-react';
+import { AlertTriangle, ArrowLeftRight, ClipboardList, Info, Target } from 'lucide-react';
 import { FMS_CORRECTION_MODALITY_LABELS } from '../../lib/workoutGenerator/fmsCorrections';
-import type { FMSReportModel, FMSScoreBandId } from '../../lib/fmsReport/types';
+import type { FMSReportModel } from '../../lib/fmsReport/types';
 import { FMSScoreGrid } from './FMSScoreGrid';
+import { FMS_RISK_BADGE, FMS_RISK_RING } from './riskStyles';
 
 interface FMSReportViewProps {
   model: FMSReportModel;
 }
-
-const BAND_STYLES: Record<FMSScoreBandId, { badge: string; ring: string }> = {
-  good: {
-    badge: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400',
-    ring: 'ring-success-200 dark:ring-success-900/50',
-  },
-  acceptable: {
-    badge: 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400',
-    ring: 'ring-warning-200 dark:ring-warning-900/50',
-  },
-  poor: {
-    badge: 'bg-error-100 text-error-800 dark:bg-error-900/30 dark:text-error-400',
-    ring: 'ring-error-200 dark:ring-error-900/50',
-  },
-};
 
 function formatDate(isoDate: string): string {
   const [year, month, day] = isoDate.split('-');
@@ -29,12 +15,12 @@ function formatDate(isoDate: string): string {
 
 /** A riport képernyős megjelenítése — ugyanaz a tartalom, mint a PDF-ben. */
 export function FMSReportView({ model }: FMSReportViewProps) {
-  const bandStyle = BAND_STYLES[model.band.id];
+  const riskStyle = { badge: FMS_RISK_BADGE[model.risk.id], ring: FMS_RISK_RING[model.risk.id] };
 
   return (
     <div className="space-y-6">
       {/* Összegző fejléc */}
-      <div className={`rounded-lg border border-gray-200 bg-white p-6 shadow-sm ring-1 dark:border-gray-700 dark:bg-gray-800 ${bandStyle.ring}`}>
+      <div className={`rounded-lg border border-gray-200 bg-white p-6 shadow-sm ring-1 dark:border-gray-700 dark:bg-gray-800 ${riskStyle.ring}`}>
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
           <div className="flex shrink-0 items-baseline gap-1">
             <span className="text-5xl font-bold text-primary-600 dark:text-primary-400">
@@ -44,12 +30,29 @@ export function FMSReportView({ model }: FMSReportViewProps) {
           </div>
 
           <div className="min-w-0 flex-1 sm:border-l sm:border-gray-200 sm:pl-6 sm:dark:border-gray-700">
-            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${bandStyle.badge}`}>
-              {model.band.label}
+            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${riskStyle.badge}`}>
+              {model.risk.label}
             </span>
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{model.band.summary}</p>
-            <p className="mt-2 text-xs text-gray-500 dark:text-gray-500">
-              {model.clientName} · {formatDate(model.assessmentDate)}
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{model.risk.summary}</p>
+
+            {/* Az értékelés indokai — enélkül a jó összpontszám elfedné a gyenge mintát. */}
+            {model.risk.reasons.length > 0 && (
+              <ul className="mt-3 space-y-1">
+                {model.risk.reasons.map(reason => (
+                  <li
+                    key={reason}
+                    className="flex gap-2 text-sm text-gray-700 dark:text-gray-300"
+                  >
+                    <span aria-hidden="true" className="text-gray-400 dark:text-gray-500">•</span>
+                    {reason}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <p className="mt-3 text-xs text-gray-500 dark:text-gray-500">
+              {model.clientName} · {formatDate(model.assessmentDate)} · összpontszám-sáv{' '}
+              {model.band.min}–{model.band.max} pont
             </p>
           </div>
         </div>
@@ -66,6 +69,46 @@ export function FMSReportView({ model }: FMSReportViewProps) {
               FMS protokoll szerint orvosi kivizsgálás javasolt, és az érintett mozgásminta terhelését
               kerülni kell a kivizsgálás eredményéig.
             </p>
+
+            {model.positiveClearingTests.length > 0 && (
+              <>
+                <p className="mt-3 text-sm font-semibold text-error-800 dark:text-error-300">
+                  Pozitív clearing (fájdalom) tesztek
+                </p>
+                <ul className="mt-1 space-y-1">
+                  {model.positiveClearingTests.map(test => (
+                    <li key={test.id} className="text-sm text-gray-700 dark:text-gray-300">
+                      <span className="font-medium">{test.label}</span> — {test.instruction}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Aszimmetria-figyelmeztetés */}
+      {model.asymmetricRows.length > 0 && (
+        <div className="flex gap-3 rounded-lg border-l-4 border-warning-500 bg-warning-50 p-4 dark:bg-warning-900/20">
+          <ArrowLeftRight className="h-5 w-5 shrink-0 text-warning-600 dark:text-warning-400" />
+          <div>
+            <p className="text-sm font-semibold text-warning-800 dark:text-warning-300">
+              Oldalkülönbség
+            </p>
+            <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">
+              Az alábbi mozgásmintáknál a két oldal pontszáma eltér. Az FMS szerint az aszimmetria
+              akkor is korrekciós indok, ha a beszámított pont egyébként elfogadható — a gyengébb
+              oldalt érdemes célzottan fejleszteni.
+            </p>
+            <ul className="mt-2 space-y-1">
+              {model.asymmetricRows.map(row => (
+                <li key={row.testId} className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="font-medium">{row.label}</span> — bal {row.sides?.left} / jobb{' '}
+                  {row.sides?.right}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       )}
@@ -87,17 +130,32 @@ export function FMSReportView({ model }: FMSReportViewProps) {
             Javasolt korrekciós gyakorlatok
           </h2>
           <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-            A 2 pont alatti mozgásmintákhoz az alábbi gyakorlatok beépítése javasolt — mintánként
-            végigvihető sorban, az SMR-től a terhelt megerősítésig.
+            A 2 pont alatti, illetve oldalkülönbséget mutató mozgásmintákhoz az alábbi gyakorlatok
+            beépítése javasolt — mintánként végigvihető sorban, az SMR-től a terhelt megerősítésig.
+            Aszimmetria esetén a gyengébb oldalon érdemes több munkát végezni.
           </p>
 
           <div className="space-y-3">
             {model.corrections.map(group => (
               <div key={group.testId} className="rounded-md bg-gray-50 p-4 dark:bg-gray-700/40">
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-medium text-gray-900 dark:text-white">{group.label}</span>
-                  <span className="text-xs font-semibold text-error-600 dark:text-error-400">
-                    {group.score} pont
+                  <span className="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                    {/* A 2 pont már nem „gyenge" — ilyenkor az oldalkülönbség az indok. */}
+                    <span
+                      className={
+                        group.reasons.includes('low_score')
+                          ? 'text-error-600 dark:text-error-400'
+                          : 'text-gray-500 dark:text-gray-400'
+                      }
+                    >
+                      {group.score} pont
+                    </span>
+                    {group.reasons.includes('asymmetry') && group.sides && (
+                      <span className="rounded bg-warning-100 px-2 py-0.5 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
+                        oldalkülönbség: bal {group.sides.left} / jobb {group.sides.right}
+                      </span>
+                    )}
                   </span>
                 </div>
                 <ul className="mt-3 space-y-3">

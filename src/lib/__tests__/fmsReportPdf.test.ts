@@ -6,7 +6,7 @@ import { buildFMSReportModel } from '@/lib/fmsReport/buildReportModel';
 import { FMS_TEST_ORDER } from '@/lib/fmsReport/constants';
 import { generateFMSReportPdf, type GeneratedReportPdf } from '@/lib/fmsReport/pdf';
 import type { FMSAssessment } from '@/lib/fms';
-import { makeFMSAssessment } from './fixtures';
+import { makeFMSAssessment, makeFMSDraft, makeSidedFMSAssessment } from './fixtures';
 
 /**
  * A PDF generálás böngészőre készült, de node alatt is lefuttatható, ha a
@@ -120,6 +120,35 @@ describe('generateFMSReportPdf', () => {
 
   it('a riport mérete e-mail csatolmánynak alkalmas marad', () => {
     expect(pdf.blob.size).toBeLessThan(300 * 1024);
+  });
+
+  it('oldalankénti pontokkal és pozitív clearing teszttel is legenerálja', async () => {
+    // Ez a modell futtatja a „Bal / Jobb" oszlopot, az aszimmetria-dobozt és a
+    // fájdalom-figyelmeztetés clearing-sorát is.
+    const sided = buildFMSReportModel({
+      assessment: makeSidedFMSAssessment(
+        makeFMSDraft({
+          shoulder_mobility_left: 1,
+          shoulder_mobility_right: 3,
+          hurdle_step_left: 2,
+          hurdle_step_right: 3,
+          rs_clearing: true,
+        }),
+      ),
+      clientName: 'Kovács Ödön',
+      clientEmail: null,
+      trainerName: 'Edző Béla',
+    });
+
+    expect(sided.asymmetricRows).toHaveLength(2);
+    expect(sided.positiveClearingTests).toHaveLength(1);
+    expect(sided.hasPainFlag).toBe(true);
+
+    const sidedPdf = await generateFMSReportPdf(sided);
+    const head = new Uint8Array(await sidedPdf.blob.arrayBuffer()).subarray(0, 5);
+
+    expect(String.fromCharCode(...head)).toBe('%PDF-');
+    expect(sidedPdf.blob.size).toBeLessThan(300 * 1024);
   });
 
   it('a legrosszabb esetet (mind a 7 minta bukott) is legenerálja, több oldalon', async () => {

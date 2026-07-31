@@ -7,7 +7,12 @@ import {
   identifyFMSCorrections,
 } from '../workoutGenerator/fmsCorrections';
 import { FMS_TEST_ORDER } from '../fmsReport/constants';
-import { makeFMSAssessment } from './fixtures';
+import { makeFMSAssessment, makeFMSDraft, makeSidedFMSAssessment } from './fixtures';
+
+/** 3 / 2-es akadálylépés: a beszámított pont 2, de a két oldal eltér. */
+function makeAsymmetricAssessment() {
+  return makeSidedFMSAssessment(makeFMSDraft({ hurdle_step_left: 3, hurdle_step_right: 2 }));
+}
 
 describe('FMS_CORRECTION_EXERCISES', () => {
   it('mind a 7 mozgásmintához tartozik korrekciós blokk', () => {
@@ -73,6 +78,13 @@ describe('identifyFMSCorrections', () => {
     const corrections = identifyFMSCorrections(makeFMSAssessment({ total_score: 1 }));
     expect(corrections).toEqual([]);
   });
+
+  it('oldalkülönbség esetén 2 pont mellett is ad korrekciót', () => {
+    const corrections = identifyFMSCorrections(makeAsymmetricAssessment());
+
+    expect(corrections).toHaveLength(1);
+    expect(FMS_CORRECTION_NAMES.hurdle_step).toContain(corrections[0]);
+  });
 });
 
 describe('getFMSCorrectionsForAssessment', () => {
@@ -95,6 +107,43 @@ describe('getFMSCorrectionsForAssessment', () => {
     expect(groups[0].exercises.map(exercise => exercise.modality)).toEqual(
       FMS_CORRECTION_MODALITY_ORDER,
     );
+  });
+
+  it('a 2 pont alatti mintát gyenge pontszámként indokolja', () => {
+    const groups = getFMSCorrectionsForAssessment(makeFMSAssessment({ deep_squat: 1 }));
+
+    expect(groups[0].reasons).toEqual(['low_score']);
+    // A régi, oldal nélkül rögzített felmérésnél nincs oldalankénti adat.
+    expect(groups[0].sides).toBeNull();
+  });
+
+  it('oldalkülönbség esetén 2 pont mellett is ad korrekciós blokkot', () => {
+    // A bejelentett eset: 3 / 2-es akadálylépés — a beszámított pont 2, tehát a
+    // korábbi „score < 2" szabály mellett üres maradt a korrekciós szekció.
+    const groups = getFMSCorrectionsForAssessment(makeAsymmetricAssessment());
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0].testId).toBe('hurdle_step');
+    expect(groups[0].score).toBe(2);
+    expect(groups[0].reasons).toEqual(['asymmetry']);
+    expect(groups[0].sides).toEqual({ left: 3, right: 2 });
+    expect(groups[0].exercises).toEqual(FMS_CORRECTION_EXERCISES.hurdle_step);
+  });
+
+  it('gyenge pontszám és oldalkülönbség együtt mindkét indokot felsorolja', () => {
+    const groups = getFMSCorrectionsForAssessment(
+      makeSidedFMSAssessment(makeFMSDraft({ inline_lunge_left: 1, inline_lunge_right: 3 })),
+    );
+
+    expect(groups[0].reasons).toEqual(['low_score', 'asymmetry']);
+  });
+
+  it('szimmetrikus, 2 pontos mintához nem ad korrekciót', () => {
+    const groups = getFMSCorrectionsForAssessment(
+      makeSidedFMSAssessment(makeFMSDraft({ hurdle_step_left: 2, hurdle_step_right: 2 })),
+    );
+
+    expect(groups).toEqual([]);
   });
 
   it('a csoportokat a kanonikus tesztsorrendben adja vissza', () => {

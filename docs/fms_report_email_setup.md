@@ -84,19 +84,27 @@ Az alábbi parancsokban ezért mindenhol szerepel a `--project-ref`. Így nem ke
 
 Válaszd a kettő közül az egyiket.
 
-**1. lehetőség — parancssorból** (a `<...>` részeket cseréld ki):
+**1. lehetőség — parancssorból.**
+
+> **Kacsacsőrt (`<`, `>`) soha ne gépelj be** — a shell ezeket fájl-átirányításnak
+> értelmezi, és a parancs némán rossz dolgot csinál. Az alábbi minta ezért
+> bekéri a jelszót, így nem is kerül a shell history-ba:
 
 ```bash
+read -rs "?Gmail alkalmazásjelszó (16 karakter, szóköz nélkül): " GMAIL_APP_PASSWORD
+
 npx supabase secrets set \
   --project-ref iipcpjczjjkwwifwzmut \
   EMAIL_TRANSPORT=smtp \
-  GMAIL_USER=<a-te-cimed@gmail.com> \
-  GMAIL_APP_PASSWORD=<abcdefghijklmnop> \
+  GMAIL_USER=sajat.cimed@gmail.com \
+  GMAIL_APP_PASSWORD="$GMAIL_APP_PASSWORD" \
   FMS_REPORT_FROM_NAME="UG Kettlebell Pro"
+
+unset GMAIL_APP_PASSWORD
 ```
 
-> A shell history-ba így bekerül a jelszó. Ha ez zavar, tedd a parancs elé egy
-> szóközt (zsh-ban ez kihagyja a history-ból), vagy használd a 2. lehetőséget.
+A `read -rs "?..."` zsh-szintaxis. Ha `bash`-ben vagy (a promptod `bash-3.2$`),
+akkor `read -rs -p "Gmail alkalmazásjelszó: " GMAIL_APP_PASSWORD` a helyes forma.
 
 **2. lehetőség — Dashboardról** (nem kerül a history-ba):
 
@@ -111,7 +119,7 @@ npx supabase secrets set \
 | `EMAIL_TRANSPORT` | nem | `smtp` (ez az alapértelmezés) vagy `resend` |
 | `GMAIL_USER` | igen | A küldő Gmail cím, pl. `edzo@gmail.com` |
 | `GMAIL_APP_PASSWORD` | igen | Az A2-ben kapott 16 karakter, **szóközök nélkül** |
-| `FMS_REPORT_FROM_NAME` | nem | A feladó megjelenített neve (alapértelmezés: `UG Kettlebell Pro`) |
+| `FMS_REPORT_FROM_NAME` | nem | A feladó megjelenített neve (alapértelmezés: `UG Kettlebell Pro`). **Csak ASCII** — ékezetes név elrontja a fejlécet, lásd a hibaelhárítást |
 | `SMTP_HOST` | nem | Más szolgáltatóhoz; alapértelmezés `smtp.gmail.com` |
 | `SMTP_PORT` | nem | Alapértelmezés `465` — **ne írd át 587-re**, lásd a korlátokat |
 
@@ -173,10 +181,24 @@ Amit a megérkezett levélben nézz meg:
 
 ## Hibaelhárítás
 
-Először mindig a naplót nézd:
+Először mindig a naplót nézd. **Nem a CLI-vel**: a `supabase functions logs`
+alparancs a telepített v2.24.3-ban még nem létezik, és a request-log amúgy sem
+tartalmazza a `console.error` üzeneteket — csak a státuszkódot. A stack trace a
+Dashboard **Logs** fülén van:
+
+<https://supabase.com/dashboard/project/iipcpjczjjkwwifwzmut/functions/send-fms-report/logs>
+
+Parancssorból a Management API adja ugyanezt (a `function_logs` tábla a
+console-kimenet, a `function_edge_logs` a kérések):
 
 ```bash
-npx supabase functions logs send-fms-report --project-ref iipcpjczjjkwwifwzmut
+SBT=$(security find-generic-password -s "Supabase CLI" -a access-token -w \
+  | sed 's/^go-keyring-base64://' | base64 -d)
+
+curl -s -G "https://api.supabase.com/v1/projects/iipcpjczjjkwwifwzmut/analytics/endpoints/logs.all" \
+  --data-urlencode "sql=select t.timestamp, t.event_message, m.level from function_logs t cross join unnest(t.metadata) as m order by t.timestamp desc limit 50" \
+  --data-urlencode "iso_timestamp_start=$(date -u -v-3H +%Y-%m-%dT%H:%M:%SZ)" \
+  -H "Authorization: Bearer $SBT"
 ```
 
 | Hibaüzenet az appban | Ok | Megoldás |
@@ -196,6 +218,41 @@ Amit a naplóban láthatsz:
 | `534 5.7.9 Application-specific password required` | Sima jelszót adtál meg | Alkalmazásjelszó kell (A2) |
 | Időtúllépés, nincs válasz | Rossz port (587) | `SMTP_PORT=465`, lásd a korlátokat |
 | `Ismeretlen EMAIL_TRANSPORT érték` | Elgépelt transport név | `smtp` vagy `resend` |
+| `TypeError: Cannot read properties of undefined (reading 'catch')` | A denomailer `close()`-a `undefined`-ot ad vissza, nem Promise-t — a `finally` ág emiatt a **sikeres** küldést is hibává írta felül | Javítva 2026-08-01-én (`try/catch` a `close()` körül). Ha visszatér: a levél valószínűleg **kiment**, nézd meg a postaládát |
+
+### Ha csatolmány helyett a nyers forrást kapod
+
+Tünet: a levél megérkezik, de a kliens nem csatolmányt mutat, hanem kiírja az egész
+MIME-forrást szövegként (`--attachment100`, `Content-Type: ...`, hosszú base64 blokk).
+
+**Ez nem a csatolmánnyal van baj** — a PDF rész végig szabályos. A `Subject` fejléc
+romlik el, és idő előtt lezárja a fejléc-blokkot, amitől a `Content-Type:
+multipart/mixed` is törzsszöveggé válik; a kliens így nem tudja, hogy csatolmányos
+üzenetet kapott. Felismerhető arról, hogy a forrásban a `From:` előtti sor egy
+**vezető szóköz nélküli folytatósor**.
+
+Oka a denomailer `quotedPrintableEncodeInline`-ja:
+
+```ts
+if (hasNonAsciiCharacters(data) || data.startsWith("=?")) {
+  return `=?utf-8?Q?${quotedPrintableEncode(data)}?=`;
+}
+return data;
+```
+
+A `quotedPrintableEncode` **törzs**-kódoló: 74 karakterenként `=\r\n` soft line
+breaket szúr be. Törzsben helyes, fejlécben viszont vezető whitespace nélküli
+sortörés — az RFC 5322 szerint a folytatósornak WSP-vel kell kezdődnie.
+
+Javítva 2026-08-01-én (v6): a `mailer.ts` `encodeHeaderValue`-ja úgy építi a
+fejléc-értéket, hogy a fenti `if` **egyik ága se** illeszkedjen, tehát a `return
+data`-ra fusson — saját base64 („B") encoded-word, **egyetlen vezető szóközzel**
+(így nincs nem-ASCII karakter, és nem `=?`-tel kezdődik). A címzettnél ezért nem
+küldünk megjelenített nevet: ott a `parseSingleEmail` `name.trim()`-el, ami levágná
+a védő szóközt. Ugyanezért a **`FMS_REPORT_FROM_NAME` legyen ASCII** (ékezet nélkül).
+
+Ellenőrzés a forrásban: a `Subject:` értéke szóközzel kezdődik, `=?utf-8?B?...?=`
+egységekből áll, egyikben sincs szóköz, és mind 75 karakter alatt van.
 
 > **Fontos:** a secretek megváltoztatása után **deployold újra a függvényt**,
 > különben a régi értékekkel fut tovább.
@@ -228,8 +285,10 @@ Ha az alkalmazásjelszó kiszivárgott vagy leváltanád:
 3. Frissítsd a secretet, majd deployolj újra:
 
 ```bash
+read -rs "?Új alkalmazásjelszó: " GMAIL_APP_PASSWORD
 npx supabase secrets set --project-ref iipcpjczjjkwwifwzmut \
-  GMAIL_APP_PASSWORD=<uj-jelszo>
+  GMAIL_APP_PASSWORD="$GMAIL_APP_PASSWORD"
+unset GMAIL_APP_PASSWORD
 npx supabase functions deploy send-fms-report --project-ref iipcpjczjjkwwifwzmut
 ```
 

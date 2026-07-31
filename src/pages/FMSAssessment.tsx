@@ -1,43 +1,54 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ChangeEvent } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { 
+import {
   Activity,
   ArrowRight,
-  CheckCircle2,
   ChevronDown,
   Info,
+  RefreshCw,
   Save,
-  User
+  User,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { createFMSAssessment, getAllUsers } from '../lib/fms';
 import { listManualGuests, ManualGuest, updateManualGuest } from '../lib/manualGuests';
+import {
+  FMS_EMPTY_FORM_VALUES,
+  FMS_MOVEMENT_STEPS,
+  calculatePartialTotalScore,
+  fmsAssessmentSchema,
+  isStepComplete,
+  toFMSAssessmentDraft,
+  type FMSAssessmentFormValues,
+  type FMSScoreField,
+} from '../lib/fmsAssessmentForm';
+import { FMS_MAX_SCORE, FMS_SCORE_LABELS } from '../lib/fmsReport/constants';
+import { buildFMSAssessmentPayload, type FMSClearingTestId } from '../lib/fmsScoring';
+import {
+  findGuestForSubject,
+  findSubjectIdForGuest,
+  formatSubjectOptionLabel,
+  resolveSubjectName,
+} from '../lib/fmsSubjectLinking';
+import { FMSMovementStepCard } from '../components/fms/FMSMovementStepCard';
 import toast from 'react-hot-toast';
-
-const movementSchema = z.object({
-  manualGuestId: z.string().min(1, 'Kérlek válassz egy vendéget'),
-  linkedUserId: z.string().min(1, 'Kérlek válassz adatbázisos FMS alanyt'),
-  deepSquat: z.number().min(0).max(3),
-  hurdleStep: z.number().min(0).max(3),
-  inlineLunge: z.number().min(0).max(3),
-  shoulderMobility: z.number().min(0).max(3),
-  activeStraightLegRaise: z.number().min(0).max(3),
-  trunkStabilityPushup: z.number().min(0).max(3),
-  rotaryStability: z.number().min(0).max(3),
-  notes: z.string().optional(),
-});
-
-type MovementScores = z.infer<typeof movementSchema>;
 
 interface User {
   id: string;
   email: string | null;
   full_name: string | null;
   // Kompatibilitás miatt a régi name mezőt is megtartjuk
-  name?: string | null; 
+  name?: string | null;
 }
+
+/** A 0–3 skála magyarázata a súgópanelben, a legjobb ponttól lefelé. */
+const SCORE_LEGEND: { score: number; badgeClass: string }[] = [
+  { score: 3, badgeClass: 'bg-success-100 text-success-700 dark:bg-success-900 dark:text-success-300' },
+  { score: 2, badgeClass: 'bg-warning-100 text-warning-700 dark:bg-warning-900 dark:text-warning-300' },
+  { score: 1, badgeClass: 'bg-error-100 text-error-700 dark:bg-error-900 dark:text-error-300' },
+  { score: 0, badgeClass: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' },
+];
 
 const FMSAssessment = () => {
   const { initialized, user } = useAuth();
@@ -55,24 +66,22 @@ const FMSAssessment = () => {
     watch,
     setValue,
     formState: { errors },
-    reset
-  } = useForm<MovementScores>({
-    resolver: zodResolver(movementSchema),
-    defaultValues: {
-      manualGuestId: '',
-      linkedUserId: '',
-      deepSquat: 0,
-      hurdleStep: 0,
-      inlineLunge: 0,
-      shoulderMobility: 0,
-      activeStraightLegRaise: 0,
-      trunkStabilityPushup: 0,
-      rotaryStability: 0,
-    },
+    reset,
+  } = useForm<FMSAssessmentFormValues>({
+    resolver: zodResolver(fmsAssessmentSchema),
+    defaultValues: FMS_EMPTY_FORM_VALUES,
   });
 
-  const selectedManualGuestId = watch('manualGuestId');
-  const selectedManualGuest = manualGuests.find((guest) => guest.id === selectedManualGuestId);
+  const values = watch();
+  const selectedManualGuestId = values.manualGuestId;
+  const selectedManualGuest = manualGuests.find(guest => guest.id === selectedManualGuestId);
+  const selectedSubject = users.find(dbUser => dbUser.id === values.linkedUserId);
+  const selectedSubjectName = selectedSubject
+    ? resolveSubjectName(selectedSubject, manualGuests)
+    : null;
+
+  const guestField = register('manualGuestId');
+  const subjectField = register('linkedUserId');
 
   useEffect(() => {
     if (initialized && user?.id) {
@@ -85,18 +94,36 @@ const FMSAssessment = () => {
     }
   }, [initialized, user?.id]);
 
-  useEffect(() => {
-    if (!selectedManualGuest) {
-      setValue('linkedUserId', '', { shouldDirty: true, shouldTouch: true, shouldValidate: true });
-      return;
-    }
+  /** Vendégválasztás → a hozzá kapcsolt (vagy azonos nevű) adatbázisos alany. */
+  const handleGuestChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    void guestField.onChange(event);
 
-    setValue('linkedUserId', selectedManualGuest.linkedFmsUserId || '', {
+    const guest = manualGuests.find(item => item.id === event.target.value);
+    setValue('linkedUserId', guest ? findSubjectIdForGuest(guest, users) : '', {
       shouldDirty: true,
       shouldTouch: true,
       shouldValidate: true,
     });
-  }, [selectedManualGuest, setValue]);
+  };
+
+  /**
+   * Alanyválasztás → ha az e-mail címhez tartozik ismert név (kapcsolt vendég
+   * vagy azonos nevű, még szabad vendég), azt beállítjuk a vendégmezőbe.
+   */
+  const handleSubjectChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    void subjectField.onChange(event);
+
+    const matchingGuest = findGuestForSubject(event.target.value, users, manualGuests);
+    if (!matchingGuest || matchingGuest.id === values.manualGuestId) {
+      return;
+    }
+
+    setValue('manualGuestId', matchingGuest.id, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+  };
 
   const loadInitialData = async () => {
     try {
@@ -115,12 +142,9 @@ const FMSAssessment = () => {
         console.warn('No users found in the database');
         toast('Nincsenek felhasználók az adatbázisban. Először adj hozzá felhasználókat.', {
           icon: '⚠️',
-          duration: 5000
+          duration: 5000,
         });
       } else {
-        // Log each user before setting state
-        data.forEach(_user => { void _user; });
-
         setUsers(data);
         toast.success(`${data.length} felhasználó betöltve`);
       }
@@ -151,90 +175,7 @@ const FMSAssessment = () => {
     }
   };
 
-  // Define movement keys as a type to ensure type safety
-  type MovementKey = keyof Omit<MovementScores, 'manualGuestId' | 'linkedUserId' | 'notes'>;
-
-  const movements = [
-    {
-      id: 'deepSquat' as MovementKey,
-      name: 'Deep Squat',
-      description: 'Tests mobility of hips, knees, and ankles',
-      instructions: [
-        'Stand with feet shoulder width apart',
-        'Hold dowel overhead with wide grip',
-        'Squat as deep as possible while keeping heels on ground',
-        'Keep dowel overhead with arms extended',
-      ],
-    },
-    {
-      id: 'hurdleStep' as MovementKey,
-      name: 'Hurdle Step',
-      description: 'Tests stride mechanics and stability',
-      instructions: [
-        'Place dowel across shoulders',
-        'Step over hurdle with one leg',
-        'Touch heel to ground and return',
-        'Maintain upright posture throughout',
-      ],
-    },
-    {
-      id: 'inlineLunge' as MovementKey,
-      name: 'Inline Lunge',
-      description: 'Tests mobility and stability of hips and torso',
-      instructions: [
-        'Place feet inline on board',
-        'Lower back knee to touch board',
-        'Maintain upright posture',
-        'Return to starting position',
-      ],
-    },
-    {
-      id: 'shoulderMobility' as MovementKey,
-      name: 'Shoulder Mobility',
-      description: 'Tests bilateral shoulder range of motion',
-      instructions: [
-        'Make fists with both hands',
-        'Place one fist behind neck',
-        'Place other fist behind back',
-        'Measure distance between fists',
-      ],
-    },
-    {
-      id: 'activeStraightLegRaise' as MovementKey,
-      name: 'Active Straight Leg Raise',
-      description: 'Tests flexibility of hamstrings and calf',
-      instructions: [
-        'Lie on back with legs straight',
-        'Raise one leg as high as possible',
-        'Keep opposite leg on ground',
-        'Keep raised leg straight',
-      ],
-    },
-    {
-      id: 'trunkStabilityPushup' as MovementKey,
-      name: 'Trunk Stability Pushup',
-      description: 'Tests core stability and strength',
-      instructions: [
-        'Start in pushup position',
-        'Hands shoulder width apart',
-        'Perform pushup with body moving as unit',
-        'No lag in lower back',
-      ],
-    },
-    {
-      id: 'rotaryStability' as MovementKey,
-      name: 'Rotary Stability',
-      description: 'Tests multi-plane stability',
-      instructions: [
-        'Start on hands and knees',
-        'Extend same side arm and leg',
-        'Touch elbow to knee',
-        'Return to start position',
-      ],
-    },
-  ];
-
-  const onSubmit = async (data: MovementScores) => {
+  const onSubmit = async (data: FMSAssessmentFormValues) => {
     try {
       setIsSubmitting(true);
 
@@ -242,7 +183,7 @@ const FMSAssessment = () => {
         throw new Error('A mentéshez be kell jelentkezned');
       }
 
-      const selectedGuest = manualGuests.find((guest) => guest.id === data.manualGuestId);
+      const selectedGuest = manualGuests.find(guest => guest.id === data.manualGuestId);
       if (!selectedGuest) {
         throw new Error('A kiválasztott vendég nem található');
       }
@@ -252,33 +193,16 @@ const FMSAssessment = () => {
         await loadManualGuests();
       }
 
-      const assessment = {
+      // A nyers oldalankénti pontok és a belőlük levezetett 7 beszámított
+      // pontszám együtt megy a DB-be — a total_score generált oszlop.
+      await createFMSAssessment({
         user_id: data.linkedUserId,
-        deep_squat: data.deepSquat,
-        hurdle_step: data.hurdleStep,
-        inline_lunge: data.inlineLunge,
-        shoulder_mobility: data.shoulderMobility,
-        active_straight_leg_raise: data.activeStraightLegRaise,
-        trunk_stability_pushup: data.trunkStabilityPushup,
-        rotary_stability: data.rotaryStability,
+        ...buildFMSAssessmentPayload(toFMSAssessmentDraft(data)),
         notes: data.notes || '',
-      };
-
-      await createFMSAssessment(assessment);
+      });
 
       toast.success('Értékelés sikeresen mentve');
-      reset({
-        manualGuestId: '',
-        linkedUserId: '',
-        deepSquat: 0,
-        hurdleStep: 0,
-        inlineLunge: 0,
-        shoulderMobility: 0,
-        activeStraightLegRaise: 0,
-        trunkStabilityPushup: 0,
-        rotaryStability: 0,
-        notes: '',
-      });
+      reset(FMS_EMPTY_FORM_VALUES);
       setCurrentStep(0);
       setShowConfirmDialog(false);
     } catch (error) {
@@ -287,9 +211,6 @@ const FMSAssessment = () => {
 
       if (error instanceof Error) {
         errorMessage += `: ${error.message}`;
-        console.error('Error details:', error);
-      } else {
-        console.error('Unknown error type:', error);
       }
 
       toast.error(errorMessage);
@@ -298,36 +219,23 @@ const FMSAssessment = () => {
     }
   };
 
-  const currentMovement = movements[currentStep];
-  const scores = watch();
+  const currentMovement = FMS_MOVEMENT_STEPS[currentStep];
+  const totalScore = calculatePartialTotalScore(values);
 
-  // Calculate the total score by explicitly summing the movement scores
-  const totalScore = 
-    (typeof scores.deepSquat === 'number' ? scores.deepSquat : 0) +
-    (typeof scores.hurdleStep === 'number' ? scores.hurdleStep : 0) +
-    (typeof scores.inlineLunge === 'number' ? scores.inlineLunge : 0) +
-    (typeof scores.shoulderMobility === 'number' ? scores.shoulderMobility : 0) +
-    (typeof scores.activeStraightLegRaise === 'number' ? scores.activeStraightLegRaise : 0) +
-    (typeof scores.trunkStabilityPushup === 'number' ? scores.trunkStabilityPushup : 0) +
-    (typeof scores.rotaryStability === 'number' ? scores.rotaryStability : 0);
+  const handleScoreChange = (field: FMSScoreField, score: number) => {
+    setValue(field, score, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+  };
 
-  const handleScoreSelect = (score: number) => {
-    // We've already typed currentMovement.id as MovementKey which is keyof MovementScores
-    setValue(currentMovement.id, score, {
-      shouldValidate: true,
-      shouldDirty: true,
-      shouldTouch: true,
-    });
+  const handleClearingChange = (field: FMSClearingTestId, painful: boolean) => {
+    setValue(field, painful, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
   };
 
   const handleNext = () => {
-    // Type assertion is not needed as we've properly typed currentMovement.id
-    const currentScore = watch(currentMovement.id);
-    if (currentScore === undefined || currentScore === null) {
-      toast.error('Kérlek válassz pontszámot a folytatás előtt');
+    if (!isStepComplete(currentMovement, values)) {
+      toast.error('Kérlek adj pontszámot minden oldalra a folytatás előtt');
       return;
     }
-    setCurrentStep(Math.min(movements.length - 1, currentStep + 1));
+    setCurrentStep(Math.min(FMS_MOVEMENT_STEPS.length - 1, currentStep + 1));
   };
 
   const handlePrevious = () => {
@@ -335,12 +243,24 @@ const FMSAssessment = () => {
   };
 
   const handleSaveClick = () => {
-    // Type assertion is not needed as we've properly typed currentMovement.id
-    const currentScore = watch(currentMovement.id);
-    if (currentScore === undefined || currentScore === null) {
-      toast.error('Kérlek válassz pontszámot a mentés előtt');
+    // Mentés előtt az összes lépést ellenőrizzük, nem csak az aktuálisat:
+    // a hiányzó pontszámhoz visszaugrunk, különben a zod hibája láthatatlan
+    // maradna az utolsó lépésen állva.
+    const incompleteIndex = FMS_MOVEMENT_STEPS.findIndex(step => !isStepComplete(step, values));
+
+    if (incompleteIndex !== -1) {
+      setCurrentStep(incompleteIndex);
+      toast.error(
+        `Hiányzó pontszám: ${FMS_MOVEMENT_STEPS[incompleteIndex].label}. Töltsd ki a mentés előtt.`,
+      );
       return;
     }
+
+    if (!values.manualGuestId || !values.linkedUserId) {
+      toast.error('Válassz vendéget és kapcsolt adatbázisos alanyt a mentés előtt');
+      return;
+    }
+
     setShowConfirmDialog(true);
   };
 
@@ -349,7 +269,7 @@ const FMSAssessment = () => {
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Loading...</p>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">Betöltés...</p>
         </div>
       </div>
     );
@@ -363,7 +283,7 @@ const FMSAssessment = () => {
             Functional Movement Screen
           </h1>
           <p className="mt-1 text-gray-600 dark:text-gray-400">
-            Assess movement patterns and identify limitations
+            Mozgásminták felmérése és a korlátozottságok azonosítása
           </p>
         </div>
 
@@ -372,12 +292,10 @@ const FMSAssessment = () => {
           className="btn btn-outline inline-flex items-center gap-2"
         >
           <Info size={20} />
-          <span>Instructions</span>
+          <span>Útmutató</span>
           <ChevronDown
             size={20}
-            className={`transform transition-transform ${
-              showInstructions ? 'rotate-180' : ''
-            }`}
+            className={`transform transition-transform ${showInstructions ? 'rotate-180' : ''}`}
           />
         </button>
       </div>
@@ -385,241 +303,186 @@ const FMSAssessment = () => {
       {showInstructions && (
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-            How to Score Movements
+            Hogyan pontozzuk a mozgásmintákat?
           </h2>
           <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-success-100 text-success-700 dark:bg-success-900 dark:text-success-300">
-                3
+            {SCORE_LEGEND.map(({ score, badgeClass }) => (
+              <div key={score} className="flex items-start gap-3">
+                <div
+                  className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full ${badgeClass}`}
+                >
+                  {score}
+                </div>
+                <p className="text-gray-600 dark:text-gray-400">{FMS_SCORE_LABELS[score]}</p>
               </div>
-              <p className="text-gray-600 dark:text-gray-400">
-                Perfect form, no compensation
-              </p>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-warning-100 text-warning-700 dark:bg-warning-900 dark:text-warning-300">
-                2
-              </div>
-              <p className="text-gray-600 dark:text-gray-400">
-                Completes movement with compensation
-              </p>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-error-100 text-error-700 dark:bg-error-900 dark:text-error-300">
-                1
-              </div>
-              <p className="text-gray-600 dark:text-gray-400">
-                Unable to complete movement pattern
-              </p>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                0
-              </div>
-              <p className="text-gray-600 dark:text-gray-400">
-                Pain during movement
-              </p>
-            </div>
+            ))}
           </div>
+
+          <h3 className="mb-2 mt-6 text-sm font-semibold text-gray-900 dark:text-white">
+            Oldalankénti mérés és clearing tesztek
+          </h3>
+          <ul className="list-inside list-disc space-y-1 text-sm text-gray-600 dark:text-gray-400">
+            <li>
+              Öt teszt (akadálylépés, inline kitörés, vállmobilitás, aktív nyújtott lábemelés,
+              rotációs stabilitás) oldalanként pontozódik — a felmérésbe a{' '}
+              <span className="font-medium">gyengébb oldal</span> pontja számít be.
+            </li>
+            <li>
+              A két oldal eltérése (aszimmetria) akkor is korrekciós indok, ha a beszámított pont
+              egyébként elfogadható.
+            </li>
+            <li>
+              Három teszthez clearing (fájdalom-provokációs) teszt tartozik. Ha az{' '}
+              <span className="font-medium">pozitív</span>, az adott mozgásminta pontszáma 0,
+              és orvosi kivizsgálás javasolt.
+            </li>
+          </ul>
         </div>
       )}
 
+      {/* Felmért személy */}
+      <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Válassz vendéget
+          </label>
+          <div className="relative mt-1">
+            <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-3">
+              <User className="h-5 w-5 text-gray-400" />
+            </div>
+            <div className="flex gap-2">
+              <select
+                {...guestField}
+                onChange={handleGuestChange}
+                className="input flex-grow pl-10"
+                disabled={manualGuests.length === 0}
+              >
+                <option value="">
+                  {manualGuests.length === 0
+                    ? 'Nincs manuális vendég - előbb hozz létre a plannerben'
+                    : 'Válassz vendéget'}
+                </option>
+                {manualGuests.map(guest => (
+                  <option key={guest.id} value={guest.id}>
+                    {guest.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => {
+                  void loadInitialData();
+                }}
+                className="btn btn-outline btn-sm"
+                title="Lista frissítése"
+              >
+                <RefreshCw size={16} />
+              </button>
+            </div>
+          </div>
+          {errors.manualGuestId && (
+            <p className="mt-1 text-sm text-error-600 dark:text-error-400">
+              {errors.manualGuestId.message}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Kapcsolt adatbázisos FMS alany
+          </label>
+          <select
+            {...subjectField}
+            onChange={handleSubjectChange}
+            className="input mt-1 w-full"
+            disabled={users.length === 0}
+          >
+            <option value="">
+              {users.length === 0
+                ? 'Nincs elérhető adatbázisos alany'
+                : 'Válassz adatbázisos alanyt'}
+            </option>
+            {users.map(dbUser => (
+              <option key={dbUser.id} value={dbUser.id}>
+                {formatSubjectOptionLabel(dbUser, manualGuests)}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            A felmérés a kiválasztott vendég nevéhez tartozik, de fizikailag ehhez az adatbázisos
+            alanyhoz mentődik az FMS táblába. A két mező bármelyik irányban kitölthető: ha az
+            alanyhoz ismert név tartozik, a vendég automatikusan beáll.
+          </p>
+          {selectedManualGuest && (
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Aktív vendég: {selectedManualGuest.name}
+            </p>
+          )}
+          {selectedSubject && !selectedManualGuest && (
+            <p className="mt-1 text-xs text-warning-600 dark:text-warning-400">
+              {selectedSubjectName
+                ? `Ehhez az alanyhoz „${selectedSubjectName}” néven nincs szabad vendég — válassz vendéget a listából.`
+                : 'Ehhez az e-mail címhez még nem tartozik név — válassz vendéget, vagy hozz létre egyet a plannerben.'}
+            </p>
+          )}
+          {errors.linkedUserId && (
+            <p className="mt-1 text-sm text-error-600 dark:text-error-400">
+              {errors.linkedUserId.message}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Aktuális mozgásminta */}
       <div className="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div className="border-b border-gray-200 p-4 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900">
                 <Activity className="h-6 w-6 text-primary-600 dark:text-primary-400" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {currentMovement.name}
+                  {currentMovement.label}
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {currentMovement.description}
                 </p>
               </div>
             </div>
-            <div className="text-right">
+            <div className="shrink-0 text-right">
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Movement {currentStep + 1} of {movements.length}
+                {currentStep + 1} / {FMS_MOVEMENT_STEPS.length}. teszt
               </p>
               <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
                 {totalScore}
-                <span className="text-sm text-gray-500 dark:text-gray-400">/21</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">/{FMS_MAX_SCORE}</span>
               </p>
             </div>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="p-4">
-          <div className="mb-6 space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 p-4">
+          <FMSMovementStepCard
+            step={currentMovement}
+            scores={values}
+            clearingPain={
+              currentMovement.clearingTest ? values[currentMovement.clearingTest.id] === true : false
+            }
+            onScoreChange={handleScoreChange}
+            onClearingChange={handleClearingChange}
+          />
+
+          {currentStep === FMS_MOVEMENT_STEPS.length - 1 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Válassz vendéget
-              </label>
-              <div className="relative mt-1">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                  <User className="h-5 w-5 text-gray-400" />
-                </div>
-                <div className="flex gap-2">
-                  <select
-                    {...register('manualGuestId')}
-                    className="input pl-10 flex-grow"
-                    disabled={manualGuests.length === 0}
-                  >
-                    <option value="">
-                      {manualGuests.length === 0
-                        ? 'Nincs manuális vendég - előbb hozz létre a plannerben'
-                        : 'Válassz vendéget'}
-                    </option>
-                    {manualGuests.map((guest) => {
-                      return (
-                        <option key={guest.id} value={guest.id}>
-                          {guest.name}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <button 
-                    type="button"
-                    onClick={() => { void loadInitialData(); }}
-                    className="btn btn-outline btn-sm"
-                    title="Lista frissítése"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-refresh-cw">
-                      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
-                      <path d="M21 3v5h-5"></path>
-                      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
-                      <path d="M8 16H3v5"></path>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              {errors.manualGuestId && (
-                <p className="mt-1 text-sm text-error-600 dark:text-error-400">
-                  {errors.manualGuestId.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Kapcsolt adatbázisos FMS alany
-              </label>
-              <div className="mt-1 flex gap-2">
-                <select
-                  {...register('linkedUserId')}
-                  className="input flex-grow"
-                  disabled={users.length === 0 || !selectedManualGuest}
-                >
-                  <option value="">
-                    {!selectedManualGuest
-                      ? 'Előbb válassz vendéget'
-                      : users.length === 0
-                        ? 'Nincs elérhető adatbázisos alany'
-                        : 'Válassz adatbázisos alanyt'}
-                  </option>
-                  {users.map((dbUser) => {
-                    const displayName = dbUser.full_name || dbUser.email || `User ${dbUser.id.slice(0, 8)}`;
-
-                    return (
-                      <option key={dbUser.id} value={dbUser.id}>
-                        {displayName}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                A felmérés a kiválasztott vendég nevéhez tartozik, de fizikailag ehhez az adatbázisos alanyhoz mentődik az FMS táblába.
-              </p>
-              {selectedManualGuest && (
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Aktív vendég: {selectedManualGuest.name}
-                </p>
-              )}
-              {errors.linkedUserId && (
-                <p className="mt-1 text-sm text-error-600 dark:text-error-400">
-                  {errors.linkedUserId.message}
-                </p>
-              )}
-            </div>
-
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Score
-            </label>
-            <div className="grid grid-cols-4 gap-3">
-              {[0, 1, 2, 3].map((score) => {
-                // Type assertion is not needed as we've properly typed currentMovement.id
-                const currentScore = watch(currentMovement.id);
-                const isSelected = currentScore === score;
-
-                return (
-                  <button
-                    key={score}
-                    type="button"
-                    onClick={() => handleScoreSelect(score)}
-                    className={`relative flex cursor-pointer items-center justify-center rounded-lg border p-4 transition-colors ${
-                      isSelected
-                        ? 'border-primary-500 bg-primary-50 dark:border-primary-400 dark:bg-primary-900/30'
-                        : 'border-gray-200 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    <span
-                      className={`text-2xl font-bold ${
-                        isSelected
-                          ? 'text-primary-600 dark:text-primary-400'
-                          : 'text-gray-900 dark:text-white'
-                      }`}
-                    >
-                      {score}
-                    </span>
-                    {isSelected && (
-                      <div className="absolute -right-1 -top-1">
-                        <CheckCircle2 className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            {errors[currentMovement.id] && (
-              <p className="mt-1 text-sm text-error-600 dark:text-error-400">
-                Please select a score
-              </p>
-            )}
-          </div>
-
-          <div className="mb-6">
-            <h3 className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-              Movement Instructions
-            </h3>
-            <ul className="space-y-2">
-              {currentMovement.instructions.map((instruction, index) => (
-                <li
-                  key={index}
-                  className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
-                >
-                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-medium text-primary-600 dark:bg-primary-900 dark:text-primary-400">
-                    {index + 1}
-                  </span>
-                  {instruction}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {currentStep === movements.length - 1 && (
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Additional Notes
+                Megjegyzés
               </label>
               <textarea
                 {...register('notes')}
                 rows={3}
                 className="input mt-1"
-                placeholder="Add any observations or notes about the assessment..."
+                placeholder="Megfigyelések, kiegészítések a felméréshez..."
               />
             </div>
           )}
@@ -631,16 +494,16 @@ const FMSAssessment = () => {
               disabled={currentStep === 0}
               className="btn btn-outline"
             >
-              Previous
+              Előző
             </button>
 
-            {currentStep < movements.length - 1 ? (
+            {currentStep < FMS_MOVEMENT_STEPS.length - 1 ? (
               <button
                 type="button"
                 onClick={handleNext}
                 className="btn btn-primary inline-flex items-center gap-2"
               >
-                <span>Next Movement</span>
+                <span>Következő teszt</span>
                 <ArrowRight size={20} />
               </button>
             ) : (
@@ -651,32 +514,30 @@ const FMSAssessment = () => {
                 className="btn btn-primary inline-flex items-center gap-2"
               >
                 <Save size={20} />
-                <span>Complete Assessment</span>
+                <span>Felmérés lezárása</span>
               </button>
             )}
           </div>
         </form>
       </div>
 
-      {/* Progress bar */}
+      {/* Haladásjelző */}
       <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
         <div
           className="h-full bg-primary-600 transition-all dark:bg-primary-400"
-          style={{
-            width: `${((currentStep + 1) / movements.length) * 100}%`,
-          }}
+          style={{ width: `${((currentStep + 1) / FMS_MOVEMENT_STEPS.length) * 100}%` }}
         ></div>
       </div>
 
-      {/* Confirmation Dialog */}
+      {/* Megerősítő párbeszéd */}
       {showConfirmDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Save Assessment
+              Felmérés mentése
             </h3>
             <p className="mt-2 text-gray-600 dark:text-gray-400">
-              Are you sure you want to save this FMS assessment? Total score: {totalScore}/21
+              Biztosan mented ezt az FMS felmérést? Összpontszám: {totalScore}/{FMS_MAX_SCORE}
             </p>
             <div className="mt-4 flex justify-end gap-3">
               <button
@@ -684,7 +545,7 @@ const FMSAssessment = () => {
                 onClick={() => setShowConfirmDialog(false)}
                 className="btn btn-outline"
               >
-                Cancel
+                Mégse
               </button>
               <button
                 type="button"
@@ -695,10 +556,10 @@ const FMSAssessment = () => {
                 {isSubmitting ? (
                   <div className="flex items-center gap-2">
                     <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    <span>Saving...</span>
+                    <span>Mentés...</span>
                   </div>
                 ) : (
-                  'Confirm & Save'
+                  'Mentés'
                 )}
               </button>
             </div>

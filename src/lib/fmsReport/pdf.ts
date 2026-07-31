@@ -104,7 +104,16 @@ export async function generateFMSReportPdf(model: FMSReportModel): Promise<Gener
 
   // ── Összpontszám kártya (a fejlécsávra lógva) ─────────────────────────────
   const CARD_TOP = HEADER_HEIGHT - 12;
-  const CARD_HEIGHT = 36;
+
+  // Az értékelés szövege a kártya jobb hasábjába kerül; a kártya magassága
+  // ehhez igazodik, hogy a hosszabb összegzés se lógjon ki a keretből.
+  setFont('normal', 8);
+  const riskSummaryLines = doc.splitTextToSize(
+    model.risk.summary,
+    CONTENT_WIDTH - 66,
+  ) as string[];
+  const CARD_HEIGHT = Math.max(36, 19 + riskSummaryLines.length * 3.6 + 5);
+
   setFill(FMS_REPORT_COLORS.white);
   setDraw(FMS_REPORT_COLORS.gray200);
   doc.setLineWidth(0.3);
@@ -130,20 +139,52 @@ export async function generateFMSReportPdf(model: FMSReportModel): Promise<Gener
 
   setFont('bold', 12);
   setText(FMS_REPORT_COLORS.gray900);
-  doc.text(model.band.label, dividerX + 8, CARD_TOP + 13);
+  doc.text(model.risk.label, dividerX + 8, CARD_TOP + 13);
 
   setFont('normal', 8);
   setText(FMS_REPORT_COLORS.gray600);
-  doc.text(doc.splitTextToSize(model.band.summary, CONTENT_WIDTH - 66), dividerX + 8, CARD_TOP + 19);
+  doc.text(riskSummaryLines, dividerX + 8, CARD_TOP + 19);
 
   cursorY = CARD_TOP + CARD_HEIGHT + 10;
+
+  // ── Az értékelés indokai ──────────────────────────────────────────────────
+  // A jó összpontszám önmagában elfedné az egy-egy gyenge vagy aszimmetrikus
+  // mintát, ezért a fejléc alatt tételesen is kiírjuk, mi rontja az értékelést.
+  if (model.risk.reasons.length > 0) {
+    setFont('normal', 8.5);
+    const reasonLines = model.risk.reasons.flatMap(
+      reason => doc.splitTextToSize(`•  ${reason}`, CONTENT_WIDTH - 14) as string[],
+    );
+    const boxHeight = reasonLines.length * 4.2 + 11;
+
+    ensureSpace(boxHeight + 6);
+    setFill(FMS_REPORT_COLORS.gray50);
+    doc.roundedRect(MARGIN, cursorY, CONTENT_WIDTH, boxHeight, 2, 2, 'F');
+    setFill(FMS_REPORT_COLORS.primary500);
+    doc.rect(MARGIN, cursorY, 1.6, boxHeight, 'F');
+
+    setFont('bold', 9);
+    setText(FMS_REPORT_COLORS.gray900);
+    doc.text('Mi indokolja ezt az értékelést?', MARGIN + 7, cursorY + 6.5);
+
+    setFont('normal', 8.5);
+    setText(FMS_REPORT_COLORS.gray600);
+    doc.text(reasonLines, MARGIN + 7, cursorY + 12);
+
+    cursorY += boxHeight + 8;
+  }
 
   // ── Fájdalom-figyelmeztetés ───────────────────────────────────────────────
   if (model.hasPainFlag) {
     const warningLines = doc.splitTextToSize(
       'A felmérés során legalább egy mozgásmintánál fájdalom jelentkezett (0 pont). '
         + 'Ilyenkor az FMS protokoll szerint orvosi kivizsgálás javasolt, és az érintett '
-        + 'mozgásminta terhelését kerülni kell a kivizsgálás eredményéig.',
+        + 'mozgásminta terhelését kerülni kell a kivizsgálás eredményéig.'
+        + (model.positiveClearingTests.length > 0
+          ? '\nPozitív clearing (fájdalom) teszt: '
+            + model.positiveClearingTests.map(test => test.label).join(', ')
+            + '.'
+          : ''),
       CONTENT_WIDTH - 14,
     ) as string[];
     const boxHeight = warningLines.length * 4.4 + 10;
@@ -187,8 +228,15 @@ export async function generateFMSReportPdf(model: FMSReportModel): Promise<Gener
   autoTable(doc, {
     startY: cursorY,
     margin: { left: MARGIN, right: MARGIN, bottom: FOOTER_HEIGHT },
-    head: [['Mozgásminta', 'Pont', 'Értékelés']],
-    body: model.rows.map(row => [row.label, `${row.score} / 3`, row.scoreLabel]),
+    head: [['Mozgásminta', 'Pont', 'Bal / Jobb', 'Értékelés']],
+    body: model.rows.map(row => [
+      row.label,
+      `${row.score} / 3`,
+      // Oldalankénti nyers pont; a szimmetrikus teszteknél és a régi, oldal
+      // nélkül rögzített felméréseknél nincs mit mutatni.
+      row.sides ? `${row.sides.left} / ${row.sides.right}` : '—',
+      row.clearingPain ? `${row.scoreLabel} (clearing teszt pozitív)` : row.scoreLabel,
+    ]),
     theme: 'plain',
     styles: {
       font: REPORT_FONT_FAMILY,
@@ -208,14 +256,24 @@ export async function generateFMSReportPdf(model: FMSReportModel): Promise<Gener
       lineWidth: 0,
     },
     columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 52 },
-      1: { halign: 'center', fontStyle: 'bold', cellWidth: 20 },
-      2: { textColor: hexToRgb(FMS_REPORT_COLORS.gray600) },
+      0: { fontStyle: 'bold', cellWidth: 46 },
+      1: { halign: 'center', fontStyle: 'bold', cellWidth: 18 },
+      2: { halign: 'center', cellWidth: 22 },
+      3: { textColor: hexToRgb(FMS_REPORT_COLORS.gray600) },
     },
     didParseCell: data => {
+      if (data.section !== 'body') return;
+      const row = model.rows[data.row.index];
+
       // A pontszám oszlop a saját sávszínét kapja.
-      if (data.section === 'body' && data.column.index === 1) {
-        data.cell.styles.textColor = hexToRgb(getScoreColor(model.rows[data.row.index].score));
+      if (data.column.index === 1) {
+        data.cell.styles.textColor = hexToRgb(getScoreColor(row.score));
+      }
+
+      // Az oldalkülönbség figyelmeztető színt kap.
+      if (data.column.index === 2 && row.hasAsymmetry) {
+        data.cell.styles.textColor = hexToRgb(FMS_REPORT_COLORS.warning500);
+        data.cell.styles.fontStyle = 'bold';
       }
     },
     willDrawCell: data => {
@@ -227,7 +285,36 @@ export async function generateFMSReportPdf(model: FMSReportModel): Promise<Gener
     },
   });
 
-  cursorY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 12;
+  cursorY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+
+  // ── Oldalkülönbség (aszimmetria) ──────────────────────────────────────────
+  if (model.asymmetricRows.length > 0) {
+    setFont('normal', 8);
+    const asymmetryLines = doc.splitTextToSize(
+      'Oldalkülönbség: '
+        + model.asymmetricRows
+          .map(row => `${row.label} (bal ${row.sides?.left} / jobb ${row.sides?.right})`)
+          .join(', ')
+        + '. A beszámított pont mindig a gyengébb oldalé, de az aszimmetria akkor is korrekciós '
+        + 'indok, ha a pontszám egyébként elfogadható — a gyengébb oldalt érdemes célzottan fejleszteni.',
+      CONTENT_WIDTH - 14,
+    ) as string[];
+    const boxHeight = asymmetryLines.length * 4 + 7;
+
+    ensureSpace(boxHeight + 6);
+    setFill('#FDF6E3');
+    doc.roundedRect(MARGIN, cursorY, CONTENT_WIDTH, boxHeight, 2, 2, 'F');
+    setFill(FMS_REPORT_COLORS.warning500);
+    doc.rect(MARGIN, cursorY, 1.6, boxHeight, 'F');
+
+    setFont('normal', 8);
+    setText(FMS_REPORT_COLORS.gray900);
+    doc.text(asymmetryLines, MARGIN + 7, cursorY + 5.5);
+
+    cursorY += boxHeight + 4;
+  }
+
+  cursorY += 4;
 
   /** Kétsoros blokk: félkövér cím + tördelt leírás, oldaltörés-figyeléssel. */
   const labelledParagraph = (label: string, body: string, indent = 0) => {
@@ -287,9 +374,10 @@ export async function generateFMSReportPdf(model: FMSReportModel): Promise<Gener
 
     setFont('normal', 8.5);
     const intro = doc.splitTextToSize(
-      'A 2 pont alatti mozgásmintákhoz az alábbi gyakorlatok beépítése javasolt az edzés '
-        + 'bemelegítő és korrekciós blokkjába. Mintánként a teljes sor végigvihető, az '
-        + 'SMR-től a terhelt megerősítésig.',
+      'A 2 pont alatti, illetve oldalkülönbséget mutató mozgásmintákhoz az alábbi gyakorlatok '
+        + 'beépítése javasolt az edzés bemelegítő és korrekciós blokkjába. Mintánként a teljes sor '
+        + 'végigvihető, az SMR-től a terhelt megerősítésig; aszimmetria esetén a gyengébb oldalon '
+        + 'érdemes több munkát végezni.',
       CONTENT_WIDTH,
     ) as string[];
     const introHeight = intro.length * 4 + 5;
@@ -349,11 +437,19 @@ export async function generateFMSReportPdf(model: FMSReportModel): Promise<Gener
         );
 
         if (!isContinuation) {
+          // Aszimmetria esetén a puszta pontszám félrevezető lenne (3 / 2-nél a
+          // beszámított pont 2, az indok viszont az oldalkülönbség).
+          const badge = group.reasons.includes('asymmetry') && group.sides
+            ? `${group.score} pont  ·  bal ${group.sides.left} / jobb ${group.sides.right}`
+            : `${group.score} pont`;
+
           setFont('bold', 8);
-          setText(getScoreColor(group.score));
-          doc.text(`${group.score} pont`, PAGE_WIDTH - MARGIN - ROW_INDENT, cursorY + 1, {
-            align: 'right',
-          });
+          setText(
+            group.reasons.includes('low_score')
+              ? getScoreColor(group.score)
+              : FMS_REPORT_COLORS.warning500,
+          );
+          doc.text(badge, PAGE_WIDTH - MARGIN - ROW_INDENT, cursorY + 1, { align: 'right' });
         }
 
         let rowY = cursorY + HEADER_BLOCK - 3;

@@ -369,6 +369,19 @@ export interface Database {
           active_straight_leg_raise: number
           trunk_stability_pushup: number
           rotary_stability: number
+          hurdle_step_left: number | null
+          hurdle_step_right: number | null
+          inline_lunge_left: number | null
+          inline_lunge_right: number | null
+          shoulder_mobility_left: number | null
+          shoulder_mobility_right: number | null
+          active_straight_leg_raise_left: number | null
+          active_straight_leg_raise_right: number | null
+          rotary_stability_left: number | null
+          rotary_stability_right: number | null
+          sm_clearing: boolean
+          tspu_clearing: boolean
+          rs_clearing: boolean
           total_score: number
           notes: string | null
           created_at: string
@@ -385,6 +398,19 @@ export interface Database {
           active_straight_leg_raise: number
           trunk_stability_pushup: number
           rotary_stability: number
+          hurdle_step_left?: number | null
+          hurdle_step_right?: number | null
+          inline_lunge_left?: number | null
+          inline_lunge_right?: number | null
+          shoulder_mobility_left?: number | null
+          shoulder_mobility_right?: number | null
+          active_straight_leg_raise_left?: number | null
+          active_straight_leg_raise_right?: number | null
+          rotary_stability_left?: number | null
+          rotary_stability_right?: number | null
+          sm_clearing?: boolean
+          tspu_clearing?: boolean
+          rs_clearing?: boolean
           notes?: string | null
           created_at?: string
           updated_at?: string
@@ -400,6 +426,19 @@ export interface Database {
           active_straight_leg_raise?: number
           trunk_stability_pushup?: number
           rotary_stability?: number
+          hurdle_step_left?: number | null
+          hurdle_step_right?: number | null
+          inline_lunge_left?: number | null
+          inline_lunge_right?: number | null
+          shoulder_mobility_left?: number | null
+          shoulder_mobility_right?: number | null
+          active_straight_leg_raise_left?: number | null
+          active_straight_leg_raise_right?: number | null
+          rotary_stability_left?: number | null
+          rotary_stability_right?: number | null
+          sm_clearing?: boolean
+          tspu_clearing?: boolean
+          rs_clearing?: boolean
           notes?: string | null
           created_at?: string
           updated_at?: string

@@ -5,7 +5,7 @@ import {
   FMS_CORRECTION_EXERCISES,
   FMS_CORRECTION_MODALITY_ORDER,
 } from '@/lib/workoutGenerator/fmsCorrections';
-import { makeFMSAssessment } from './fixtures';
+import { makeFMSAssessment, makeFMSDraft, makeSidedFMSAssessment } from './fixtures';
 
 function buildModel(overrides: Parameters<typeof makeFMSAssessment>[0] = {}) {
   return buildFMSReportModel({
@@ -90,6 +90,52 @@ describe('buildFMSReportModel', () => {
   it('0 pontos mozgásmintánál fájdalom-jelzőt állít', () => {
     expect(buildModel({ trunk_stability_pushup: 0 }).hasPainFlag).toBe(true);
     expect(buildModel({ trunk_stability_pushup: 1 }).hasPainFlag).toBe(false);
+  });
+
+  it('átveszi az oldalankénti pontokat és jelzi az aszimmetriát', () => {
+    const model = buildFMSReportModel({
+      assessment: makeSidedFMSAssessment(
+        makeFMSDraft({ shoulder_mobility_left: 1, shoulder_mobility_right: 3 }),
+      ),
+      clientName: 'Teszt Elek',
+      clientEmail: null,
+      trainerName: null,
+    });
+
+    const shoulderRow = model.rows.find(row => row.testId === 'shoulder_mobility')!;
+    expect(shoulderRow.sides).toEqual({ left: 1, right: 3 });
+    // A beszámított pont a gyengébb oldalé.
+    expect(shoulderRow.score).toBe(1);
+    expect(shoulderRow.hasAsymmetry).toBe(true);
+    expect(model.asymmetricRows.map(row => row.testId)).toEqual(['shoulder_mobility']);
+
+    // A szimmetrikus teszthez nincs oldalankénti adat.
+    expect(model.rows.find(row => row.testId === 'deep_squat')!.sides).toBeNull();
+  });
+
+  it('a régi, oldal nélkül rögzített felmérésnél nincs oldal- és aszimmetria-adat', () => {
+    const model = buildModel({ hurdle_step: 2 });
+
+    expect(model.rows.every(row => row.sides === null)).toBe(true);
+    expect(model.asymmetricRows).toEqual([]);
+  });
+
+  it('a pozitív clearing tesztet kiemeli és fájdalom-jelzőt állít', () => {
+    const model = buildFMSReportModel({
+      assessment: makeSidedFMSAssessment(makeFMSDraft({ rs_clearing: true })),
+      clientName: 'Teszt Elek',
+      clientEmail: null,
+      trainerName: null,
+    });
+
+    const rotaryRow = model.rows.find(row => row.testId === 'rotary_stability')!;
+    expect(rotaryRow.clearingPain).toBe(true);
+    // Hibátlan végrehajtás mellett is 0 pont, ha a clearing teszt fájdalmas.
+    expect(rotaryRow.score).toBe(0);
+    expect(model.positiveClearingTests.map(test => test.id)).toEqual(['rs_clearing']);
+    expect(model.hasPainFlag).toBe(true);
+    // A 0 pont miatt korrekciós javaslatot is kap.
+    expect(model.corrections.map(group => group.testId)).toEqual(['rotary_stability']);
   });
 
   it('az üres vagy csak whitespace megjegyzést null-ra normalizálja', () => {

@@ -9,14 +9,22 @@ The FMS (Functional Movement Screen) assessments table stores evaluation data fo
 | id | UUID | Primary key, auto-generated |
 | user_id | UUID | Foreign key to auth.users, identifies the assessed user |
 | date | DATE | Date when the assessment was conducted |
-| deep_squat | INTEGER | Score for Deep Squat movement (0-3) |
-| hurdle_step | INTEGER | Score for Hurdle Step movement (0-3) |
-| inline_lunge | INTEGER | Score for Inline Lunge movement (0-3) |
-| shoulder_mobility | INTEGER | Score for Shoulder Mobility movement (0-3) |
-| active_straight_leg_raise | INTEGER | Score for Active Straight Leg Raise movement (0-3) |
-| trunk_stability_pushup | INTEGER | Score for Trunk Stability Pushup movement (0-3) |
-| rotary_stability | INTEGER | Score for Rotary Stability movement (0-3) |
-| total_score | INTEGER | Auto-calculated sum of all movement scores (0-21) |
+| deep_squat | INTEGER | **Scored** value for Deep Squat (0-3) |
+| hurdle_step | INTEGER | **Scored** value for Hurdle Step (0-3) — the weaker side |
+| inline_lunge | INTEGER | **Scored** value for Inline Lunge (0-3) — the weaker side |
+| shoulder_mobility | INTEGER | **Scored** value for Shoulder Mobility (0-3) — weaker side, or 0 if `sm_clearing` |
+| active_straight_leg_raise | INTEGER | **Scored** value for ASLR (0-3) — the weaker side |
+| trunk_stability_pushup | INTEGER | **Scored** value for TSPU (0-3) — 0 if `tspu_clearing` |
+| rotary_stability | INTEGER | **Scored** value for Rotary Stability (0-3) — weaker side, or 0 if `rs_clearing` |
+| hurdle_step_left / _right | SMALLINT NULL | Raw per-side score (0-3) |
+| inline_lunge_left / _right | SMALLINT NULL | Raw per-side score (0-3) |
+| shoulder_mobility_left / _right | SMALLINT NULL | Raw per-side score (0-3) |
+| active_straight_leg_raise_left / _right | SMALLINT NULL | Raw per-side score (0-3) |
+| rotary_stability_left / _right | SMALLINT NULL | Raw per-side score (0-3) |
+| sm_clearing | BOOLEAN | Shoulder impingement clearing test — `true` = painful |
+| tspu_clearing | BOOLEAN | Spinal extension (press-up) clearing test — `true` = painful |
+| rs_clearing | BOOLEAN | Spinal flexion (posterior rocking) clearing test — `true` = painful |
+| total_score | INTEGER | Auto-calculated sum of the seven **scored** columns (0-21) |
 | notes | TEXT | Additional notes about the assessment |
 | created_at | TIMESTAMPTZ | Auto-generated creation timestamp |
 | updated_at | TIMESTAMPTZ | Auto-generated update timestamp |
@@ -27,6 +35,28 @@ The FMS (Functional Movement Screen) assessments table stores evaluation data fo
 - **1**: Unable to complete movement pattern
 - **2**: Completes movement with compensation
 - **3**: Perfect form, no compensation
+
+## Per-side scoring and clearing tests
+
+Five tests are scored **per side** (hurdle step, inline lunge, shoulder
+mobility, ASLR, rotary stability). The raw sides live in the `_left` / `_right`
+columns; the seven legacy columns hold the **scored** value, which is the
+weaker side — this is what `total_score` (a generated column) sums. A
+left/right difference (asymmetry) is a corrective indication on its own, even
+when the scored value is acceptable, so the raw sides are surfaced in the
+report and the PDF.
+
+Three **clearing tests** (`sm_clearing`, `tspu_clearing`, `rs_clearing`) are
+pain-provocation screens. A positive result forces the associated test's scored
+value to 0 regardless of movement quality, and calls for medical referral.
+
+The derivation lives in `src/lib/fmsScoring.ts` (`resolveFMSScores`,
+`buildFMSAssessmentPayload`) and is unit-tested in `fmsScoring.test.ts` — do
+not reimplement it at a call site.
+
+Assessments recorded before migration `20260801130000` have `NULL` in the
+per-side columns. That is deliberate: the scored value does not tell us which
+side was weaker, so it must not be back-filled.
 
 ## Total Score Interpretation
 

@@ -29,13 +29,29 @@ export function buildDefaultEmailContent(model: FMSReportModel): { subject: stri
     ? `A riportban megtalálod a javasolt korrekciós fókuszokat is (${model.corrections.length} mozgásminta).`
     : 'A felmérés egyik mozgásmintájánál sem volt szükség korrekciós javaslatra.';
 
+  // A fájdalom-jelzés nem maradhat csak a PDF-ben: a levélben is látszódnia
+  // kell, mert orvosi kivizsgálásra vonatkozó javaslat.
+  const painLine = model.hasPainFlag
+    ? 'Fontos: a felmérés során legalább egy mozgásmintánál fájdalom jelentkezett, '
+      + 'ezért orvosi kivizsgálás javasolt. A részleteket a riport elején találod.\n\n'
+    : '';
+
+  // Az értékelést indokló tételek (0/1 pontos minta, oldalkülönbség) nélkül a
+  // levél a jó összpontszám alapján azt sugallná, hogy minden rendben van.
+  const reasonBlock = model.risk.reasons.length > 0
+    ? `Kiemelt megállapítások:\n${model.risk.reasons.map(reason => `- ${reason}`).join('\n')}\n\n`
+    : '';
+
   return {
     subject: `FMS felmérés eredménye – ${model.clientName} (${date})`,
     bodyText:
       `Kedves ${model.clientName}!\n\n`
       + `Mellékelten küldöm a ${date} napon készült FMS (Functional Movement Screen) felmérésed részletes riportját.\n\n`
-      + `Összpontszám: ${model.totalScore} / ${model.maxScore} – ${model.band.label}\n`
-      + `${model.band.summary}\n\n`
+      + `Összpontszám: ${model.totalScore} / ${model.maxScore}\n`
+      + `Értékelés: ${model.risk.label}\n`
+      + `${model.risk.summary}\n\n`
+      + reasonBlock
+      + painLine
       + `${correctionLine}\n\n`
       + `Ha bármi kérdésed van az eredményekkel kapcsolatban, keress bátran.`
       + signature,

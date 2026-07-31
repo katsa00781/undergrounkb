@@ -19,6 +19,10 @@ function scoreBarClass(score: number): string {
 /**
  * A 7 FMS teszt pontszáma sávdiagrammal. A Dashboard korábban hétszer
  * ismételte ugyanezt a markupot — ez az egyetlen forrás.
+ *
+ * Az oldalanként mért teszteknél a bal/jobb nyers pont és az esetleges
+ * aszimmetria is látszik: a beszámított pont a gyengébb oldalé, de az
+ * oldalkülönbség önálló korrekciós információ.
  */
 export function FMSScoreGrid({ rows }: FMSScoreGridProps) {
   return (
@@ -40,6 +44,26 @@ export function FMSScoreGrid({ rows }: FMSScoreGridProps) {
             />
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-500">{row.scoreLabel}</p>
+
+          {row.sides && (
+            <p className="flex flex-wrap items-center gap-x-2 text-xs text-gray-500 dark:text-gray-500">
+              <span>
+                Bal <span className="font-semibold">{row.sides.left}</span> · Jobb{' '}
+                <span className="font-semibold">{row.sides.right}</span>
+              </span>
+              {row.hasAsymmetry && (
+                <span className="rounded bg-warning-100 px-1.5 py-0.5 font-medium text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
+                  aszimmetria
+                </span>
+              )}
+            </p>
+          )}
+
+          {row.clearingPain && row.clearingTest && (
+            <p className="text-xs font-medium text-error-600 dark:text-error-400">
+              {row.clearingTest.label}: fájdalom
+            </p>
+          )}
         </div>
       ))}
     </div>
