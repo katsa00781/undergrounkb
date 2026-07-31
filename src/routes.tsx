@@ -21,6 +21,8 @@ const ProgramDetailPage = lazy(() => import('./pages/ProgramDetailPage'));
 const ExerciseLibrary = lazy(() => import('./pages/ExerciseLibrary'));
 const ExerciseDetail = lazy(() => import('./pages/ExerciseDetail'));
 const FMSAssessment = lazy(() => import('./pages/FMSAssessment'));
+const FMSResultsPage = lazy(() => import('./pages/FMSResultsPage'));
+const FMSReportPage = lazy(() => import('./pages/FMSReportPage'));
 const UserManagement = lazy(() => import('./pages/UserManagement'));
 const AppointmentManager = lazy(() => import('./pages/AppointmentManager'));
 const TestAuth = lazy(() => import('./pages/TestAuth'));
@@ -112,6 +114,16 @@ export const AppRoutes = ({ userRole }: AppRoutesProps) => {
           <Route path="/assessment" element={
             <ProtectedRoute userRole={userRole} requiredRole="admin">
               <FMSAssessment />
+            </ProtectedRoute>
+          } />
+          <Route path="/fms-results" element={
+            <ProtectedRoute userRole={userRole} requiredRole="admin">
+              <FMSResultsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/fms-results/:userId" element={
+            <ProtectedRoute userRole={userRole} requiredRole="admin">
+              <FMSReportPage />
             </ProtectedRoute>
           } />
 

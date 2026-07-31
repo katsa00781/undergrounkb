@@ -144,7 +144,6 @@ export interface Database {
           first_name: string | null
           last_name: string | null
           full_name: string | null  // Új mező - ProfileFormData.displayName
-          display_name: string | null  // Új mező - ProfileFormData.displayName
           role: string | null
           avatar_url: string | null
           created_at: string
@@ -163,7 +162,6 @@ export interface Database {
           first_name?: string | null
           last_name?: string | null
           full_name?: string | null  // Új mező
-          display_name?: string | null  // Új mező
           role?: string | null
           avatar_url?: string | null
           created_at?: string
@@ -182,7 +180,6 @@ export interface Database {
           first_name?: string | null
           last_name?: string | null
           full_name?: string | null  // Új mező
-          display_name?: string | null  // Új mező
           role?: string | null
           avatar_url?: string | null
           created_at?: string

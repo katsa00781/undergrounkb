@@ -252,7 +252,7 @@ const Dashboard = () => {
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">FMS Értékelés</p>
                 <p className="text-lg text-gray-400">Nincs adat</p>
                 <Link
-                  to="/fms-assessment"
+                  to="/assessment"
                   className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400"
                 >
                   Új értékelés készítése →

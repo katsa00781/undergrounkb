@@ -4,6 +4,8 @@ import { notifyDataChanged } from '../utils/dataRefresh';
 export interface FMSAssessment {
   id: string;
   user_id: string;
+  /** A felmérés napja (DATE oszlop, DB default CURRENT_DATE). */
+  date: string;
   deep_squat: number;
   hurdle_step: number;
   inline_lunge: number;
@@ -11,9 +13,9 @@ export interface FMSAssessment {
   active_straight_leg_raise: number;
   trunk_stability_pushup: number;
   rotary_stability: number;
+  /** A DB generált oszlopa (a 7 pontszám összege). */
   total_score?: number;
   notes?: string;
-  assessed_by?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -28,7 +30,11 @@ export interface FMSAssessmentSubject {
   latestTotalScore: number | null;
 }
 
-export async function createFMSAssessment(assessment: Omit<FMSAssessment, 'id' | 'created_at' | 'updated_at' | 'total_score'>) {
+/** A `date` és a `total_score` a DB-ből jön (default, illetve generált oszlop). */
+export type FMSAssessmentInput =
+  Omit<FMSAssessment, 'id' | 'created_at' | 'updated_at' | 'total_score' | 'date'> & { date?: string };
+
+export async function createFMSAssessment(assessment: FMSAssessmentInput) {
 
   try {
     // Create a copy of the assessment object for the database operation
@@ -60,6 +66,7 @@ export async function getLatestFMSAssessment(userId: string) {
       .from('fms_assessments')
       .select('*')
       .eq('user_id', userId)
+      .order('date', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -76,6 +83,26 @@ export async function getLatestFMSAssessment(userId: string) {
   }
 }
 
+export async function getFMSAssessmentById(id: string) {
+  try {
+    const { data, error } = await supabase
+      .from('fms_assessments')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching FMS assessment by id:', error);
+      throw error;
+    }
+
+    return data as FMSAssessment | null;
+  } catch (error) {
+    console.error('Exception in getFMSAssessmentById:', error);
+    throw error;
+  }
+}
+
 export async function getFMSAssessments(userId: string) {
   try {
 
@@ -83,7 +110,8 @@ export async function getFMSAssessments(userId: string) {
       .from('fms_assessments')
       .select('*')
       .eq('user_id', userId)
-      .order('date', { ascending: false });
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching FMS assessments:', error);
@@ -201,12 +229,51 @@ export async function listFMSAssessmentSubjects(): Promise<FMSAssessmentSubject[
           email: profile?.email || null,
           latestAssessmentDate: latestAssessment?.date || null,
           latestAssessmentCreatedAt: latestAssessment?.created_at || null,
-          latestTotalScore: latestAssessment?.total_score || null,
+          // ?? és nem ||: a 0 összpontszám (minden teszt fájdalmas) érvényes érték.
+          latestTotalScore: latestAssessment?.total_score ?? null,
         } satisfies FMSAssessmentSubject;
       })
       .sort((left, right) => left.displayName.localeCompare(right.displayName, 'hu'));
   } catch (error) {
     console.error('Exception in listFMSAssessmentSubjects:', error);
+    throw error;
+  }
+}
+
+/**
+ * A `listFMSAssessmentSubjects` egy-profilos változata: a riport oldalnak csak
+ * a felmért személy nevére és e-mail címére van szüksége, nem a teljes listára.
+ */
+export async function getFMSAssessmentSubject(userId: string): Promise<FMSAssessmentSubject | null> {
+  try {
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('Error fetching FMS subject profile:', profileError);
+      throw profileError;
+    }
+
+    const latest = await getLatestFMSAssessment(userId);
+
+    if (!profile && !latest) {
+      return null;
+    }
+
+    return {
+      userId,
+      displayName: profile?.full_name || profile?.email || `FMS alany ${userId.slice(0, 8)}`,
+      fullName: profile?.full_name || null,
+      email: profile?.email || null,
+      latestAssessmentDate: latest?.date ?? null,
+      latestAssessmentCreatedAt: latest?.created_at ?? null,
+      latestTotalScore: latest?.total_score ?? null,
+    };
+  } catch (error) {
+    console.error('Exception in getFMSAssessmentSubject:', error);
     throw error;
   }
 }

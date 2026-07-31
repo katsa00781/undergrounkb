@@ -1,48 +1,28 @@
 import { FMSAssessment } from '../fms';
+import { FMS_FOCUS_OPTIONS } from '../exerciseTaxonomy/constants';
+import { getFMSFocusLabel } from '../exerciseTaxonomy/metadata';
+import type { FMSFocusId } from '../exerciseTaxonomy/types';
+import { FMS_CORRECTION_EXERCISES, type FMSCorrectionExercise } from './fmsCorrectionExercises';
 
-// Az FMS korrekciók listája
-const FMS_CORRECTIONS: Record<string, string[]> = {
-  deep_squat: [
-    'Csípő mozgékonyság javítása',
-    'Boka dorziflexió fejlesztése',
-    'Core stabilizáció'
-  ],
-  hurdle_step: [
-    'Csípő stabilitás fejlesztése',
-    'Egyensúlyfejlesztés',
-    'Lépés mechanika javítása'
-  ],
-  inline_lunge: [
-    'Csípő mobilitás javítása',
-    'Térd stabilitás fejlesztése',
-    'Törzs kontrollfejlesztés'
-  ],
-  shoulder_mobility: [
-    'Váll mobilitás növelése',
-    'Mellizom nyújtás',
-    'Lapocka stabilitás'
-  ],
-  active_straight_leg_raise: [
-    'Hamstring nyújtás',
-    'Csípőhajlító nyújtás',
-    'Medence pozíció javítása'
-  ],
-  trunk_stability_pushup: [
-    'Core stabilizáció',
-    'Vállöv stabilitás fejlesztése',
-    'Plank variációk'
-  ],
-  rotary_stability: [
-    'Rotációs core erősítés',
-    'Csípő-vállöv koordináció',
-    'Egyoldali stabilitás fejlesztése'
-  ]
-};
+export type { FMSCorrectionExercise, FMSCorrectionModality } from './fmsCorrectionExercises';
+export {
+  FMS_CORRECTION_EXERCISES,
+  FMS_CORRECTION_MODALITY_LABELS,
+  FMS_CORRECTION_MODALITY_ORDER,
+} from './fmsCorrectionExercises';
+
+/** A korrekciós gyakorlatok nevei mozgásmintánként (az edzésgenerátor ezeket teszi a tervbe). */
+export const FMS_CORRECTION_NAMES: Record<FMSFocusId, string[]> = Object.fromEntries(
+  FMS_FOCUS_OPTIONS.map(option => [
+    option.id,
+    FMS_CORRECTION_EXERCISES[option.id].map(exercise => exercise.name),
+  ]),
+) as Record<FMSFocusId, string[]>;
 
 /**
  * Az FMS korrekciók azonosítása a felmérés alapján
  * @param assessment - Az FMS felmérés
- * @returns Az ajánlott korrekciók listája
+ * @returns Az ajánlott korrekciós gyakorlatok nevei
  */
 export function identifyFMSCorrections(assessment: FMSAssessment | null): string[] {
   if (!assessment) return [];
@@ -57,12 +37,50 @@ export function identifyFMSCorrections(assessment: FMSAssessment | null): string
 
     // Biztonságos típuskonverzió
     const score = assessment[key as keyof FMSAssessment];
-    if (typeof score === 'number' && score < 2 && FMS_CORRECTIONS[key]) {
-      // Véletlenszerűen választunk egy korrekciót a lehetséges opciók közül
-      const correction = FMS_CORRECTIONS[key][Math.floor(Math.random() * FMS_CORRECTIONS[key].length)];
-      corrections.push(correction);
+    const names = FMS_CORRECTION_NAMES[key as FMSFocusId] as string[] | undefined;
+    if (typeof score === 'number' && score < 2 && names) {
+      // Véletlenszerűen választunk egy gyakorlatot a lehetséges opciók közül
+      corrections.push(names[Math.floor(Math.random() * names.length)]);
     }
   });
 
   return corrections;
+}
+
+export interface FMSCorrectionGroup {
+  testId: FMSFocusId;
+  label: string;
+  score: number;
+  exercises: FMSCorrectionExercise[];
+}
+
+/**
+ * A riporthoz használt, **determinisztikus** korrekció-gyűjtés.
+ *
+ * Az `identifyFMSCorrections` szándékosan véletlenszerűen választ egy gyakorlatot
+ * az edzésgenerátornak (hogy ne mindig ugyanazt tegye be). Egy PDF riportnál ez
+ * elfogadhatatlan: két generálás más dokumentumot adna. Ez a változat fix
+ * sorrendben jár végig a teszteken, és minden 2 alatti pontszámhoz a mozgásminta
+ * teljes korrekciós blokkját visszaadja (SMR → FMS szalag → saját testsúly →
+ * kettlebell).
+ */
+export function getFMSCorrectionsForAssessment(
+  assessment: FMSAssessment | null,
+): FMSCorrectionGroup[] {
+  if (!assessment) return [];
+
+  return FMS_FOCUS_OPTIONS.reduce<FMSCorrectionGroup[]>((groups, option) => {
+    const score = assessment[option.id];
+
+    if (typeof score === 'number' && score < 2) {
+      groups.push({
+        testId: option.id,
+        label: getFMSFocusLabel(option.id) ?? option.id,
+        score,
+        exercises: FMS_CORRECTION_EXERCISES[option.id].map(exercise => ({ ...exercise })),
+      });
+    }
+
+    return groups;
+  }, []);
 }

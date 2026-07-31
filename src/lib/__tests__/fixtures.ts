@@ -39,6 +39,7 @@ export function makeFMSAssessment(overrides: Partial<FMSAssessment> = {}): FMSAs
   return {
     id: 'fms-1',
     user_id: 'user-1',
+    date: '2026-07-01',
     deep_squat: 3,
     hurdle_step: 3,
     inline_lunge: 3,

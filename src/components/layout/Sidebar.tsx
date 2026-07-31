@@ -206,6 +206,19 @@ const Sidebar = ({ open, onClose, isMobile }: SidebarProps) => {
           </NavLink>
         )}
 
+        {permissions.canAccessFMSResults && (
+          <NavLink
+            to="/fms-results"
+            className={({ isActive }) =>
+              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+            }
+            onClick={onClose}
+          >
+            <ClipboardList size={20} />
+            <span>FMS Eredmények</span>
+          </NavLink>
+        )}
+
         <NavLink
           to="/progress"
           className={({ isActive }) =>

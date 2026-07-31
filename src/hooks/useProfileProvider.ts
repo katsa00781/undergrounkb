@@ -25,7 +25,6 @@ export type ProfileDatabaseUpdate = {
   experience_level?: string | null;
   updated_at: string;
   full_name?: string | null;
-  display_name?: string | null;
 };
 
 // Function to check if the db schema has the required columns
@@ -156,11 +155,9 @@ export const useProfileProvider = () => {
         updated_at: new Date().toISOString()
       };
 
-      // Add full name and display name conditionally
+      // Add full name conditionally
       if (data.displayName && data.displayName.trim()) {
         updates.full_name = data.displayName.trim();
-        // We also send display_name for SQL compatibility
-        updates.display_name = data.displayName.trim();
       }
 
       // Try-Catch block specifically for the update operation

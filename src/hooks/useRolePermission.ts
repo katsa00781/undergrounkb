@@ -41,6 +41,7 @@ export function useRolePermission() {
     canAccessWorkoutPlanner: isAdmin,
     canAccessExerciseLibrary: isAdmin,
     canAccessFMSAssessment: isAdmin,
+    canAccessFMSResults: isAdmin,
     canAccessUserManagement: isAdmin,
     canAccessAppointmentManager: isAdmin
   };
