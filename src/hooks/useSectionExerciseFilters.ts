@@ -38,6 +38,7 @@ export const useSectionExerciseFilters = (exercises: Exercise[]) => {
       selectedFMSFocus: fmsFocusFilters[exerciseKey] || null,
       selectedDifficulty: null,
       showInactive: true,
+      reviewedFilter: 'all',
     }, {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       isFmsCandidate: isExerciseFMSCandidate as any,

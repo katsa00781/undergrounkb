@@ -24,6 +24,7 @@ export interface Database {
           updated_at: string
           created_by: string | null
           is_active: boolean
+          reviewed: boolean
         }
         Insert: {
           id?: string
@@ -39,6 +40,7 @@ export interface Database {
           updated_at?: string
           created_by?: string | null
           is_active?: boolean
+          reviewed?: boolean
         }
         Update: {
           id?: string
@@ -54,6 +56,7 @@ export interface Database {
           updated_at?: string
           created_by?: string | null
           is_active?: boolean
+          reviewed?: boolean
         }
         Relationships: [
           {

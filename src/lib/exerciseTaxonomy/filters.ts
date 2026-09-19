@@ -196,6 +196,9 @@ export function filterExercisesList(
 
     const matchesActiveState = filters.showInactive || exercise.is_active;
 
+    const matchesReviewed = filters.reviewedFilter === 'all'
+      || (filters.reviewedFilter === 'reviewed' ? Boolean(exercise.reviewed) : !exercise.reviewed);
+
     return matchesSearch
       && matchesCategory
       && matchesMovementPattern
@@ -203,7 +206,8 @@ export function filterExercisesList(
       && matchesLaterality
       && matchesFmsFocus
       && matchesDifficulty
-      && matchesActiveState;
+      && matchesActiveState
+      && matchesReviewed;
   });
 }
 
@@ -221,6 +225,7 @@ export function getAvailableMovementPatternOptions(
       selectedMovementPattern: null,
       selectedDifficulty: null,
       showInactive: true,
+      reviewedFilter: 'all',
     },
     options,
   );

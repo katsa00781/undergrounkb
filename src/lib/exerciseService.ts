@@ -221,6 +221,22 @@ export async function updateExercise(id: string, updates: ExerciseWriteUpdate) {
 }
 
 /**
+ * Gyakorlat ellenőrzött-állapotának be/kikapcsolása (gyakorlattár-átnézéshez)
+ */
+export async function setExerciseReviewed(id: string, reviewed: boolean) {
+  const { error } = await supabase
+    .from('exercises')
+    .update({ reviewed })
+    .eq('id', id);
+
+  if (error) {
+    throw new Error(`Error updating exercise review status: ${error.message}`);
+  }
+
+  return true;
+}
+
+/**
  * Delete an exercise (soft delete by setting is_active to false)
  */
 export async function deleteExercise(id: string) {

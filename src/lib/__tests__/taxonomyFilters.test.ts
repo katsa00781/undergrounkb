@@ -17,6 +17,7 @@ const emptyFilters: ExerciseListFilters = {
   selectedFMSFocus: null,
   selectedDifficulty: null,
   showInactive: true,
+  reviewedFilter: 'all',
 };
 
 describe('getExerciseFMSFocuses', () => {
@@ -62,7 +63,8 @@ describe('filterExercisesList', () => {
   const swing = makeExercise({ id: 'swing', name: 'Kettlebell lengetés', category: 'kettlebell', movement_pattern: 'hip_dominant_bilateral', difficulty: 2 });
   const press = makeExercise({ id: 'press', name: 'Katonai nyomás', category: 'kettlebell', movement_pattern: 'vertical_push_bilateral', difficulty: 3 });
   const inactive = makeExercise({ id: 'old', name: 'Régi gyakorlat', is_active: false });
-  const all = [swing, press, inactive];
+  const reviewed = makeExercise({ id: 'checked', name: 'Ellenőrzött gyakorlat', reviewed: true });
+  const all = [swing, press, inactive, reviewed];
 
   it('a kereső a névre, leírásra, instrukcióra illeszt (kis/nagybetű-független)', () => {
     const result = filterExercisesList(all, { ...emptyFilters, searchQuery: 'lenget' });
@@ -89,6 +91,16 @@ describe('filterExercisesList', () => {
   });
 
   it('üres szűrőre az összes gyakorlatot visszaadja', () => {
-    expect(filterExercisesList(all, emptyFilters)).toHaveLength(3);
+    expect(filterExercisesList(all, emptyFilters)).toHaveLength(4);
+  });
+
+  it('reviewedFilter="reviewed" csak az ellenőrzött gyakorlatokat adja vissza', () => {
+    const result = filterExercisesList(all, { ...emptyFilters, reviewedFilter: 'reviewed' });
+    expect(result.map(e => e.id)).toEqual(['checked']);
+  });
+
+  it('reviewedFilter="unreviewed" kihagyja az ellenőrzött gyakorlatokat', () => {
+    const result = filterExercisesList(all, { ...emptyFilters, reviewedFilter: 'unreviewed' });
+    expect(result.map(e => e.id)).not.toContain('checked');
   });
 });

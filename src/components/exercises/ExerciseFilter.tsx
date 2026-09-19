@@ -16,8 +16,10 @@ interface ExerciseFilterProps {
     selectedFMSFocus: string | null;
     selectedDifficulty: number | null; // Using numeric difficulty (1-5)
     showInactive: boolean;
+    reviewedFilter: 'all' | 'reviewed' | 'unreviewed';
   }) => void;
   showInactiveToggle?: boolean;
+  showReviewedFilter?: boolean;
 }
 
 export const ExerciseFilter = ({
@@ -27,7 +29,8 @@ export const ExerciseFilter = ({
   lateralities = [],
   fmsFocuses,
   onFilterChange,
-  showInactiveToggle = false
+  showInactiveToggle = false,
+  showReviewedFilter = false
 }: ExerciseFilterProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -38,6 +41,7 @@ export const ExerciseFilter = ({
   const [selectedFMSFocus, setSelectedFMSFocus] = useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<number | null>(null);
   const [showInactive, setShowInactive] = useState(false);
+  const [reviewedFilter, setReviewedFilter] = useState<'all' | 'reviewed' | 'unreviewed'>('all');
 
   const allMovementPatterns = Array.from(
     new Map(
@@ -52,53 +56,59 @@ export const ExerciseFilter = ({
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
-    applyFilters(e.target.value, selectedCategory, selectedMovementPattern, selectedPatternFamily, selectedLaterality, selectedFMSFocus, selectedDifficulty, showInactive);
+    applyFilters(e.target.value, selectedCategory, selectedMovementPattern, selectedPatternFamily, selectedLaterality, selectedFMSFocus, selectedDifficulty, showInactive, reviewedFilter);
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const category = e.target.value === '' ? null : e.target.value;
     setSelectedCategory(category);
-    
+
     // Reset movement pattern when category changes
     setSelectedMovementPattern(null);
-    
+
     setSelectedFMSFocus(null);
-    applyFilters(searchQuery, category, null, selectedPatternFamily, selectedLaterality, null, selectedDifficulty, showInactive);
+    applyFilters(searchQuery, category, null, selectedPatternFamily, selectedLaterality, null, selectedDifficulty, showInactive, reviewedFilter);
   };
 
   const handleMovementPatternChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const pattern = e.target.value === '' ? null : e.target.value;
     setSelectedMovementPattern(pattern);
-    applyFilters(searchQuery, selectedCategory, pattern, selectedPatternFamily, selectedLaterality, selectedFMSFocus, selectedDifficulty, showInactive);
+    applyFilters(searchQuery, selectedCategory, pattern, selectedPatternFamily, selectedLaterality, selectedFMSFocus, selectedDifficulty, showInactive, reviewedFilter);
   };
 
   const handlePatternFamilyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const patternFamily = e.target.value === '' ? null : e.target.value;
     setSelectedPatternFamily(patternFamily);
-    applyFilters(searchQuery, selectedCategory, selectedMovementPattern, patternFamily, selectedLaterality, selectedFMSFocus, selectedDifficulty, showInactive);
+    applyFilters(searchQuery, selectedCategory, selectedMovementPattern, patternFamily, selectedLaterality, selectedFMSFocus, selectedDifficulty, showInactive, reviewedFilter);
   };
 
   const handleLateralityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const laterality = e.target.value === '' ? null : e.target.value;
     setSelectedLaterality(laterality);
-    applyFilters(searchQuery, selectedCategory, selectedMovementPattern, selectedPatternFamily, laterality, selectedFMSFocus, selectedDifficulty, showInactive);
+    applyFilters(searchQuery, selectedCategory, selectedMovementPattern, selectedPatternFamily, laterality, selectedFMSFocus, selectedDifficulty, showInactive, reviewedFilter);
   };
 
   const handleFMSFocusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const focus = e.target.value === '' ? null : e.target.value;
     setSelectedFMSFocus(focus);
-    applyFilters(searchQuery, selectedCategory, selectedMovementPattern, selectedPatternFamily, selectedLaterality, focus, selectedDifficulty, showInactive);
+    applyFilters(searchQuery, selectedCategory, selectedMovementPattern, selectedPatternFamily, selectedLaterality, focus, selectedDifficulty, showInactive, reviewedFilter);
   };
 
   const handleDifficultyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const difficulty = e.target.value === '' ? null : parseInt(e.target.value);
     setSelectedDifficulty(difficulty);
-    applyFilters(searchQuery, selectedCategory, selectedMovementPattern, selectedPatternFamily, selectedLaterality, selectedFMSFocus, difficulty, showInactive);
+    applyFilters(searchQuery, selectedCategory, selectedMovementPattern, selectedPatternFamily, selectedLaterality, selectedFMSFocus, difficulty, showInactive, reviewedFilter);
   };
 
   const handleShowInactiveChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setShowInactive(e.target.checked);
-    applyFilters(searchQuery, selectedCategory, selectedMovementPattern, selectedPatternFamily, selectedLaterality, selectedFMSFocus, selectedDifficulty, e.target.checked);
+    applyFilters(searchQuery, selectedCategory, selectedMovementPattern, selectedPatternFamily, selectedLaterality, selectedFMSFocus, selectedDifficulty, e.target.checked, reviewedFilter);
+  };
+
+  const handleReviewedFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value as 'all' | 'reviewed' | 'unreviewed';
+    setReviewedFilter(value);
+    applyFilters(searchQuery, selectedCategory, selectedMovementPattern, selectedPatternFamily, selectedLaterality, selectedFMSFocus, selectedDifficulty, showInactive, value);
   };
 
   const applyFilters = (
@@ -109,7 +119,8 @@ export const ExerciseFilter = ({
     laterality: string | null,
     fmsFocus: string | null,
     difficulty: number | null,
-    inactive: boolean
+    inactive: boolean,
+    reviewed: 'all' | 'reviewed' | 'unreviewed'
   ) => {
     onFilterChange({
       searchQuery: search,
@@ -119,7 +130,8 @@ export const ExerciseFilter = ({
       selectedLaterality: laterality,
       selectedFMSFocus: fmsFocus,
       selectedDifficulty: difficulty,
-      showInactive: inactive
+      showInactive: inactive,
+      reviewedFilter: reviewed
     });
   };
 
@@ -132,7 +144,8 @@ export const ExerciseFilter = ({
     setSelectedFMSFocus(null);
     setSelectedDifficulty(null);
     setShowInactive(false);
-    
+    setReviewedFilter('all');
+
     onFilterChange({
       searchQuery: '',
       selectedCategory: null,
@@ -141,7 +154,8 @@ export const ExerciseFilter = ({
       selectedLaterality: null,
       selectedFMSFocus: null,
       selectedDifficulty: null,
-      showInactive: false
+      showInactive: false,
+      reviewedFilter: 'all'
     });
   };
 
@@ -167,7 +181,7 @@ export const ExerciseFilter = ({
         >
           <Filter size={18} />
           <span>Filter</span>
-          {(selectedCategory || selectedMovementPattern || selectedPatternFamily || selectedLaterality || selectedDifficulty || showInactive) && (
+          {(selectedCategory || selectedMovementPattern || selectedPatternFamily || selectedLaterality || selectedDifficulty || showInactive || reviewedFilter !== 'all') && (
             <span className="ml-1 rounded-full bg-primary-500 px-2 py-0.5 text-xs text-white dark:text-gray-900">
               {[
                 selectedCategory ? 1 : 0,
@@ -176,7 +190,8 @@ export const ExerciseFilter = ({
                 selectedLaterality ? 1 : 0,
                 selectedFMSFocus ? 1 : 0,
                 selectedDifficulty ? 1 : 0,
-                showInactive ? 1 : 0
+                showInactive ? 1 : 0,
+                reviewedFilter !== 'all' ? 1 : 0
               ].reduce((a, b) => a + b, 0)}
             </span>
           )}
@@ -295,7 +310,24 @@ export const ExerciseFilter = ({
                 ))}
               </select>
             </div>
-            
+
+            {showReviewedFilter && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Ellenőrzöttség
+                </label>
+                <select
+                  value={reviewedFilter}
+                  onChange={handleReviewedFilterChange}
+                  className="input mt-1 w-full"
+                >
+                  <option value="all">Összes</option>
+                  <option value="unreviewed">Csak ellenőrizetlen</option>
+                  <option value="reviewed">Csak ellenőrzött</option>
+                </select>
+              </div>
+            )}
+
             {showInactiveToggle && (
               <div className="flex items-end">
                 <label className="flex items-center space-x-2">

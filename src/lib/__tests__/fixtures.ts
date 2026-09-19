@@ -25,6 +25,7 @@ export function makeExercise(overrides: Partial<Exercise> = {}): Exercise {
     updated_at: overrides.updated_at ?? '2026-01-01T00:00:00Z',
     created_by: overrides.created_by ?? null,
     is_active: overrides.is_active ?? true,
+    reviewed: overrides.reviewed ?? false,
     exercise_taxonomy_assignments: overrides.exercise_taxonomy_assignments ?? [],
     taxonomy_tags: overrides.taxonomy_tags ?? [],
     manual_taxonomy_tags: overrides.manual_taxonomy_tags ?? [],

@@ -37,6 +37,7 @@ export type ExerciseListFilters = {
   selectedFMSFocus: string | null;
   selectedDifficulty: number | null;
   showInactive: boolean;
+  reviewedFilter: 'all' | 'reviewed' | 'unreviewed';
 };
 
 export type FMSFocusId =

@@ -7,6 +7,7 @@ interface ExerciseCardProps {
   exercise: Exercise;
   onEdit?: (exercise: Exercise) => void;
   onDelete?: (exercise: Exercise) => void;
+  onToggleReviewed?: (exercise: Exercise, reviewed: boolean) => void;
   isAdmin?: boolean;
 }
 
@@ -18,7 +19,7 @@ const difficultyLabels: Record<number, string> = {
   5: 'Nagyon nehéz'
 };
 
-export const ExerciseCard = ({ exercise, onEdit, onDelete, isAdmin = false }: ExerciseCardProps) => {
+export const ExerciseCard = ({ exercise, onEdit, onDelete, onToggleReviewed, isAdmin = false }: ExerciseCardProps) => {
   const [showDetails, setShowDetails] = useState(false);
   const exerciseFMSFocuses = getExerciseFMSFocuses(exercise);
 
@@ -53,7 +54,23 @@ export const ExerciseCard = ({ exercise, onEdit, onDelete, isAdmin = false }: Ex
             <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${getDifficultyColor(exercise.difficulty)}`}>
               {difficultyLabels[exercise.difficulty] || `${exercise.difficulty}. szint`}
             </span>
+            {exercise.reviewed && !(isAdmin && onToggleReviewed) && (
+              <span className="inline-flex items-center rounded-md bg-success-100 px-2 py-1 text-xs font-medium text-success-800 dark:bg-success-900 dark:text-success-300">
+                Ellenőrizve
+              </span>
+            )}
           </div>
+          {isAdmin && onToggleReviewed && (
+            <label className="mt-2 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <input
+                type="checkbox"
+                checked={exercise.reviewed}
+                onChange={(e) => onToggleReviewed(exercise, e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span>Ellenőrizve</span>
+            </label>
+          )}
         </div>
 
         <div className="flex space-x-2">

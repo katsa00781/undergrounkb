@@ -15,8 +15,9 @@ import {
   getFMSFocusOptions,
   getExerciseManualTaxonomySlugs,
   getMovementPatternLabel,
-  getExercises, 
-  deleteExercise
+  getExercises,
+  deleteExercise,
+  setExerciseReviewed
 } from '../lib/exerciseService';
 import ExerciseCard from '../components/exercises/ExerciseCard';
 import ExerciseForm from '../components/exercises/ExerciseForm';
@@ -46,7 +47,8 @@ const ExerciseLibrary = () => {
     selectedLaterality: null as string | null,
     selectedFMSFocus: null as string | null,
     selectedDifficulty: null as number | null,
-    showInactive: false
+    showInactive: false,
+    reviewedFilter: 'all' as 'all' | 'reviewed' | 'unreviewed'
   });
 
   useEffect(() => {
@@ -107,8 +109,22 @@ const ExerciseLibrary = () => {
     selectedFMSFocus: string | null;
     selectedDifficulty: number | null;
     showInactive: boolean;
+    reviewedFilter: 'all' | 'reviewed' | 'unreviewed';
   }) => {
     setFilters(newFilters);
+  };
+
+  const handleToggleReviewed = async (exercise: Exercise, reviewed: boolean) => {
+    // Optimista frissítés, hogy a checkbox azonnal reagáljon
+    setExercises((prev) => prev.map((item) => (item.id === exercise.id ? { ...item, reviewed } : item)));
+
+    try {
+      await setExerciseReviewed(exercise.id, reviewed);
+    } catch (error) {
+      console.error('Failed to update exercise review status:', error);
+      toast.error('Nem sikerült frissíteni az ellenőrzött állapotot');
+      setExercises((prev) => prev.map((item) => (item.id === exercise.id ? { ...item, reviewed: !reviewed } : item)));
+    }
   };
 
   // Apply filters
@@ -218,6 +234,7 @@ const ExerciseLibrary = () => {
             fmsFocuses={FMS_FOCUS_OPTIONS.map(focus => ({ value: focus.id, label: focus.label }))}
             onFilterChange={handleFilterChange}
             showInactiveToggle={isAdmin}
+            showReviewedFilter={isAdmin}
           />
 
           {/* Exercise grid */}
@@ -233,6 +250,7 @@ const ExerciseLibrary = () => {
                   exercise={exercise}
                   onEdit={isAdmin ? handleEditExercise : undefined}
                   onDelete={isAdmin ? handleDeleteExercise : undefined}
+                  onToggleReviewed={isAdmin ? handleToggleReviewed : undefined}
                   isAdmin={isAdmin}
                 />
               ))}
