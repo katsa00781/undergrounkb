@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Calendar, Clock, Dumbbell, BarChart2, Trash2, Edit2, Filter, Copy, Heart, Flame, Activity, CheckCircle2, Eye, ArrowLeft, TrendingUp, Zap } from 'lucide-react';
-import { getWorkoutsWithLogs, deleteWorkout, WorkoutWithLog, computeLogDuration, computeTotalVolume } from '../lib/workouts';
+import { getWorkoutsWithLogs, deleteWorkout, WorkoutWithLog, WorkoutSection, computeLogDuration, computeTotalVolume } from '../lib/workouts';
 import { getExercises, Exercise } from '../lib/exercises';
 import { getCardioSessions, type CardioSession } from '../lib/polarService';
 import { useAuth } from '../hooks/useAuth';
@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import WorkoutSectionHeader from '../components/workouts/WorkoutSectionHeader';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
-import { formatWorkoutDate, formatWorkoutDuration } from '../lib/workoutDisplay';
+import { formatWorkoutDate, formatWorkoutDuration, resolveExerciseDisplayName } from '../lib/workoutDisplay';
 
 const WorkoutLog = () => {
   const { user, initialized } = useAuth();
@@ -222,7 +222,7 @@ const WorkoutLog = () => {
                       return (
                         <div key={ei} className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 text-sm">
                           <span className="font-medium text-gray-900 dark:text-white">
-                            {exDetails?.name || 'Ismeretlen gyakorlat'}
+                            {resolveExerciseDisplayName(ex, exDetails?.name)}
                           </span>
                           <span className="text-gray-500 dark:text-gray-400">
                             {ex.sets} × {ex.reps}{ex.weight ? ` @ ${ex.weight} kg` : ''}
@@ -471,7 +471,7 @@ const WorkoutLog = () => {
                           return (
                             <div key={exerciseIndex} className="flex items-center justify-between text-sm">
                               <span className="font-medium text-gray-900 dark:text-white">
-                                {exerciseDetails?.name || 'Ismeretlen gyakorlat'}
+                                {resolveExerciseDisplayName(exercise, exerciseDetails?.name)}
                               </span>
                               <span className="text-gray-500 dark:text-gray-400">
                                 {exercise.sets} × {exercise.reps} {exercise.weight && `@ ${exercise.weight}kg`}
@@ -532,16 +532,18 @@ const WorkoutLog = () => {
               {Object.entries(
                 workouts.flatMap(w => w.sections.flatMap(s => s.exercises))
                   .reduce((acc, exercise) => {
-                    acc[exercise.exerciseId] = (acc[exercise.exerciseId] || 0) + 1;
+                    const entry = acc[exercise.exerciseId] || { count: 0, exercise };
+                    entry.count += 1;
+                    acc[exercise.exerciseId] = entry;
                     return acc;
-                  }, {} as { [key: string]: number })
+                  }, {} as { [key: string]: { count: number; exercise: WorkoutSection['exercises'][number] } })
               )
-                .sort(([, a], [, b]) => b - a)
+                .sort(([, a], [, b]) => b.count - a.count)
                 .slice(0, 3)
-                .map(([exerciseId, count]) => (
+                .map(([exerciseId, { count, exercise }]) => (
                   <div key={exerciseId} className="flex items-center justify-between">
                     <span className="text-gray-600 dark:text-gray-400">
-                      {exercises[exerciseId]?.name || 'Ismeretlen gyakorlat'}
+                      {resolveExerciseDisplayName(exercise, exercises[exerciseId]?.name)}
                     </span>
                     <span className="font-semibold text-gray-900 dark:text-white">
                       {count} alkalom

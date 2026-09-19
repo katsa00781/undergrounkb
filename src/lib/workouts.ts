@@ -6,6 +6,10 @@ export interface WorkoutSection {
   name: string;
   exercises: {
     exerciseId: string;
+    // Placeholder gyakorlatok (pl. Longevity záró blokk) olvasható neve — a mobilos
+    // nézetek ID-katalógus lookupja nem tud placeholder-id-t feloldani, ezért kell
+    // ez a mező a program_id-s microciklus-workoutokhoz (lásd microcycleGenerator.ts)
+    exerciseName?: string;
     sets: number;
     reps: number | string; // Support both number and string for reps
     weight?: number;

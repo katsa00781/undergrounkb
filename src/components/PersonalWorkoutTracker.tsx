@@ -44,24 +44,35 @@ const PersonalWorkoutTracker: React.FC<PersonalWorkoutTrackerProps> = ({
     
     for (const section of workout.sections) {
       for (const exercise of section.exercises) {
-        if (!exerciseData[exercise.exerciseId]) {
-          try {
-            const exerciseDetails = await getExerciseById(exercise.exerciseId);
-            if (exerciseDetails) {
-              exerciseData[exercise.exerciseId] = {
-                id: exerciseDetails.id,
-                name: exerciseDetails.name,
-                description: exerciseDetails.description || ''
-              };
-            }
-          } catch {
-            console.error('Error loading exercise:', exercise.exerciseId);
+        if (exerciseData[exercise.exerciseId]) {
+          continue;
+        }
+
+        if (exercise.exerciseId.startsWith('placeholder-')) {
+          exerciseData[exercise.exerciseId] = {
+            id: exercise.exerciseId,
+            name: exercise.exerciseName || exercise.exerciseId,
+            description: ''
+          };
+          continue;
+        }
+
+        try {
+          const exerciseDetails = await getExerciseById(exercise.exerciseId);
+          if (exerciseDetails) {
             exerciseData[exercise.exerciseId] = {
-              id: exercise.exerciseId,
-              name: exercise.exerciseId,
-              description: ''
+              id: exerciseDetails.id,
+              name: exerciseDetails.name,
+              description: exerciseDetails.description || ''
             };
           }
+        } catch {
+          console.error('Error loading exercise:', exercise.exerciseId);
+          exerciseData[exercise.exerciseId] = {
+            id: exercise.exerciseId,
+            name: exercise.exerciseName || exercise.exerciseId,
+            description: ''
+          };
         }
       }
     }

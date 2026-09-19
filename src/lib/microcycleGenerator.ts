@@ -76,7 +76,7 @@ function mapPlanToDbSections(plan: GeneratedWorkoutPlan): WorkoutSection[] {
           exercise.restPeriod && Number(exercise.restPeriod) > 0 ? Number(exercise.restPeriod) : undefined,
       };
     }),
-  })) as unknown as WorkoutSection[];
+  }));
 }
 
 export interface GenerateMicrocycleResult {
