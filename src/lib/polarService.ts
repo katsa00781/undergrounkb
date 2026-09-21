@@ -106,7 +106,19 @@ export async function disconnectPolar(): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-/** A felhasználó importált cardio edzései, legújabb elöl. */
+/** Cardio-edzés forrásának megjelenítendő neve (Apple Health / Polar / egyéb). */
+export function getCardioSourceLabel(source: string): string {
+  switch (source) {
+    case 'apple_health':
+      return 'Apple Health';
+    case 'polar':
+      return 'Polar';
+    default:
+      return 'Cardio';
+  }
+}
+
+/** A felhasználó importált cardio edzései (Polar és Apple Health), legújabb elöl. */
 export async function getCardioSessions(): Promise<CardioSession[]> {
   const { data, error } = await supabase
     .from('cardio_sessions')

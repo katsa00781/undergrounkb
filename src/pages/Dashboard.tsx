@@ -10,6 +10,7 @@ import { format, subDays, parseISO, isFuture } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import ConnectionTest from '../components/ui/ConnectionTest';
 import GoalsDashboard from '../components/GoalsDashboard';
+import AppleHealthCard from '../components/health/AppleHealthCard';
 import { connectionManager } from '../config/supabase';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
@@ -411,6 +412,11 @@ const Dashboard = () => {
           )}
         </div>
       )}
+
+      {/* Apple Health adatok (mobil app HealthKit szinkron) */}
+      <div className="animate-fade-in" style={{ animationDelay: '0.45s' }}>
+        <AppleHealthCard />
+      </div>
 
       {/* Közelgő foglalások */}
       {upcomingBookings.length > 0 && (

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Calendar, Clock, Dumbbell, BarChart2, Trash2, Edit2, Filter, Copy, Heart, Flame, Activity, CheckCircle2, Eye, ArrowLeft, TrendingUp, Zap } from 'lucide-react';
 import { getWorkoutsWithLogs, deleteWorkout, WorkoutWithLog, WorkoutSection, computeLogDuration, computeTotalVolume } from '../lib/workouts';
 import { getExercises, Exercise } from '../lib/exercises';
-import { getCardioSessions, type CardioSession } from '../lib/polarService';
+import { getCardioSessions, getCardioSourceLabel, type CardioSession } from '../lib/polarService';
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -133,7 +133,7 @@ const WorkoutLog = () => {
     const logSections = log?.sections ?? [];
     const completedExs = logSections.flatMap(s => s.exercises).filter(e => e.completed);
     const volume = logSections.length > 0 ? computeTotalVolume(logSections) : 0;
-    const relatedPolar = cardioSessions.filter(
+    const relatedCardio = cardioSessions.filter(
       s => s.start_time?.slice(0, 10) === selectedWorkout.date
     );
 
@@ -277,24 +277,29 @@ const WorkoutLog = () => {
 
           {/* Jobb oldal: Polar adatok */}
           <div className="space-y-4">
-            {relatedPolar.length > 0 ? (
+            {relatedCardio.length > 0 ? (
               <div className="card">
                 <h3 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-4">
                   <Activity size={18} className="text-primary-600 dark:text-primary-400" />
-                  Polar edzésadatok
+                  Cardio-edzés adatok
                   <span className="ml-auto text-xs font-normal text-gray-500 dark:text-gray-400">
                     {formatWorkoutDate(selectedWorkout.date)}
                   </span>
                 </h3>
                 <div className="space-y-3">
-                  {relatedPolar.map((session) => (
+                  {relatedCardio.map((session) => (
                     <div key={session.id} className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900 dark:text-white text-sm">
-                          {session.sport || 'Edzés'}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-2 text-sm">
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {session.sport || 'Edzés'}
+                          </span>
+                          <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                            {getCardioSourceLabel(session.source)}
+                          </span>
                         </span>
                         {session.start_time && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
                             {new Date(session.start_time).toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         )}
@@ -339,13 +344,13 @@ const WorkoutLog = () => {
               <div className="card">
                 <h3 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white mb-3">
                   <Activity size={18} className="text-gray-400" />
-                  Polar edzésadatok
+                  Cardio-edzés adatok
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Nincs szinkronizált Polar edzés erre a napra ({formatWorkoutDate(selectedWorkout.date)}).
+                  Nincs szinkronizált cardio-edzés erre a napra ({formatWorkoutDate(selectedWorkout.date)}).
                 </p>
                 <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
-                  A Polar szinkronizálást a Profiloldalon találod.
+                  Az Apple Health adatokat a Profiloldalon találod.
                 </p>
               </div>
             )}
@@ -557,7 +562,7 @@ const WorkoutLog = () => {
             <div className="card">
               <h3 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
                 <Activity size={20} className="text-primary-600 dark:text-primary-400" />
-                Polar edzések
+                Cardio-edzések
               </h3>
               <div className="mt-4 space-y-3">
                 {filteredCardio.length > 0 ? (
@@ -566,11 +571,16 @@ const WorkoutLog = () => {
                       key={session.id}
                       className="rounded-lg border border-gray-200 p-3 dark:border-gray-700"
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {session.sport || 'Edzés'}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-2">
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {session.sport || 'Edzés'}
+                          </span>
+                          <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                            {getCardioSourceLabel(session.source)}
+                          </span>
                         </span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                        <span className="shrink-0 text-sm text-gray-500 dark:text-gray-400">
                           {session.start_time
                             ? formatWorkoutDate(session.start_time.slice(0, 10))
                             : ''}
@@ -605,7 +615,7 @@ const WorkoutLog = () => {
                   ))
                 ) : (
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Nincs Polar edzés a kiválasztott napon.
+                    Nincs cardio-edzés a kiválasztott napon.
                   </p>
                 )}
               </div>

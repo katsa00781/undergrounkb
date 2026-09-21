@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { User, Calendar, Scale, Ruler, Target, X } from 'lucide-react';
 import { useProfileProvider } from '../hooks/useProfileProvider';
 import SchemaFixNotification from '../components/SchemaFixNotification';
-import PolarConnectionCard from '../components/PolarConnectionCard';
+import AppleHealthCard from '../components/health/AppleHealthCard';
 import { showSchemaFixNotification } from '../utils/schemaNotifications';
 
 // Elérhető fitness célok
@@ -410,8 +410,8 @@ const Profile = () => {
         </div>
       </form>
 
-      {/* Polar Flow integráció */}
-      <PolarConnectionCard />
+      {/* Apple Health adatok (mobil app HealthKit szinkron) */}
+      <AppleHealthCard />
 
       {/* Schema Fix Notification */}
       <SchemaFixNotification 
