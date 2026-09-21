@@ -1,4 +1,4 @@
-export type DataRefreshScope = 'all' | 'workouts' | 'appointments' | 'weights' | 'fms';
+export type DataRefreshScope = 'all' | 'workouts' | 'appointments' | 'weights' | 'fms' | 'nutrition';
 
 export const DATA_REFRESH_EVENT = 'app:data-refresh';
 

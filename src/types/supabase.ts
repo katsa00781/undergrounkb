@@ -532,6 +532,103 @@ export interface Database {
           }
         ]
       }
+      daily_logs: {
+        Row: {
+          id: string
+          user_id: string
+          date: string
+          protein_meals: Json
+          checklist: Json
+          created_at: string
+          updated_at: string
+          steps: number | null
+          is_rest_day: boolean
+          active_energy_kcal: number | null
+          sleep_score: number | null
+          sleep_minutes: number | null
+          sleep_in_bed_minutes: number | null
+          sleep_deep_minutes: number | null
+          sleep_rem_minutes: number | null
+          sleep_light_minutes: number | null
+          sleep_awake_minutes: number | null
+          sleep_awakenings: number | null
+          sleep_efficiency: number | null
+          sleep_start: string | null
+          sleep_end: string | null
+          stress_level: number | null
+          energy_level: number | null
+          shift_key: string | null
+          resting_heart_rate: number | null
+          hrv_sdnn: number | null
+          sleep_wake_stage: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          date: string
+          protein_meals?: Json
+          checklist?: Json
+          created_at?: string
+          updated_at?: string
+          steps?: number | null
+          is_rest_day?: boolean
+          active_energy_kcal?: number | null
+          sleep_score?: number | null
+          sleep_minutes?: number | null
+          sleep_in_bed_minutes?: number | null
+          sleep_deep_minutes?: number | null
+          sleep_rem_minutes?: number | null
+          sleep_light_minutes?: number | null
+          sleep_awake_minutes?: number | null
+          sleep_awakenings?: number | null
+          sleep_efficiency?: number | null
+          sleep_start?: string | null
+          sleep_end?: string | null
+          stress_level?: number | null
+          energy_level?: number | null
+          shift_key?: string | null
+          resting_heart_rate?: number | null
+          hrv_sdnn?: number | null
+          sleep_wake_stage?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          date?: string
+          protein_meals?: Json
+          checklist?: Json
+          created_at?: string
+          updated_at?: string
+          steps?: number | null
+          is_rest_day?: boolean
+          active_energy_kcal?: number | null
+          sleep_score?: number | null
+          sleep_minutes?: number | null
+          sleep_in_bed_minutes?: number | null
+          sleep_deep_minutes?: number | null
+          sleep_rem_minutes?: number | null
+          sleep_light_minutes?: number | null
+          sleep_awake_minutes?: number | null
+          sleep_awakenings?: number | null
+          sleep_efficiency?: number | null
+          sleep_start?: string | null
+          sleep_end?: string | null
+          stress_level?: number | null
+          energy_level?: number | null
+          shift_key?: string | null
+          resting_heart_rate?: number | null
+          hrv_sdnn?: number | null
+          sleep_wake_stage?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_logs_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       cardio_sessions: {
         Row: {
           id: string
@@ -584,6 +681,366 @@ export interface Database {
         Relationships: [
           {
             foreignKeyName: "cardio_sessions_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      user_weights: {
+        Row: {
+          id: string
+          user_id: string
+          weight: number
+          created_at: string
+          date: string | null
+          notes: string | null
+          bodyfat: number | null
+          muscle: number | null
+          bmi: number | null
+          deep_sleep: number | null
+          rest_rating: number | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          weight: number
+          created_at?: string
+          date?: string | null
+          notes?: string | null
+          bodyfat?: number | null
+          muscle?: number | null
+          bmi?: number | null
+          deep_sleep?: number | null
+          rest_rating?: number | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          weight?: number
+          created_at?: string
+          date?: string | null
+          notes?: string | null
+          bodyfat?: number | null
+          muscle?: number | null
+          bmi?: number | null
+          deep_sleep?: number | null
+          rest_rating?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_weights_user_id"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      // Kalória-kalkulátor / étel-napló – ugyanaz a séma, amit a mobil app
+      // (Underground KB Mobile) használ, közös Supabase projekt. Ne hozz létre
+      // ehhez új migrációt: a táblák és az RLS policy-k már élnek.
+      foods: {
+        Row: {
+          id: string
+          source: string
+          barcode: string | null
+          name: string
+          brand: string | null
+          kcal_100: number
+          protein_100: number
+          carbs_100: number
+          fat_100: number
+          fiber_100: number | null
+          sugar_100: number | null
+          salt_100: number | null
+          serving_g: number | null
+          serving_label: string | null
+          image_url: string | null
+          verified: boolean
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          source?: string
+          barcode?: string | null
+          name: string
+          brand?: string | null
+          kcal_100: number
+          protein_100?: number
+          carbs_100?: number
+          fat_100?: number
+          fiber_100?: number | null
+          sugar_100?: number | null
+          salt_100?: number | null
+          serving_g?: number | null
+          serving_label?: string | null
+          image_url?: string | null
+          verified?: boolean
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          source?: string
+          barcode?: string | null
+          name?: string
+          brand?: string | null
+          kcal_100?: number
+          protein_100?: number
+          carbs_100?: number
+          fat_100?: number
+          fiber_100?: number | null
+          sugar_100?: number | null
+          salt_100?: number | null
+          serving_g?: number | null
+          serving_label?: string | null
+          image_url?: string | null
+          verified?: boolean
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "foods_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      food_log_entries: {
+        Row: {
+          id: string
+          user_id: string
+          date: string
+          meal_index: number
+          food_id: string | null
+          recipe_id: string | null
+          name: string
+          grams: number
+          servings: number | null
+          kcal: number
+          protein: number
+          carbs: number
+          fat: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          date: string
+          meal_index?: number
+          food_id?: string | null
+          recipe_id?: string | null
+          name: string
+          grams: number
+          servings?: number | null
+          kcal?: number
+          protein?: number
+          carbs?: number
+          fat?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          date?: string
+          meal_index?: number
+          food_id?: string | null
+          recipe_id?: string | null
+          name?: string
+          grams?: number
+          servings?: number | null
+          kcal?: number
+          protein?: number
+          carbs?: number
+          fat?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_log_entries_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "food_log_entries_food_id_fkey"
+            columns: ["food_id"]
+            referencedRelation: "foods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "food_log_entries_recipe_id_fkey"
+            columns: ["recipe_id"]
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      recipes: {
+        Row: {
+          id: string
+          user_id: string
+          kind: string
+          name: string
+          servings: number
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          kind?: string
+          name: string
+          servings?: number
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          kind?: string
+          name?: string
+          servings?: number
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipes_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      recipe_items: {
+        Row: {
+          id: string
+          recipe_id: string
+          position: number
+          food_id: string | null
+          name: string
+          grams: number
+          kcal: number
+          protein: number
+          carbs: number
+          fat: number
+        }
+        Insert: {
+          id?: string
+          recipe_id: string
+          position?: number
+          food_id?: string | null
+          name: string
+          grams: number
+          kcal?: number
+          protein?: number
+          carbs?: number
+          fat?: number
+        }
+        Update: {
+          id?: string
+          recipe_id?: string
+          position?: number
+          food_id?: string | null
+          name?: string
+          grams?: number
+          kcal?: number
+          protein?: number
+          carbs?: number
+          fat?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_items_recipe_id_fkey"
+            columns: ["recipe_id"]
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_items_food_id_fkey"
+            columns: ["food_id"]
+            referencedRelation: "foods"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      lifestyle_settings: {
+        Row: {
+          id: string
+          user_id: string
+          shift_anchor_date: string | null
+          shift_order: Json
+          eating_window_start: string
+          eating_window_end: string
+          protein_goal_min: number
+          protein_goal_max: number
+          custom_schedules: Json
+          eating_windows: Json
+          step_goal: number
+          self_check_reminder_enabled: boolean
+          self_check_reminder_time: string
+          kcal_goal: number | null
+          carbs_goal_g: number | null
+          fat_goal_g: number | null
+          activity_factor: number
+          goal_type: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          shift_anchor_date?: string | null
+          shift_order?: Json
+          eating_window_start?: string
+          eating_window_end?: string
+          protein_goal_min?: number
+          protein_goal_max?: number
+          custom_schedules?: Json
+          eating_windows?: Json
+          step_goal?: number
+          self_check_reminder_enabled?: boolean
+          self_check_reminder_time?: string
+          kcal_goal?: number | null
+          carbs_goal_g?: number | null
+          fat_goal_g?: number | null
+          activity_factor?: number
+          goal_type?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          shift_anchor_date?: string | null
+          shift_order?: Json
+          eating_window_start?: string
+          eating_window_end?: string
+          protein_goal_min?: number
+          protein_goal_max?: number
+          custom_schedules?: Json
+          eating_windows?: Json
+          step_goal?: number
+          self_check_reminder_enabled?: boolean
+          self_check_reminder_time?: string
+          kcal_goal?: number | null
+          carbs_goal_g?: number | null
+          fat_goal_g?: number | null
+          activity_factor?: number
+          goal_type?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lifestyle_settings_user_id_fkey"
             columns: ["user_id"]
             referencedRelation: "users"
             referencedColumns: ["id"]

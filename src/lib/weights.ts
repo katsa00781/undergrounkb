@@ -71,6 +71,24 @@ export const createWeightMeasurement = async (measurement: Omit<WeightMeasuremen
   return data as WeightMeasurement;
 };
 
+/** A legfrissebb testsúlymérés – a kalória-kalkulátor BMR-bemenetéhez. */
+export const getLatestWeightMeasurement = async (userId: string): Promise<WeightMeasurement | null> => {
+  const { data, error } = await supabase
+    .from('user_weights')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching latest weight measurement:', error);
+    throw error;
+  }
+
+  return data as WeightMeasurement | null;
+};
+
 export const deleteWeightMeasurement = async (id: string) => {
   const { error } = await supabase
     .from('user_weights')

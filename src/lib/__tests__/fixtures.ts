@@ -1,6 +1,8 @@
 import type { Exercise } from '../exercises';
 import type { FMSAssessment } from '../fms';
 import { resolveFMSScores, type FMSAssessmentDraft } from '../fmsScoring';
+import type { Food } from '../foods';
+import type { FoodLogEntry } from '../foodLog';
 
 let counter = 0;
 
@@ -110,6 +112,58 @@ export function makeFMSDraft(overrides: Partial<FMSAssessmentDraft> = {}): FMSAs
     sm_clearing: false,
     tspu_clearing: false,
     rs_clearing: false,
+    ...overrides,
+  };
+}
+
+let foodCounter = 0;
+
+/** Teszt-élelmiszer factory a `foods` katalógushoz. */
+export function makeFood(overrides: Partial<Food> = {}): Food {
+  foodCounter += 1;
+  return {
+    id: overrides.id ?? `food-${foodCounter}`,
+    source: overrides.source ?? 'seed',
+    barcode: overrides.barcode ?? null,
+    name: overrides.name ?? `Étel ${foodCounter}`,
+    brand: overrides.brand ?? null,
+    kcal_100: overrides.kcal_100 ?? 100,
+    protein_100: overrides.protein_100 ?? 10,
+    carbs_100: overrides.carbs_100 ?? 10,
+    fat_100: overrides.fat_100 ?? 5,
+    fiber_100: overrides.fiber_100 ?? null,
+    sugar_100: overrides.sugar_100 ?? null,
+    salt_100: overrides.salt_100 ?? null,
+    serving_g: overrides.serving_g ?? null,
+    serving_label: overrides.serving_label ?? null,
+    image_url: overrides.image_url ?? null,
+    verified: overrides.verified ?? false,
+    created_by: overrides.created_by ?? null,
+    created_at: overrides.created_at ?? '2026-01-01T00:00:00Z',
+    ...overrides,
+  };
+}
+
+let foodLogEntryCounter = 0;
+
+/** Teszt napló-bejegyzés factory a `food_log_entries` táblához. */
+export function makeFoodLogEntry(overrides: Partial<FoodLogEntry> = {}): FoodLogEntry {
+  foodLogEntryCounter += 1;
+  return {
+    id: overrides.id ?? `entry-${foodLogEntryCounter}`,
+    user_id: overrides.user_id ?? 'user-1',
+    date: overrides.date ?? '2026-01-01',
+    meal_index: overrides.meal_index ?? 1,
+    food_id: overrides.food_id ?? null,
+    recipe_id: overrides.recipe_id ?? null,
+    name: overrides.name ?? `Bejegyzés ${foodLogEntryCounter}`,
+    grams: overrides.grams ?? 100,
+    servings: overrides.servings ?? null,
+    kcal: overrides.kcal ?? 100,
+    protein: overrides.protein ?? 10,
+    carbs: overrides.carbs ?? 10,
+    fat: overrides.fat ?? 5,
+    created_at: overrides.created_at ?? '2026-01-01T00:00:00Z',
     ...overrides,
   };
 }

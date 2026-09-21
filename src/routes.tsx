@@ -32,6 +32,9 @@ const Goals = lazy(() => import('./pages/Goals'));
 const WorkoutCalendarPage = lazy(() => import('./pages/WorkoutCalendarPage'));
 const MyWorkouts = lazy(() => import('./pages/MyWorkouts'));
 const PolarCallback = lazy(() => import('./pages/PolarCallback'));
+const NutritionLog = lazy(() => import('./pages/NutritionLog'));
+const NutritionRecipes = lazy(() => import('./pages/NutritionRecipes'));
+const NutritionTargets = lazy(() => import('./pages/NutritionTargets'));
 
 interface AppRoutesProps {
   userRole: string;
@@ -85,6 +88,9 @@ export const AppRoutes = ({ userRole }: AppRoutesProps) => {
           <Route path="/calendar" element={<WorkoutCalendarPage />} />
           <Route path="/my-workouts" element={<MyWorkouts />} />
           <Route path="/progress" element={<ProgressTracking />} />
+          <Route path="/nutrition" element={<NutritionLog />} />
+          <Route path="/nutrition/recipes" element={<NutritionRecipes />} />
+          <Route path="/nutrition/targets" element={<NutritionTargets />} />
           <Route path="/appointments" element={<AppointmentBookingPage />} />
           <Route path="/goals" element={<Goals />} />
           <Route path="/workout-planner" element={<WorkoutPlanner />} />

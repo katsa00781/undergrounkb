@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Calendar, BarChart2, ClipboardList, User, Users, CalendarDays } from 'lucide-react';
+import { Home, Calendar, BarChart2, ClipboardList, User, Users, CalendarDays, Utensils } from 'lucide-react';
 import { useRolePermission } from '../../hooks/useRolePermission';
 
 const MobileNav = () => {
@@ -66,7 +66,21 @@ const MobileNav = () => {
             <Calendar size={20} />
             <span>Kezelés</span>
           </NavLink>
-          
+
+          <NavLink
+            to="/nutrition"
+            className={({ isActive }) =>
+              `mobile-tab ${
+                isActive
+                  ? 'text-primary-600 dark:text-primary-400'
+                  : 'text-gray-500 dark:text-gray-400'
+              }`
+            }
+          >
+            <Utensils size={20} />
+            <span>Kalória</span>
+          </NavLink>
+
           <NavLink
             to="/profile"
             className={({ isActive }) =>
@@ -142,6 +156,20 @@ const MobileNav = () => {
         >
           <BarChart2 size={20} />
           <span>Fejlődés</span>
+        </NavLink>
+
+        <NavLink
+          to="/nutrition"
+          className={({ isActive }) =>
+            `mobile-tab ${
+              isActive
+                ? 'text-primary-600 dark:text-primary-400'
+                : 'text-gray-500 dark:text-gray-400'
+            }`
+          }
+        >
+          <Utensils size={20} />
+          <span>Kalória</span>
         </NavLink>
 
         <NavLink

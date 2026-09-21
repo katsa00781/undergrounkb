@@ -10,7 +10,8 @@ import {
   Activity,
   Target,
   CalendarDays,
-  CalendarRange
+  CalendarRange,
+  Utensils
 } from 'lucide-react';
 import { useRolePermission } from '../../hooks/useRolePermission';
 
@@ -228,6 +229,17 @@ const Sidebar = ({ open, onClose, isMobile }: SidebarProps) => {
         >
           <BarChart2 size={20} />
           <span>Fejlődés Követése</span>
+        </NavLink>
+
+        <NavLink
+          to="/nutrition"
+          className={({ isActive }) =>
+            `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+          }
+          onClick={onClose}
+        >
+          <Utensils size={20} />
+          <span>Kalória-napló</span>
         </NavLink>
 
         <NavLink
