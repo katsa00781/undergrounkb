@@ -545,6 +545,7 @@ export interface Database {
           is_rest_day: boolean
           active_energy_kcal: number | null
           sleep_score: number | null
+          sleep_rested: number | null
           sleep_minutes: number | null
           sleep_in_bed_minutes: number | null
           sleep_deep_minutes: number | null
@@ -574,6 +575,7 @@ export interface Database {
           is_rest_day?: boolean
           active_energy_kcal?: number | null
           sleep_score?: number | null
+          sleep_rested?: number | null
           sleep_minutes?: number | null
           sleep_in_bed_minutes?: number | null
           sleep_deep_minutes?: number | null
@@ -603,6 +605,7 @@ export interface Database {
           is_rest_day?: boolean
           active_energy_kcal?: number | null
           sleep_score?: number | null
+          sleep_rested?: number | null
           sleep_minutes?: number | null
           sleep_in_bed_minutes?: number | null
           sleep_deep_minutes?: number | null

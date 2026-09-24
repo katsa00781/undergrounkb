@@ -16,6 +16,9 @@ export interface DailyHealthLog {
   sleep_light_minutes: number | null;
   sleep_awake_minutes: number | null;
   sleep_score: number | null;
+  /** Szubjektív kipihentség 1–5 (a mobilon a felhasználó adja meg, nem a HealthKit); NULL = nincs kitöltve. */
+  sleep_rested: number | null;
+  shift_key: string | null;
   sleep_efficiency: number | null;
   sleep_start: string | null;
   sleep_end: string | null;

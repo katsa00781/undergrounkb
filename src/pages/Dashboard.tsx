@@ -11,6 +11,7 @@ import { hu } from 'date-fns/locale';
 import ConnectionTest from '../components/ui/ConnectionTest';
 import GoalsDashboard from '../components/GoalsDashboard';
 import AppleHealthCard from '../components/health/AppleHealthCard';
+import SleepTrendCard from '../components/health/SleepTrendCard';
 import { connectionManager } from '../config/supabase';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
@@ -416,6 +417,9 @@ const Dashboard = () => {
       {/* Apple Health adatok (mobil app HealthKit szinkron) */}
       <div className="animate-fade-in" style={{ animationDelay: '0.45s' }}>
         <AppleHealthCard />
+      </div>
+      <div className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
+        <SleepTrendCard />
       </div>
 
       {/* Közelgő foglalások */}

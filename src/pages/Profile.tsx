@@ -6,6 +6,7 @@ import { User, Calendar, Scale, Ruler, Target, X } from 'lucide-react';
 import { useProfileProvider } from '../hooks/useProfileProvider';
 import SchemaFixNotification from '../components/SchemaFixNotification';
 import AppleHealthCard from '../components/health/AppleHealthCard';
+import SleepTrendCard from '../components/health/SleepTrendCard';
 import { showSchemaFixNotification } from '../utils/schemaNotifications';
 
 // Elérhető fitness célok
@@ -412,6 +413,7 @@ const Profile = () => {
 
       {/* Apple Health adatok (mobil app HealthKit szinkron) */}
       <AppleHealthCard />
+      <SleepTrendCard />
 
       {/* Schema Fix Notification */}
       <SchemaFixNotification 

@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Footprints, Moon, HeartPulse, Activity, Flame } from 'lucide-react';
+import { Footprints, Moon, HeartPulse, Activity, Flame, Gauge } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { getLatestDailyHealthLog, formatHealthDuration, type DailyHealthLog } from '../../lib/healthService';
+import { formatSleepRested, sleepRestedTone, type SleepRestedTone } from '../../lib/sleepRested';
+
+const RESTED_TONE_CLASSES: Record<SleepRestedTone, string> = {
+  low: 'text-error-600 dark:text-error-400',
+  mid: 'text-warning-600 dark:text-warning-400',
+  high: 'text-success-600 dark:text-success-400',
+};
 
 // Apple Health adatok (mobil app HealthKit szinkronjából) a Profil oldalon.
 // Nincs "összekötés" gomb: az adat automatikusan érkezik a mobil appból, a web csak megjeleníti.
@@ -23,7 +30,10 @@ const AppleHealthCard = () => {
   const formatDate = (value: string | null) =>
     value ? new Date(value).toLocaleDateString('hu-HU') : '—';
 
-  const metrics = log
+  const restedText = log ? formatSleepRested(log.sleep_rested) : null;
+  const restedTone = log ? sleepRestedTone(log.sleep_rested) : null;
+
+  const metrics: { icon: typeof Moon; label: string; value: string; detail?: string | null; detailClass?: string }[] = log
     ? [
         {
           icon: Footprints,
@@ -34,6 +44,14 @@ const AppleHealthCard = () => {
           icon: Moon,
           label: 'Alvás',
           value: formatHealthDuration(log.sleep_minutes),
+        },
+        {
+          icon: Gauge,
+          label: 'Alvás-pontszám',
+          value: log.sleep_score != null ? `${log.sleep_score}/100` : '—',
+          // A kipihentséget a felhasználó adja meg a mobilon; csak akkor jelenik meg, ha ki van töltve.
+          detail: restedText,
+          detailClass: restedTone ? RESTED_TONE_CLASSES[restedTone] : undefined,
         },
         {
           icon: HeartPulse,
@@ -76,12 +94,13 @@ const AppleHealthCard = () => {
             Legutóbbi nap: <span className="font-medium">{formatDate(log.date)}</span>
           </p>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            {metrics.map(({ icon: Icon, label, value }) => (
+            {metrics.map(({ icon: Icon, label, value, detail, detailClass }) => (
               <div key={label} className="flex items-start gap-2">
                 <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary-600 dark:text-primary-400" />
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
                   <p className="font-medium text-gray-900 dark:text-white">{value}</p>
+                  {detail && <p className={`text-xs font-medium ${detailClass ?? ''}`}>{detail}</p>}
                 </div>
               </div>
             ))}
