@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Trash2 } from 'lucide-react';
+import { RefreshCw, Trash2 } from 'lucide-react';
 import Modal from '../ui/Modal';
 import { QuantityInput, type Quantity } from './QuantityInput';
-import { MEAL_LABELS, deleteFoodEntry, updateFoodEntry, type FoodLogEntry } from '../../lib/foodLog';
+import {
+  MEAL_LABELS,
+  deleteFoodEntry,
+  updateFoodEntry,
+  updateFoodEntryMeal,
+  type FoodLogEntry,
+} from '../../lib/foodLog';
+import { entrySourceLabel, isSyncedEntry } from '../../lib/foodLogSource';
 import { getFoodById, type Food } from '../../lib/foods';
 import { scaleFood } from '../../lib/nutritionTargets';
 
@@ -14,9 +21,10 @@ interface EntryEditModalProps {
 }
 
 export default function EntryEditModal({ entry, onClose, onSaved }: EntryEditModalProps) {
+  const synced = isSyncedEntry(entry);
   const [food, setFood] = useState<Food | null>(null);
   const [mealIndex, setMealIndex] = useState(entry.meal_index);
-  const [quantity, setQuantity] = useState<Quantity>({ grams: entry.grams, servings: entry.servings });
+  const [quantity, setQuantity] = useState<Quantity>({ grams: entry.grams ?? 0, servings: entry.servings });
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -37,6 +45,21 @@ export default function EntryEditModal({ entry, onClose, onSaved }: EntryEditMod
   const busy = isSaving || isDeleting;
 
   const handleSave = async () => {
+    // Szinkronizált sornál csak az étkezés állítható – a makrók a forrásappé.
+    if (synced) {
+      try {
+        setIsSaving(true);
+        await updateFoodEntryMeal(entry.id, mealIndex);
+        toast.success('Mentve');
+        onSaved();
+      } catch (error) {
+        console.error('Failed to update food entry meal:', error);
+        toast.error('Nem sikerült menteni a módosítást');
+      } finally {
+        setIsSaving(false);
+      }
+      return;
+    }
     if (quantity.grams <= 0) {
       toast.error('Adj meg egy érvényes mennyiséget');
       return;
@@ -96,32 +119,50 @@ export default function EntryEditModal({ entry, onClose, onSaved }: EntryEditMod
           </select>
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-900 dark:text-white">Mennyiség</label>
-          <QuantityInput
-            servingG={food?.serving_g ?? null}
-            servingLabel={food?.serving_label}
-            initial={quantity}
-            onChange={setQuantity}
-          />
-        </div>
+        {synced ? (
+          <div className="space-y-2">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              {Math.round(entry.kcal)} kcal · F {entry.protein} g · Sz {entry.carbs} g · Zs {entry.fat} g
+            </p>
+            <p className="flex items-start gap-2 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+              <RefreshCw size={16} className="mt-0.5 shrink-0" />
+              <span>
+                Szinkronizálva innen: {entrySourceLabel(entry)}. A mennyiséget és a törlést ott végezd.
+              </span>
+            </p>
+          </div>
+        ) : (
+          <>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-900 dark:text-white">Mennyiség</label>
+              <QuantityInput
+                servingG={food?.serving_g ?? null}
+                servingLabel={food?.serving_label}
+                initial={quantity}
+                onChange={setQuantity}
+              />
+            </div>
 
-        {preview ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {Math.round(preview.kcal)} kcal · F {preview.protein} g · Sz {preview.carbs} g · Zs {preview.fat} g
-          </p>
-        ) : null}
+            {preview ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {Math.round(preview.kcal)} kcal · F {preview.protein} g · Sz {preview.carbs} g · Zs {preview.fat} g
+              </p>
+            ) : null}
+          </>
+        )}
 
-        <div className="flex items-center justify-between gap-3 pt-2">
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={busy}
-            className="btn btn-outline inline-flex items-center gap-2 text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-900/20"
-          >
-            <Trash2 size={16} />
-            {isDeleting ? 'Törlés...' : 'Törlés'}
-          </button>
+        <div className={`flex items-center gap-3 pt-2 ${synced ? 'justify-end' : 'justify-between'}`}>
+          {synced ? null : (
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={busy}
+              className="btn btn-outline inline-flex items-center gap-2 text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-900/20"
+            >
+              <Trash2 size={16} />
+              {isDeleting ? 'Törlés...' : 'Törlés'}
+            </button>
+          )}
           <button type="button" onClick={handleSave} disabled={busy} className="btn btn-primary">
             {isSaving ? 'Mentés...' : 'Mentés'}
           </button>

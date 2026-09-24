@@ -163,6 +163,9 @@ export function makeFoodLogEntry(overrides: Partial<FoodLogEntry> = {}): FoodLog
     protein: overrides.protein ?? 10,
     carbs: overrides.carbs ?? 10,
     fat: overrides.fat ?? 5,
+    source: overrides.source ?? 'manual',
+    external_id: overrides.external_id ?? null,
+    source_app: overrides.source_app ?? null,
     created_at: overrides.created_at ?? '2026-01-01T00:00:00Z',
     ...overrides,
   };

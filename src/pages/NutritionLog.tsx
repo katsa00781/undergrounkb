@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { addDays, format, isToday } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Plus, Target, BookOpen } from 'lucide-react';
 import { useFoodLog } from '../hooks/useFoodLog';
 import { useNutritionGoals } from '../hooks/useNutritionGoals';
-import { MEAL_LABELS, mealLabel, type FoodLogEntry } from '../lib/foodLog';
+import { MEAL_LABELS, deleteFoodEntry, mealLabel, type FoodLogEntry } from '../lib/foodLog';
 import { entryTotals } from '../lib/nutritionTargets';
 import DailyMacroCard from '../components/nutrition/DailyMacroCard';
 import FoodEntryRow from '../components/nutrition/FoodEntryRow';
@@ -28,6 +29,17 @@ export default function NutritionLog() {
   const [editingEntry, setEditingEntry] = useState<FoodLogEntry | null>(null);
 
   const totals = useMemo(() => entryTotals(entries), [entries]);
+
+  const handleDeleteEntry = async (id: string) => {
+    try {
+      await deleteFoodEntry(id);
+      toast.success('Törölve');
+      reload();
+    } catch (error) {
+      console.error('Failed to delete food entry:', error);
+      toast.error('Nem sikerült törölni a bejegyzést');
+    }
+  };
 
   const goals = useMemo(
     () => ({
@@ -114,7 +126,12 @@ export default function NutritionLog() {
 
                 <div>
                   {meal.entries.map((entry) => (
-                    <FoodEntryRow key={entry.id} entry={entry} onEdit={() => setEditingEntry(entry)} onDelete={reload} />
+                    <FoodEntryRow
+                      key={entry.id}
+                      entry={entry}
+                      onEdit={() => setEditingEntry(entry)}
+                      onDelete={() => handleDeleteEntry(entry.id)}
+                    />
                   ))}
                 </div>
 

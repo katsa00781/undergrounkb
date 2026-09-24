@@ -155,6 +155,22 @@ export async function updateFoodEntry(input: FoodEntryUpdate): Promise<FoodLogEn
   return data;
 }
 
+/**
+ * Csak az étkezés-besorolás átállítása. A szinkronizált (`healthkit`) soroknál
+ * ez az egyetlen megengedett módosítás – a makrókhoz és a mennyiséghez nem nyúlunk.
+ */
+export async function updateFoodEntryMeal(id: string, mealIndex: number): Promise<FoodLogEntry> {
+  const { data, error } = await supabase
+    .from('food_log_entries')
+    .update({ meal_index: mealIndex })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  notifyDataChanged('nutrition');
+  return data;
+}
+
 export async function deleteFoodEntry(id: string): Promise<void> {
   const { error } = await supabase.from('food_log_entries').delete().eq('id', id);
   if (error) throw error;

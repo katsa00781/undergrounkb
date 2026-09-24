@@ -136,6 +136,23 @@ describe('entryTotals', () => {
   it('üres listára nulla összeget ad', () => {
     expect(entryTotals([])).toEqual({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
   });
+
+  it('a gramm nélküli, Health-ből szinkronizált sorokat is beszámítja', () => {
+    const entries = [
+      makeFoodLogEntry({ kcal: 300, protein: 20, carbs: 30, fat: 10 }),
+      makeFoodLogEntry({
+        grams: null,
+        source: 'healthkit',
+        external_id: 'yazio-1',
+        source_app: 'com.yazio.ios.YAZIO',
+        kcal: 150,
+        protein: 5,
+        carbs: 20,
+        fat: 4,
+      }),
+    ];
+    expect(entryTotals(entries)).toEqual({ kcal: 450, protein: 25, carbs: 50, fat: 14 });
+  });
 });
 
 describe('recipes helperek', () => {

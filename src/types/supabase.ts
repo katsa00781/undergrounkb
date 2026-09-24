@@ -818,12 +818,15 @@ export interface Database {
           food_id: string | null
           recipe_id: string | null
           name: string
-          grams: number
+          grams: number | null
           servings: number | null
           kcal: number
           protein: number
           carbs: number
           fat: number
+          source: 'manual' | 'healthkit'
+          external_id: string | null
+          source_app: string | null
           created_at: string
         }
         Insert: {
@@ -834,12 +837,15 @@ export interface Database {
           food_id?: string | null
           recipe_id?: string | null
           name: string
-          grams: number
+          grams?: number | null
           servings?: number | null
           kcal?: number
           protein?: number
           carbs?: number
           fat?: number
+          source?: 'manual' | 'healthkit'
+          external_id?: string | null
+          source_app?: string | null
           created_at?: string
         }
         Update: {
@@ -850,12 +856,15 @@ export interface Database {
           food_id?: string | null
           recipe_id?: string | null
           name?: string
-          grams?: number
+          grams?: number | null
           servings?: number | null
           kcal?: number
           protein?: number
           carbs?: number
           fat?: number
+          source?: 'manual' | 'healthkit'
+          external_id?: string | null
+          source_app?: string | null
           created_at?: string
         }
         Relationships: [
