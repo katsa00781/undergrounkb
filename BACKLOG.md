@@ -3,7 +3,7 @@
 > Ez a fájl a projekt **jelenlegi állapotát** rögzíti, és ide gyűjtjük a **jövőbeni fejlesztéseket** is.
 > Frissítsd, amikor egy feladatot elkezdesz, befejezel, vagy új ötlet merül fel.
 >
-> Utolsó frissítés: **2026-09-24** (Alvás-trend + kipihentség műszakonként a weben; előtte: kipihentség az alvás-pontszám mellett)
+> Utolsó frissítés: **2026-11-12** (Mobil szinkron: szerkeszthető napi végrehajtás + napirend a `lifestyle_settings`-ben — típusok + védett kalóriacél-mentés; előtte: alvás-trend + kipihentség műszakonként)
 
 ---
 
@@ -21,7 +21,7 @@
 - Dashboard, Profil
 - Edzésnapló (`/log`), Edzésnaptár (`/calendar`), Saját edzések (`/my-workouts`)
 - Haladáskövetés (`/progress`), Célok (`/goals`)
-- Kalória-kalkulátor / étel-napló (`/nutrition`, `/nutrition/recipes`, `/nutrition/targets`) — közös séma a mobil app (Underground KB Mobile) élő `foods`/`food_log_entries`/`recipes`/`recipe_items`/`lifestyle_settings` tábláival; a mobil által Apple Health-ből (Yazio) importált sorok (`source = 'healthkit'`) gramm helyett forrás-címkével, csak olvasható makrókkal, törlés nélkül jelennek meg
+- Kalória-kalkulátor / étel-napló (`/nutrition`, `/nutrition/recipes`, `/nutrition/targets`) — közös séma a mobil app (Underground KB Mobile) élő `foods`/`food_log_entries`/`recipes`/`recipe_items`/`lifestyle_settings` tábláival (a `lifestyle_settings`-ből a web csak a kalóriacél-mezőket írja, whitelisttel; a mobil szerkeszthető napi végrehajtás-listája és napirendje — `checklist_items`/`schedule_entries` — típusozva, de a weben nem jelenik meg); a mobil által Apple Health-ből (Yazio) importált sorok (`source = 'healthkit'`) gramm helyett forrás-címkével, csak olvasható makrókkal, törlés nélkül jelennek meg
 - Időpontfoglalás (`/appointments`) + admin kezelés (`/appointments/manage`)
 - Edzéstervező (`/workout-planner`) + 3 generátor al-oldal:
   - Sablon (`/template-generator`)
@@ -40,9 +40,9 @@
 
 ### Tech állapot
 - Build: **zöld** (`npm run build` sikeres); lint: **0 error** (22 örökölt warning); typecheck (`tsc --noEmit` és `tsc --noEmit -p tsconfig.app.json`): **zöld**
-- Tesztek: **Vitest, 200 unit teszt zöld 16 fájlban** (`npm test`) — generátor, taxonómia, FMS pontozás/riport/értékelés/korrekció/PDF, kalória-kalkulátor tiszta logika, alvás-kipihentség szabályai + trend/műszak-összesítés
+- Tesztek: **Vitest, 208 unit teszt zöld 17 fájlban** (`npm test`) — generátor, taxonómia, FMS pontozás/riport/értékelés/korrekció/PDF, kalória-kalkulátor tiszta logika, alvás-kipihentség szabályai + trend/műszak-összesítés, `lifestyle_settings` kalóriacél-payload whitelist + feladatlista-feloldás
 - TODO/FIXME a kódban: 0 db (a `workouts.ts:473` gyakorlatnév-feloldás megoldva)
-- **35 Supabase migráció** a `supabase/migrations/`-ban — a kalória-kalkulátor táblái (`foods`/`food_log_entries`/`recipes`/`recipe_items`/`lifestyle_settings` bővítés) szándékosan **nem** itt élnek, hanem a mobil app repójában (közös Supabase projekt, `iipcpjczjjkwwifwzmut`)
+- **36 Supabase migráció** a `supabase/migrations/`-ban (a legutóbbi csak dokumentáló: `lifestyle_settings.checklist_items`/`schedule_entries`) — a kalória-kalkulátor táblái (`foods`/`food_log_entries`/`recipes`/`recipe_items`/`lifestyle_settings` bővítés) szándékosan **nem** itt élnek, hanem a mobil app repójában (közös Supabase projekt, `iipcpjczjjkwwifwzmut`)
 - Edge Functions: `polar-oauth`, `polar-sync`, `send-fms-report`, `food-lookup`, `food-label-vision` (utóbbi kettő a mobil app repójából deployolva, közös projekt)
 - Új futásidejű függőség: `jspdf` + `jspdf-autotable` (lazy chunk, a fő bundle nem hivatkozza); `public/fonts/Manrope-{Regular,Bold}.ttf` (~48 KB/súly)
 - A korábbi 100 SQL/shell fix-szkript a `scripts/legacy/`-ba archiválva; a gyökérben már csak `build.sh`, `deploy.sh` maradt
@@ -101,11 +101,14 @@
 
 - [ ] **denomailer leváltása saját MIME + SMTP rétegre** 🟢 (alacsony prioritás, 2026-08-01): a `send-fms-report` jelenleg működik, de a denomailer 1.6.0 fejléc-kezelése alapvetően hibás — a `quotedPrintableEncode` egy **törzs**-kódoló, amit fejlécre használ (74 karakterenként `=\r\n`, vezető whitespace nélkül), a `startsWith("=?")` ág pedig a kész encoded-wordöket is újracsomagolja. Ezt jelenleg egy vezető szóközös kerülőúttal védjük ki (`mailer.ts` / `encodeHeaderValue`). Két látható ára van: a `To:` fejlécben nem küldünk megjelenített nevet, és a `FMS_REPORT_FROM_NAME` csak ASCII lehet. Saját MIME-építéssel + közvetlen SMTP-párbeszéddel (Deno TLS socket, AUTH LOGIN — kb. 120 sor) mindkettő megszűnne, és egy hibás, nem karbantartott függőség is kikerülne. A 1.6.0 a legfrissebb kiadás, tehát felfelé nincs hova frissíteni.
 - [x] **Alvás-trend + kipihentség műszakonkénti bontása a weben** 🟢 (2026-09-24) — kész, lásd 5. Done. ✅ 2026-09-24
+- [ ] **Napi végrehajtás + napirend megjelenítése a weben** 🟢 (opcionális, 2026-11-12): a mobilon szerkeszthető feladatlista (`lifestyle_settings.checklist_items`, pipák a `daily_logs.checklist`-ben) és a műszakonkénti napirend (`schedule_entries`) a weben még nem látszik. Az alakok és az alap lista már megvannak a `src/lib/lifestyleSettings.ts`-ben (`resolveChecklistItems`, `ScheduleEntry`); hiányzik a napirend feloldása (`schedule_entries[shift]` → ha nincs: beépített sablon + `custom_schedules` felülírások — a sablon jelenleg csak a mobil kódjában él) és a UI. Ha a web írni is fogja, a mobillal azonos szabályok kellenek (`custom_<timestamp>` kulcs, kezdési idő szerinti rendezés, sablonnal egyező műszak kulcsa nem kerül be).
 - [ ] _(ide jönnek az új funkció-ötletek)_
 
 ---
 
 ## 5. Done (lezárt tételek)
+
+- [x] **Mobil szinkron: szerkeszthető napi végrehajtás + napirend (`lifestyle_settings`)** (2026-11-12): a mobil `add_checklist_items_and_schedule_entries_to_lifestyle_settings` migrációja a közös projekten már lefutott (élő sémán ellenőrizve: `checklist_items jsonb NULL`, `schedule_entries jsonb NOT NULL DEFAULT '{}'`) — itt **nem futtattunk semmit**, csak dokumentáló, idempotens migrációs fájl készült (`20261112120000_document_checklist_items_and_schedule_entries.sql`, `ADD COLUMN IF NOT EXISTS`). `types/supabase.ts` (Row/Insert/Update) bővítve a két mezővel. A kalóriacél-mentés eddig is csak a patch mezőit küldte, de egy `...patch` spreaddel — ezt most egy explicit whitelist (`NUTRITION_GOAL_FIELDS` + `buildNutritionGoalsPayload` az új, tiszta `src/lib/lifestyleSettings.ts`-ben) váltja, így a mobil mezői (`checklist_items`, `schedule_entries`, `custom_schedules`, …) a webes upsertből semmilyen hívásnál nem kaphatnak `null`-t vagy `{}`-t. Ugyanitt a mobil alakjainak típusai (`ChecklistItem`, `ScheduleEntry`, `ShiftKey`) és az alap lista + `resolveChecklistItems` (NULL → alap 5 feladat, `[]` → üres lista; az alap lista ikonjai a DB-ben nincsenek, ezért `null`). 8 új teszt (`lifestyleSettings.test.ts`). Szándékosan kimaradt: webes UI a feladatlistához/napirendhez (nyitott tétel a 4. szekcióban), a `custom_schedules` oszlop nem változott. Build, lint (0 error, 22 örökölt warning), mindkét `tsc --noEmit`, 208 teszt zöld; a mentés előtti/utáni SQL-összevetést bejelentkezett mentéssel **nem ellenőriztük** (nincs teszt-bejelentkezés ebben a környezetben).
 
 - [x] **Alvás-trend + kipihentség műszakonként** (2026-09-24): új `src/components/health/SleepTrendCard.tsx` a Dashboardon és a Profilon az `AppleHealthCard` alatt — az utolsó 30 nap `daily_logs` adatából (`getDailyHealthLogs`) két tengelyes Chart.js vonaldiagram (alvás-pontszám 0–100 + kipihentség 1–5), a rossz éjszakák (`sleep_score < 55` VAGY `sleep_rested <= 2`, a mobillal azonos) `error` színű, nagyobb ponttal és tooltip-jelöléssel; fölötte átlagos pontszám / átlagos kipihentség / rossz éjszakák száma. Alatta a mobil Fejlődés tabjával azonos műszakonkénti táblázat (`shift_key` szerint, csak kitöltött kipihentségű éjszakák; átlagos kipihentség 1 tizedessel, átlagos pontszám, éjszakaszám, „eltérés” = `sleep_score >= 70` ÉS `sleep_rested <= 2`). A tiszta logika a `src/lib/sleepRested.ts`-ben (`summarizeSleepTrend`, `summarizeSleepByShift`, `isSleepMismatch`, `shiftLabel`; ismeretlen/hiányzó `shift_key` → „Nincs megadva” csoport), 7 új teszt. A chart színei az `index.css` CSS-változóiból (primary/secondary/error) olvasódnak, `MutationObserver`-rel téma-váltáskor frissülnek. Nincs új migráció/tábla. Build, lint (0 error, 22 örökölt warning), mindkét `tsc --noEmit`, 200 teszt zöld; böngészőben **nem ellenőrizve** (nincs teszt-bejelentkezés ebben a környezetben).
 

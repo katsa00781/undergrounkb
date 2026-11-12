@@ -994,6 +994,8 @@ export interface Database {
           protein_goal_min: number
           protein_goal_max: number
           custom_schedules: Json
+          checklist_items: Json | null
+          schedule_entries: Json
           eating_windows: Json
           step_goal: number
           self_check_reminder_enabled: boolean
@@ -1016,6 +1018,8 @@ export interface Database {
           protein_goal_min?: number
           protein_goal_max?: number
           custom_schedules?: Json
+          checklist_items?: Json | null
+          schedule_entries?: Json
           eating_windows?: Json
           step_goal?: number
           self_check_reminder_enabled?: boolean
@@ -1038,6 +1042,8 @@ export interface Database {
           protein_goal_min?: number
           protein_goal_max?: number
           custom_schedules?: Json
+          checklist_items?: Json | null
+          schedule_entries?: Json
           eating_windows?: Json
           step_goal?: number
           self_check_reminder_enabled?: boolean

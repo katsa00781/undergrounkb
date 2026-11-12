@@ -1,12 +1,15 @@
 import { supabase } from '../config/supabase';
 import { notifyDataChanged } from '../utils/dataRefresh';
 import type { Database } from '../types/supabase';
-import type { GoalType } from './nutritionTargets';
+import { buildNutritionGoalsPayload, type NutritionGoalsPatch } from './lifestyleSettings';
+
+export type { NutritionGoalsPatch } from './lifestyleSettings';
 
 /**
  * A `lifestyle_settings` tábla a mobil app „Kortalanul” műszak-tervezőjének is
- * otthona (shift_order, eating_windows, stb.) – ide csak a kalória-kalkulátor
- * mezőit vesszük fel, a többit a web nem érinti.
+ * otthona (shift_order, eating_windows, checklist_items, schedule_entries, stb.) –
+ * a web ebből csak a kalória-kalkulátor mezőit írja (whitelist:
+ * `NUTRITION_GOAL_FIELDS`), a többit nem érinti.
  */
 export type LifestyleSettings = Database['public']['Tables']['lifestyle_settings']['Row'];
 
@@ -16,21 +19,13 @@ export async function getLifestyleSettings(userId: string): Promise<LifestyleSet
   return data;
 }
 
-export type NutritionGoalsPatch = {
-  kcal_goal?: number | null;
-  carbs_goal_g?: number | null;
-  fat_goal_g?: number | null;
-  activity_factor?: number;
-  goal_type?: GoalType;
-};
-
-/** Napi kalória-/makrócél mentése. A sor a felhasználóhoz upsert-elődik. */
+/**
+ * Napi kalória-/makrócél mentése. A sor a felhasználóhoz upsert-elődik; a payload
+ * csak a whitelistelt kalória-mezőket tartalmazza, így ütközéskor a mobil mezői
+ * (`checklist_items`, `schedule_entries`, `custom_schedules`, …) változatlanok.
+ */
 export async function upsertNutritionGoals(userId: string, patch: NutritionGoalsPatch): Promise<LifestyleSettings> {
-  const payload = {
-    user_id: userId,
-    ...patch,
-    updated_at: new Date().toISOString(),
-  };
+  const payload = buildNutritionGoalsPayload(userId, patch);
   const { data, error } = await supabase
     .from('lifestyle_settings')
     .upsert(payload, { onConflict: 'user_id' })
